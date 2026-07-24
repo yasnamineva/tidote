@@ -1,65 +1,308 @@
-import Image from "next/image";
+import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { PlaceholderImage } from "@/components/placeholder-image";
+import { Reveal } from "@/components/reveal";
+import { Marquee } from "@/components/marquee";
+import { TypingText } from "@/components/typing-text";
+import { FramedMedia } from "@/components/framed-media";
+import { SplitReveal } from "@/components/split-reveal";
+import { ImageReveal } from "@/components/image-reveal";
+import { FloatingShapes } from "@/components/floating-shapes";
+import { JourneyStepper } from "@/components/journey-stepper";
+
+const SHOP_CATEGORIES = [
+  {
+    title: "Casual",
+    copy: "Relaxed hoodies, denim, and layered everyday basics.",
+    href: "/casual",
+    image: "/photos/casual-hero.jpg",
+  },
+  {
+    title: "Sports",
+    copy: "Track jackets, windbreakers, technical athletic fits.",
+    href: "/sports",
+    image: "/photos/sports-hero.jpg",
+  },
+];
+
+const PROCESS = [
+  {
+    step: "01",
+    title: "Design",
+    copy: "Every silhouette starts as a sketch pulled from street reference and rebuilt for movement.",
+  },
+  {
+    step: "02",
+    title: "Handcraft",
+    copy: "Cut, sewn, and finished in-house — no mass factory lines, no shortcuts.",
+  },
+  {
+    step: "03",
+    title: "Fit",
+    copy: "Made-to-measure clients get pieces built around their own tracked measurements.",
+  },
+  {
+    step: "04",
+    title: "Deliver",
+    copy: "Small batches, tracked from the atelier floor to your door.",
+  },
+];
+
+const GALLERY_PHOTOS = [
+  "/photos/gallery-1.jpg",
+  "/photos/gallery-2.jpg",
+  "/photos/gallery-3.jpg",
+  "/photos/gallery-4.jpg",
+  "/photos/gallery-5.jpg",
+  "/photos/gallery-6.jpg",
+  "/photos/gallery-7.jpg",
+  "/photos/gallery-8.jpg",
+];
+
+const INSTAGRAM_URL = "https://www.instagram.com/tidote.atelier/";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <>
+      <SiteHeader />
+      <main className="flex-1">
+        {/* About Us */}
+        <section id="about" className="relative border-b border-line overflow-hidden scroll-mt-20">
+          <FloatingShapes variant="light" />
+          <div className="relative z-10 mx-auto max-w-7xl px-6 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
+            <Reveal>
+              <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-4">
+                About Us
+              </p>
+              <TypingText
+                className="font-round font-semibold text-4xl md:text-6xl leading-[0.95] text-ink mb-6 inline-block"
+                speed={55}
+                segments={[
+                  { text: "The an" },
+                  { text: "TIDOTE", className: "font-gothic text-moss-deep" },
+                  { text: " to mediocrity" },
+                ]}
+              />
+              <p className="text-ink-soft text-base md:text-lg max-w-md">
+                Tidote Atelier is a Sofia-based streetwear house building
+                unique, unrepeatable pieces for people who refuse to blend
+                in. Unique streetstyle to match your main character energy.
+              </p>
+            </Reveal>
+            <div className="aspect-square">
+              <FramedMedia className="h-full w-full">
+                <ImageReveal className="h-full w-full">
+                  <PlaceholderImage
+                    label="Tidote streetwear look"
+                    src="/photos/about-hero.jpg"
+                    className="h-full w-full"
+                    priority
+                  />
+                </ImageReveal>
+              </FramedMedia>
+            </div>
+          </div>
+        </section>
+
+        {/* Story */}
+        <section className="relative bg-paper border-b border-line overflow-hidden">
+          <FloatingShapes variant="light" />
+          <Reveal className="relative z-10 mx-auto max-w-3xl px-6 py-16 md:py-20 text-center">
+            <h2 className="font-display text-2xl md:text-3xl mb-6">
+              <SplitReveal text="Our Story" />
+            </h2>
+            <p className="text-ink-soft leading-relaxed mb-4">
+              Tidote started as a rejection of the ordinary — pieces that
+              looked the same on every rack, in every shop, on every feed.
+              The atelier was built to be the opposite: garments cut in small
+              runs, finished by hand, and made to be worn like a statement,
+              not a uniform.
+            </p>
+            <p className="text-ink-soft leading-relaxed">
+              Every collection pulls from street culture and reworks it
+              through a made-to-order lens — meaning what you wear was
+              actually made for you, whether that's a limited drop piece or a
+              fully custom, measured-to-fit commission.
+            </p>
+          </Reveal>
+        </section>
+
+        <Marquee />
+
+        {/* New Vibes */}
+        <section id="new-vibes" className="relative border-b border-line overflow-hidden scroll-mt-20">
+          <FloatingShapes variant="warm" />
+          <div className="relative z-10 mx-auto max-w-7xl grid md:grid-cols-2">
+            <div className="aspect-square md:aspect-auto">
+              <FramedMedia className="h-full w-full">
+                <ImageReveal className="h-full w-full">
+                  <PlaceholderImage
+                    label="Tidote streetwear look"
+                    src="/photos/new-vibes.jpg"
+                    className="h-full w-full"
+                  />
+                </ImageReveal>
+              </FramedMedia>
+            </div>
+            <Reveal
+              delay={150}
+              className="flex flex-col justify-center gap-6 px-8 py-16 md:px-16"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
+              <p className="text-xs uppercase tracking-[0.3em] text-moss-deep">
+                Main Character Energy
+              </p>
+              <h2 className="font-display text-4xl md:text-5xl leading-[0.95]">
+                <SplitReveal text="NEW VIBES" />
+              </h2>
+              <p className="text-ink-soft max-w-sm">
+                Every drop is designed to be worn like a statement. Follow
+                along as new pieces land straight from the atelier.
+              </p>
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-sweep w-fit bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5"
+              >
+                Shop the Drop
+              </a>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* Shop categories */}
+        <section id="shop" className="bg-moss md:h-[calc(100vh-140px)]">
+          <div className="grid md:grid-cols-2 md:h-full">
+            {SHOP_CATEGORIES.map((c, i) => (
+              <Reveal key={c.title} delay={i * 100} className="md:h-full">
+                <Link
+                  href={c.href}
+                  className="group relative block h-[70vh] md:h-full overflow-hidden"
+                >
+                  <PlaceholderImage
+                    label={`${c.title}'s pieces`}
+                    src={c.image}
+                    className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-8 md:p-10 text-cream">
+                    <h3 className="font-display text-4xl md:text-5xl tracking-wide transition-transform duration-300 group-hover:-translate-y-1">
+                      {c.title}
+                    </h3>
+                    <p className="text-sm text-cream/80 mt-2 max-w-xs">
+                      {c.copy}
+                    </p>
+                    <span className="inline-block text-xs uppercase tracking-[0.2em] mt-4 border-b border-cream/60 pb-1 group-hover:border-cream transition-colors">
+                      Shop {c.title} &rarr;
+                    </span>
+                  </div>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* Client Journey */}
+        <section className="relative border-b border-line overflow-hidden bg-paper">
+          <FloatingShapes variant="light" />
+          <div className="relative z-10 mx-auto max-w-6xl px-6 py-16 md:py-20">
+            <Reveal className="text-center mb-12">
+              <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
+                From First Fitting to Final Piece
+              </p>
+              <h2 className="font-display text-2xl md:text-3xl">
+                <SplitReveal text="Your Made-to-Measure Journey" />
+              </h2>
+            </Reveal>
+            <Reveal delay={100}>
+              <JourneyStepper />
+            </Reveal>
+            <Reveal delay={200} className="text-center mt-12">
+              <Link
+                href="/login"
+                className="btn-sweep bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5 inline-block"
+              >
+                Start Your Order
+              </Link>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* Process */}
+        <section className="relative border-b border-line overflow-hidden">
+          <FloatingShapes variant="light" />
+          <div className="relative z-10 mx-auto max-w-7xl px-6 py-16 md:py-20">
+            <Reveal className="text-center mb-10">
+              <h2 className="font-display text-2xl md:text-3xl">
+                <SplitReveal text="How a Piece Comes Together" />
+              </h2>
+            </Reveal>
+            <div className="grid md:grid-cols-4">
+              {PROCESS.map((p, i) => (
+                <Reveal key={p.step} delay={i * 100}>
+                  <div
+                    className={`group px-6 py-8 border-line h-full transition-colors duration-300 hover:bg-moss-soft ${
+                      i > 0 ? "border-t md:border-t-0 md:border-l" : ""
+                    }`}
+                  >
+                    <span
+                      className={`font-display text-4xl transition-colors duration-300 ${
+                        i % 2 === 0 ? "text-accent" : "text-moss-deep"
+                      }`}
+                    >
+                      {p.step}
+                    </span>
+                    <h3 className="font-display text-xl mt-4 mb-2">
+                      {p.title}
+                    </h3>
+                    <p className="text-sm text-ink-soft">{p.copy}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Gallery pulled from Instagram */}
+        <section
+          id="gallery"
+          className="relative mx-auto max-w-7xl px-6 py-16 md:py-20 scroll-mt-20 overflow-hidden"
+        >
+          <FloatingShapes variant="light" />
+          <Reveal className="relative z-10 flex items-end justify-between mb-8">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
+                Straight From Instagram
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl">
+                <SplitReveal text="@tidote.atelier" />
+              </h2>
+            </div>
             <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="link-underline text-sm uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+              Follow &rarr;
+            </a>
+          </Reveal>
+          <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3">
+            {GALLERY_PHOTOS.map((src, i) => (
+              <Reveal key={src} delay={(i % 4) * 80}>
+                <PlaceholderImage
+                  label="Tidote streetwear look"
+                  src={src}
+                  index={i}
+                  className="aspect-square transition-transform duration-500 hover:-translate-y-1"
+                />
+              </Reveal>
+            ))}
+          </div>
+        </section>
       </main>
-    </div>
+      <SiteFooter />
+    </>
   );
 }
