@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { MonthGrid } from "@/components/calendar/month-grid";
 import { useBooking } from "@/lib/booking";
+import { useLang } from "@/lib/i18n";
 import { getAllClientsWithLiveData } from "@/lib/admin-data";
 
 export function AdminAvailabilityPanel() {
   const { availability, bookings, toggleDayOpen, addSlot, removeSlot } = useBooking();
+  const { t } = useLang();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [newTime, setNewTime] = useState("10:00");
 
@@ -51,15 +53,15 @@ export function AdminAvailabilityPanel() {
         <div className="flex flex-wrap items-center gap-4 mt-4 text-[10px] uppercase tracking-[0.1em] text-ink-soft">
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-sm bg-moss-soft border border-moss-deep" />
-            Open
+            {t("cal.legend.open")}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            Order due
+            {t("cal.legend.orderDue")}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-ink" />
-            Fitting booked
+            {t("cal.legend.booked")}
           </span>
         </div>
       </div>
@@ -74,7 +76,7 @@ export function AdminAvailabilityPanel() {
                 onClick={() => toggleDayOpen(selectedDate)}
                 className="btn-sweep text-xs uppercase tracking-[0.15em] border border-ink px-3 py-1.5 transition-colors duration-300 hover:text-cream"
               >
-                {selectedDay?.open ? "Close Day" : "Open Day"}
+                {selectedDay?.open ? t("cal.closeDay") : t("cal.openDay")}
               </button>
             </div>
 
@@ -92,12 +94,12 @@ export function AdminAvailabilityPanel() {
                     onClick={() => addSlot(selectedDate, newTime)}
                     className="bg-moss text-cream px-4 py-2 text-xs uppercase tracking-[0.15em] hover:bg-moss-deep transition-colors"
                   >
-                    Add Slot
+                    {t("cal.addSlot")}
                   </button>
                 </div>
                 <ul className="flex flex-col gap-2">
                   {selectedDay.slots.length === 0 && (
-                    <li className="text-sm text-ink-soft">No open slots yet.</li>
+                    <li className="text-sm text-ink-soft">{t("cal.noSlots")}</li>
                   )}
                   {selectedDay.slots.map((slot) => (
                     <li
@@ -110,7 +112,7 @@ export function AdminAvailabilityPanel() {
                         onClick={() => removeSlot(selectedDate, slot.id)}
                         className="text-xs text-accent hover:underline"
                       >
-                        Remove
+                        {t("cal.remove")}
                       </button>
                     </li>
                   ))}
@@ -121,7 +123,7 @@ export function AdminAvailabilityPanel() {
             {selectedBookings.length > 0 && (
               <div className="mt-6">
                 <h4 className="text-xs uppercase tracking-[0.1em] text-ink-soft mb-2">
-                  Booked Fittings
+                  {t("cal.bookedFittings")}
                 </h4>
                 <ul className="flex flex-col gap-2">
                   {selectedBookings.map((b) => (
@@ -137,9 +139,7 @@ export function AdminAvailabilityPanel() {
             )}
           </>
         ) : (
-          <p className="text-sm text-ink-soft">
-            Select a date to open/close it and manage fitting slots.
-          </p>
+          <p className="text-sm text-ink-soft">{t("cal.selectDate")}</p>
         )}
       </div>
     </div>

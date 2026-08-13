@@ -7,9 +7,7 @@ export const metadata = {
 export default function CasualPage() {
   return (
     <CategoryPage
-      eyebrow="Casual"
-      title="EVERYDAY EDGE"
-      blurb="Relaxed hoodies, denim, and layered basics — streetwear built for the everyday, cut and finished to made-to-measure standard."
+      categoryKey="casual"
       heroSrc="/photos/casual-hero.jpg"
       photos={[
         "/photos/casual-1.jpg",

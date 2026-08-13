@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "@/lib/i18n";
 
-const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const WEEKDAY_LABELS_EN = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const WEEKDAY_LABELS_BG = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
 function toDateKey(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -21,6 +23,8 @@ export function MonthGrid({
   dayClassName?: (date: string) => string;
   selectedDate?: string | null;
 }) {
+  const { lang } = useLang();
+  const WEEKDAY_LABELS = lang === "bg" ? WEEKDAY_LABELS_BG : WEEKDAY_LABELS_EN;
   const today = new Date();
   const [cursor, setCursor] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
@@ -37,10 +41,10 @@ export function MonthGrid({
   for (let i = 0; i < startOffset; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(toDateKey(year, month, d));
 
-  const monthLabel = cursor.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
+  const monthLabel = cursor.toLocaleDateString(
+    lang === "bg" ? "bg-BG" : "en-US",
+    { month: "long", year: "numeric" }
+  );
 
   return (
     <div>

@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useLang } from "@/lib/i18n";
+import { categoryLabel } from "@/lib/translations";
 import { ORDER_CATEGORIES, type OrderCategory } from "@/lib/mock-data";
 
 const MAX_PHOTOS = 4;
@@ -10,6 +12,7 @@ const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
 
 export function NewOrderForm() {
   const { addOrder } = useAuth();
+  const { lang, t } = useLang();
   const router = useRouter();
   const [piece, setPiece] = useState("");
   const [category, setCategory] = useState<OrderCategory>(ORDER_CATEGORIES[0]);
@@ -24,14 +27,12 @@ export function NewOrderForm() {
 
     const room = MAX_PHOTOS - photos.length;
     if (files.length > room) {
-      setWarning(
-        `You can attach up to ${MAX_PHOTOS} reference photos — only the first ${room} were added.`
-      );
+      setWarning(t("neworder.warnMax", { max: MAX_PHOTOS, room }));
     }
 
     files.slice(0, room).forEach((file) => {
       if (file.size > MAX_FILE_BYTES) {
-        setWarning(`"${file.name}" is too large (max 1.5MB) — skipped.`);
+        setWarning(t("neworder.warnLarge", { name: file.name }));
         return;
       }
       const reader = new FileReader();
@@ -69,31 +70,31 @@ export function NewOrderForm() {
     >
       <div className="flex flex-col gap-1.5">
         <label htmlFor="piece" className="text-xs uppercase tracking-[0.1em] text-ink-soft">
-          Piece Name
+          {t("neworder.piece")}
         </label>
         <input
           id="piece"
           required
           value={piece}
           onChange={(e) => setPiece(e.target.value)}
-          placeholder="e.g. Oversized Denim Jacket"
-          className="border border-line bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep"
+          placeholder={t("neworder.piecePlaceholder")}
+          className="border border-line-strong bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="category" className="text-xs uppercase tracking-[0.1em] text-ink-soft">
-          Category
+          {t("neworder.category")}
         </label>
         <select
           id="category"
           value={category}
           onChange={(e) => setCategory(e.target.value as OrderCategory)}
-          className="border border-line bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep"
+          className="border border-line-strong bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep"
         >
           {ORDER_CATEGORIES.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {categoryLabel(lang, c)}
             </option>
           ))}
         </select>
@@ -101,22 +102,22 @@ export function NewOrderForm() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="notes" className="text-xs uppercase tracking-[0.1em] text-ink-soft">
-          Notes (fabric, fit, colour&hellip;)
+          {t("neworder.notes")}
         </label>
         <textarea
           id="notes"
           rows={3}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="border border-line bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep resize-none"
+          className="border border-line-strong bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep resize-none"
         />
       </div>
 
       <div className="flex flex-col gap-2">
         <label className="text-xs uppercase tracking-[0.1em] text-ink-soft">
-          Reference Photos{" "}
+          {t("neworder.refPhotos")}{" "}
           <span className="normal-case text-ink-soft/70">
-            (optional, up to {MAX_PHOTOS})
+            {t("neworder.optional", { n: MAX_PHOTOS })}
           </span>
         </label>
         <input
@@ -156,7 +157,7 @@ export function NewOrderForm() {
         type="submit"
         className="btn-sweep mt-2 bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5"
       >
-        Place Order
+        {t("neworder.submit")}
       </button>
     </form>
   );

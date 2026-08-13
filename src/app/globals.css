@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --cream: #e9ddcd;
-  --paper: #f1e8db;
+  /* Light warm-neutral surfaces; every text pair clears WCAG AA on these. */
+  --cream: #f7f4ef;
+  --paper: #fffdf9;
   --ink: #221e19;
-  --ink-soft: #6b6152;
-  --line: #d6c7ac;
-  --accent: #b3402f;
-  --accent-soft: #e8b9ae;
-  --moss: #707b57;
-  --moss-deep: #4a5238;
-  --moss-soft: #e2e5d3;
+  --ink-soft: #655c4e;
+  --line: #e3dcd1;
+  --line-strong: #c9bfae; /* form fields & other boundaries that must read as edges */
+  --accent: #a83b2a;
+  --accent-soft: #f0d4cc;
+  --moss: #63704a;
+  --moss-deep: #454d34;
+  --moss-soft: #e9ecdd;
+  /* Chart data hue: the moss family, pushed to clear the palette validator's
+     chroma floor while holding 3:1 against --paper. */
+  --chart-data: #5f7a33;
 }
 
 @theme inline {
@@ -19,15 +24,16 @@
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-moss: var(--moss);
   --color-moss-deep: var(--moss-deep);
   --color-moss-soft: var(--moss-soft);
-  --font-display: var(--font-anton);
-  --font-gothic: var(--font-pirata);
-  --font-round: var(--font-quicksand);
-  --font-sans: var(--font-inter);
+  --font-display: var(--font-typewriter), monospace;
+  --font-gothic: var(--font-brand), serif;
+  --font-round: var(--font-typewriter), monospace;
+  --font-sans: var(--font-inter), sans-serif;
 }
 
 body {
@@ -367,6 +373,10 @@ html.lenis body {
   .link-underline::after,
   .btn-sweep::before {
     transition: none;
+  }
+  .brand-anim {
+    transition: none !important;
+    transform: none !important;
   }
   .typing-caret {
     animation: none;

@@ -53,6 +53,17 @@ export type Order = {
   updates: OrderNote[];
 };
 
+// A garment the client already owns/received — a reference catalogue for the
+// atelier, distinct from the order pipeline (no status/production/fitting).
+export type OwnedItem = {
+  id: string;
+  name: string;
+  category: OrderCategory;
+  photos: string[];
+  notes: string;
+  addedOn: string;
+};
+
 export type MessageSender = "client" | "studio";
 
 export type Message = {
@@ -85,12 +96,16 @@ export type Notification = {
 
 export type Measurements = {
   height: string;
+  shoulders: string;
   chest: string;
-  waist: string;
-  hips: string;
-  shoulder: string;
-  sleeve: string;
+  waistNatural: string;
+  lowerWaist: string;
+  upperArm: string;
+  biceps: string;
+  wrist: string;
   inseam: string;
+  thigh: string;
+  ankle: string;
   notes: string;
   updatedAt: string;
 };
@@ -115,6 +130,7 @@ export type Client = {
   orders: Order[];
   measurements: Measurements;
   delivery: DeliveryInfo;
+  items: OwnedItem[];
 };
 
 export type AdminAccount = {
@@ -171,19 +187,56 @@ export function generateId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-const EMPTY_MEASUREMENTS: Measurements = {
+// Fills in fields that may be missing on orders persisted by older versions,
+// so the UI never hits undefined arrays/enums from legacy localStorage data.
+export function normalizeOrder(o: Order): Order {
+  return {
+    ...o,
+    category: o.category ?? "Accessory",
+    photos: o.photos ?? [],
+    status: o.status ?? "received",
+    reviewStatus: o.reviewStatus ?? "accepted",
+    eta: o.eta ?? "",
+    total: o.total ?? "",
+    updates: o.updates ?? [],
+  };
+}
+
+/**
+ * Stored orders are snapshots taken when the studio last edited one, so they can
+ * lag behind the seed data (e.g. missing reference photos added later). Studio
+ * edits still win; the seed only fills gaps.
+ */
+export function mergeOrdersWithSeed(stored: Order[], seed: Order[]): Order[] {
+  return stored.map((o) => {
+    const base = seed.find((s) => s.id === o.id);
+    if (!base) return normalizeOrder(o);
+    return normalizeOrder({
+      ...o,
+      photos: o.photos?.length ? o.photos : base.photos,
+      piece: o.piece || base.piece,
+      category: o.category ?? base.category,
+    });
+  });
+}
+
+export const EMPTY_MEASUREMENTS: Measurements = {
   height: "",
+  shoulders: "",
   chest: "",
-  waist: "",
-  hips: "",
-  shoulder: "",
-  sleeve: "",
+  waistNatural: "",
+  lowerWaist: "",
+  upperArm: "",
+  biceps: "",
+  wrist: "",
   inseam: "",
+  thigh: "",
+  ankle: "",
   notes: "",
   updatedAt: "Not yet taken",
 };
 
-const EMPTY_DELIVERY: DeliveryInfo = {
+export const EMPTY_DELIVERY: DeliveryInfo = {
   address: "",
   city: "",
   postalCode: "",
@@ -191,6 +244,8 @@ const EMPTY_DELIVERY: DeliveryInfo = {
   notes: "",
   updatedAt: "",
 };
+
+export const EMPTY_ITEMS: OwnedItem[] = [];
 
 export const ADMIN: AdminAccount = {
   id: "admin",
@@ -202,15 +257,15 @@ export const ADMIN: AdminAccount = {
 
 export const CLIENTS: Client[] = [
   {
-    id: "yasna",
-    name: "Yasna",
+    id: "dimitar",
+    name: "Dimitar Kolev",
     email: "demo@tidote.atelier",
     password: "antidote",
     role: "client",
     orders: [
       {
         id: "TD-1042",
-        piece: "Oversized Raw-Hem Trench",
+        piece: "Burgundy Track Jacket",
         category: "Jacket",
         photos: ["/photos/gallery-2.jpg"],
         placedOn: "2026-06-02",
@@ -218,12 +273,12 @@ export const CLIENTS: Client[] = [
         reviewStatus: "accepted",
         eta: "2026-07-28",
         total: "€420",
-        notes: "Charcoal, custom shoulder taping.",
+        notes: "Burgundy panelling, custom shoulder taping.",
         updates: [],
       },
       {
         id: "TD-1031",
-        piece: "Deconstructed Cargo Set",
+        piece: "Olive Cargo Set",
         category: "Cargo Set",
         photos: ["/photos/gallery-4.jpg"],
         placedOn: "2026-05-11",
@@ -235,7 +290,7 @@ export const CLIENTS: Client[] = [
       },
       {
         id: "TD-1058",
-        piece: "Made-to-Measure Denim Jacket",
+        piece: "Black Puffer Jacket",
         category: "Jacket",
         photos: ["/photos/men-1.jpg"],
         placedOn: "2026-07-10",
@@ -248,9 +303,9 @@ export const CLIENTS: Client[] = [
       },
       {
         id: "TD-1065",
-        piece: "Cropped Bomber",
-        category: "Jacket",
-        photos: ["/photos/gallery-5.jpg"],
+        piece: "Gold Graphic Hoodie",
+        category: "Hoodie",
+        photos: ["/photos/casual-5.jpg"],
         placedOn: "2026-06-20",
         status: "ready",
         reviewStatus: "accepted",
@@ -261,28 +316,50 @@ export const CLIENTS: Client[] = [
       },
     ],
     measurements: {
-      height: "170",
-      chest: "88",
-      waist: "68",
-      hips: "94",
-      shoulder: "39",
-      sleeve: "58",
-      inseam: "76",
+      height: "178",
+      shoulders: "46",
+      chest: "98",
+      waistNatural: "82",
+      lowerWaist: "86",
+      upperArm: "34",
+      biceps: "33",
+      wrist: "17",
+      inseam: "80",
+      thigh: "56",
+      ankle: "24",
       notes: "Prefers slightly oversized fit through the shoulder.",
       updatedAt: "2026-06-02",
     },
     delivery: EMPTY_DELIVERY,
+    items: [
+      {
+        id: "item-dimitar-1",
+        name: "Denim Sherpa Jacket",
+        category: "Jacket",
+        photos: ["/photos/gallery-6.jpg"],
+        notes: "Store-bought — like the collar and the boxy cut.",
+        addedOn: "2026-05-20",
+      },
+      {
+        id: "item-dimitar-2",
+        name: "Tan Wide-Leg Pants",
+        category: "Pants",
+        photos: ["/photos/gallery-5.jpg"],
+        notes: "Reference for my usual leg opening.",
+        addedOn: "2026-05-20",
+      },
+    ],
   },
   {
     id: "boris",
-    name: "Boris",
+    name: "Boris Petrov",
     email: "boris@tidote.atelier",
     password: "cargo2026",
     role: "client",
     orders: [
       {
         id: "TD-1022",
-        piece: "Wide-Leg Tech Cargo",
+        piece: "Mint Track Pants",
         category: "Pants",
         photos: ["/photos/gallery-3.jpg"],
         placedOn: "2026-06-20",
@@ -306,13 +383,17 @@ export const CLIENTS: Client[] = [
       },
     ],
     measurements: {
-      height: "181",
-      chest: "98",
-      waist: "82",
-      hips: "100",
-      shoulder: "46",
-      sleeve: "64",
-      inseam: "82",
+      height: "185",
+      shoulders: "48",
+      chest: "104",
+      waistNatural: "88",
+      lowerWaist: "92",
+      upperArm: "36",
+      biceps: "36",
+      wrist: "18",
+      inseam: "84",
+      thigh: "60",
+      ankle: "25",
       notes: "Runs long in the torso.",
       updatedAt: "2026-04-15",
     },
@@ -324,18 +405,28 @@ export const CLIENTS: Client[] = [
       notes: "Leave with concierge if not home.",
       updatedAt: "2026-04-20",
     },
+    items: [
+      {
+        id: "item-boris-1",
+        name: "Colour-Block Jacket",
+        category: "Jacket",
+        photos: ["/photos/casual-6.jpg"],
+        notes: "Favourite everyday layer — reference for fit.",
+        addedOn: "2026-04-10",
+      },
+    ],
   },
   {
-    id: "elena",
-    name: "Elena",
-    email: "elena@tidote.atelier",
+    id: "kaloyan",
+    name: "Kaloyan Ivanov",
+    email: "kaloyan@tidote.atelier",
     password: "denim2026",
     role: "client",
     orders: [
       {
         id: "TD-1071",
-        piece: "Reworked Shirt",
-        category: "Shirt",
+        piece: "Reworked Graphic Tee",
+        category: "T-Shirt",
         photos: ["/photos/gallery-7.jpg"],
         placedOn: "2026-07-18",
         status: "received",
@@ -348,6 +439,7 @@ export const CLIENTS: Client[] = [
     ],
     measurements: EMPTY_MEASUREMENTS,
     delivery: EMPTY_DELIVERY,
+    items: EMPTY_ITEMS,
   },
 ];
 
@@ -388,12 +480,12 @@ export const SEED_AVAILABILITY: DayAvailability[] = [
 export const SEED_BOOKINGS: Booking[] = [];
 
 export const SEED_MESSAGES: Record<string, Message[]> = {
-  yasna: [
+  dimitar: [
     {
-      id: "msg-seed-yasna-1",
-      clientId: "yasna",
+      id: "msg-seed-dimitar-1",
+      clientId: "dimitar",
       sender: "studio",
-      text: "Welcome back, Yasna! Message us here anytime about fabric, fit, or timing.",
+      text: "Welcome back, Dimitar! Message us here anytime about fabric, fit, or timing.",
       createdAt: "2026-06-02T09:00:00.000Z",
     },
   ],
@@ -406,12 +498,12 @@ export const SEED_MESSAGES: Record<string, Message[]> = {
       createdAt: "2026-04-15T09:00:00.000Z",
     },
   ],
-  elena: [
+  kaloyan: [
     {
-      id: "msg-seed-elena-1",
-      clientId: "elena",
+      id: "msg-seed-kaloyan-1",
+      clientId: "kaloyan",
       sender: "studio",
-      text: "Welcome to Tidote Atelier, Elena! Feel free to ask us anything here.",
+      text: "Welcome to Tidote Atelier, Kaloyan! Feel free to ask us anything here.",
       createdAt: "2026-07-18T09:00:00.000Z",
     },
   ],
@@ -421,9 +513,9 @@ export const SEED_ADMIN_NOTIFICATIONS: Notification[] = [
   {
     id: "ntf-seed-admin-1",
     audience: "admin",
-    clientId: "elena",
+    clientId: "kaloyan",
     kind: "message",
-    text: "Elena sent you a message.",
+    text: "Kaloyan sent you a message.",
     href: "/admin/inbox",
     createdAt: "2026-07-18T09:05:00.000Z",
     read: false,
@@ -431,18 +523,18 @@ export const SEED_ADMIN_NOTIFICATIONS: Notification[] = [
 ];
 
 export const SEED_CLIENT_NOTIFICATIONS: Record<string, Notification[]> = {
-  yasna: [
+  dimitar: [
     {
-      id: "ntf-seed-yasna-1",
+      id: "ntf-seed-dimitar-1",
       audience: "client",
-      clientId: "yasna",
+      clientId: "dimitar",
       kind: "status_changed",
-      text: "Your Cropped Bomber is ready for a fitting — book a slot.",
+      text: "Your Gold Graphic Hoodie is ready for a fitting — book a slot.",
       href: "/dashboard/orders/TD-1065",
       createdAt: "2026-07-22T10:00:00.000Z",
       read: false,
     },
   ],
   boris: [],
-  elena: [],
+  kaloyan: [],
 };

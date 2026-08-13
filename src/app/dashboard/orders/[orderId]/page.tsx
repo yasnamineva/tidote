@@ -9,10 +9,12 @@ import { Reveal } from "@/components/reveal";
 import { OrderDetail } from "@/components/order-detail";
 import { useAuth } from "@/lib/auth";
 import { useBooking } from "@/lib/booking";
+import { useLang } from "@/lib/i18n";
 
 export default function ClientOrderPage() {
   const { session, ready, orders, addOrderNote } = useAuth();
   const { bookings } = useBooking();
+  const { t } = useLang();
   const router = useRouter();
   const params = useParams<{ orderId: string }>();
 
@@ -28,7 +30,7 @@ export default function ClientOrderPage() {
         <SiteHeader />
         <main className="flex-1 flex items-center justify-center py-24">
           <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-            Loading&hellip;
+            {t("common.loading")}
           </p>
         </main>
         <SiteFooter />
@@ -43,12 +45,12 @@ export default function ClientOrderPage() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="mx-auto max-w-3xl px-6 py-12">
+        <section className="mx-auto max-w-5xl px-6 py-12">
           <Link
             href="/dashboard"
             className="link-underline text-sm text-ink-soft hover:text-ink"
           >
-            &larr; Back to My Account
+            {t("od.backToAccount")}
           </Link>
           {order ? (
             <Reveal className="mt-8">
@@ -65,7 +67,7 @@ export default function ClientOrderPage() {
               />
             </Reveal>
           ) : (
-            <p className="text-ink-soft mt-8">Order not found.</p>
+            <p className="text-ink-soft mt-8">{t("od.notFound")}</p>
           )}
         </section>
       </main>

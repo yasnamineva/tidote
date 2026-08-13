@@ -8,9 +8,11 @@ import { SiteFooter } from "@/components/site-footer";
 import { Reveal } from "@/components/reveal";
 import { NewOrderForm } from "@/components/new-order-form";
 import { useAuth } from "@/lib/auth";
+import { useLang } from "@/lib/i18n";
 
 export default function NewOrderPage() {
   const { session, ready } = useAuth();
+  const { t } = useLang();
   const router = useRouter();
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function NewOrderPage() {
         <SiteHeader />
         <main className="flex-1 flex items-center justify-center py-24">
           <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-            Loading&hellip;
+            {t("common.loading")}
           </p>
         </main>
         <SiteFooter />
@@ -40,9 +42,9 @@ export default function NewOrderPage() {
         <section className="border-b border-line bg-paper">
           <div className="mx-auto max-w-7xl px-6 py-10">
             <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
-              New Commission
+              {t("neworder.eyebrow")}
             </p>
-            <h1 className="font-display text-3xl md:text-4xl">Place an Order</h1>
+            <h1 className="font-display text-3xl md:text-4xl">{t("neworder.title")}</h1>
           </div>
         </section>
         <section className="mx-auto max-w-7xl px-6 py-12">
@@ -51,7 +53,7 @@ export default function NewOrderPage() {
           </Reveal>
           <p className="text-sm text-center mt-8">
             <Link href="/dashboard" className="link-underline text-ink-soft hover:text-ink">
-              &larr; Back to My Account
+              {t("neworder.back")}
             </Link>
           </p>
         </section>

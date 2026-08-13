@@ -1,7 +1,6 @@
 import {
-  CLIENTS,
-  ORDER_STATUS_LABEL,
   generateId,
+  mergeOrdersWithSeed,
   type Client,
   type OrderNote,
   type OrderNoteAuthor,
@@ -9,27 +8,39 @@ import {
 } from "@/lib/mock-data";
 import {
   deliveryKey,
+  itemsKey,
   measurementsKey,
   ordersKey,
   readJSON,
   writeJSON,
 } from "@/lib/storage";
+import { getBaseClientById, getBaseClients } from "@/lib/clients";
 import { appendMessage } from "@/lib/messages";
 import { pushNotification } from "@/lib/notifications-data";
+import {
+  getStoredLang,
+  pieceLabel,
+  statusLabel,
+  translate,
+} from "@/lib/translations";
 
 export function getClientWithLiveData(clientId: string): Client | undefined {
-  const seed = CLIENTS.find((c) => c.id === clientId);
+  const seed = getBaseClientById(clientId);
   if (!seed) return undefined;
   return {
     ...seed,
-    orders: readJSON(ordersKey(clientId), seed.orders),
+    orders: mergeOrdersWithSeed(
+      readJSON(ordersKey(clientId), seed.orders),
+      seed.orders
+    ),
     measurements: readJSON(measurementsKey(clientId), seed.measurements),
     delivery: readJSON(deliveryKey(clientId), seed.delivery),
+    items: readJSON(itemsKey(clientId), seed.items),
   };
 }
 
 export function getAllClientsWithLiveData(): Client[] {
-  return CLIENTS.map((c) => getClientWithLiveData(c.id)!);
+  return getBaseClients().map((c) => getClientWithLiveData(c.id)!);
 }
 
 function adminOrderHref(clientId: string, orderId: string) {
@@ -49,9 +60,13 @@ export function updateOrderStatus(
     o.id === orderId ? { ...o, status } : o
   );
   writeJSON(ordersKey(clientId), nextOrders);
+  const lang = getStoredLang();
   pushNotification("client", clientId, {
     kind: "status_changed",
-    text: `"${order.piece}" is now ${ORDER_STATUS_LABEL[status]}.`,
+    text: translate(lang, "gen.notif.statusChanged", {
+      piece: pieceLabel(lang, order.piece),
+      status: statusLabel(lang, status),
+    }),
     href: `/dashboard/orders/${orderId}`,
   });
   return { ...client, orders: nextOrders };
@@ -70,9 +85,13 @@ export function updateOrderDeadline(
     o.id === orderId ? { ...o, eta } : o
   );
   writeJSON(ordersKey(clientId), nextOrders);
+  const lang = getStoredLang();
   pushNotification("client", clientId, {
     kind: "status_changed",
-    text: `New target date for "${order.piece}": ${eta}.`,
+    text: translate(lang, "gen.notif.deadline", {
+      piece: pieceLabel(lang, order.piece),
+      eta,
+    }),
     href: `/dashboard/orders/${orderId}`,
   });
   return { ...client, orders: nextOrders };
@@ -101,14 +120,16 @@ export function acceptOrder(
       : o
   );
   writeJSON(ordersKey(clientId), nextOrders);
+  const lang = getStoredLang();
+  const piece = pieceLabel(lang, order.piece);
   appendMessage(
     clientId,
     "studio",
-    `Great news — your order for "${order.piece}" has been accepted! Price: ${total}. We'll keep you updated as it moves through production.`
+    translate(lang, "gen.msg.accepted", { piece, total })
   );
   pushNotification("client", clientId, {
     kind: "order_reviewed",
-    text: `Your order "${order.piece}" was accepted (${total}).`,
+    text: translate(lang, "gen.notif.acceptedClient", { piece, total }),
     href: `/dashboard/orders/${orderId}`,
   });
   return { ...client, orders: nextOrders };
@@ -127,17 +148,20 @@ export function denyOrder(
     o.id === orderId ? { ...o, reviewStatus: "denied" as const } : o
   );
   writeJSON(ordersKey(clientId), nextOrders);
+  const lang = getStoredLang();
+  const piece = pieceLabel(lang, order.piece);
   const trimmedReason = reason?.trim();
   appendMessage(
     clientId,
     "studio",
-    `We're sorry, but we can't take on your order for "${order.piece}" right now.${
-      trimmedReason ? ` ${trimmedReason}` : ""
-    }`
+    translate(lang, "gen.msg.denied", {
+      piece,
+      reason: trimmedReason ? ` ${trimmedReason}` : "",
+    })
   );
   pushNotification("client", clientId, {
     kind: "order_reviewed",
-    text: `Your order "${order.piece}" was declined.`,
+    text: translate(lang, "gen.notif.deniedClient", { piece }),
     href: `/dashboard/orders/${orderId}`,
   });
   return { ...client, orders: nextOrders };
@@ -167,16 +191,21 @@ export function appendOrderNote(
   );
   writeJSON(ordersKey(clientId), nextOrders);
 
+  const lang = getStoredLang();
+  const piece = pieceLabel(lang, order.piece);
   if (author === "client") {
     pushNotification("admin", clientId, {
       kind: "order_note",
-      text: `${client.name} added info to "${order.piece}".`,
+      text: translate(lang, "gen.notif.noteFromClient", {
+        name: client.name,
+        piece,
+      }),
       href: adminOrderHref(clientId, orderId),
     });
   } else {
     pushNotification("client", clientId, {
       kind: "order_note",
-      text: `The studio added a note to "${order.piece}".`,
+      text: translate(lang, "gen.notif.noteFromStudio", { piece }),
       href: `/dashboard/orders/${orderId}`,
     });
   }
@@ -187,7 +216,7 @@ export function sendStudioMessage(clientId: string, text: string) {
   const messages = appendMessage(clientId, "studio", text);
   pushNotification("client", clientId, {
     kind: "message",
-    text: "The studio sent you a message.",
+    text: translate(getStoredLang(), "gen.notif.msgFromStudio"),
     href: "/dashboard#messages",
   });
   return messages;

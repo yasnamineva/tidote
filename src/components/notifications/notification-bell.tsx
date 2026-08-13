@@ -3,23 +3,26 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useNotifications } from "@/lib/notifications";
-
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  return `${days}d ago`;
-}
+import { useLang } from "@/lib/i18n";
+import { seedTextById } from "@/lib/translations";
 
 export function NotificationBell() {
   const { notifications, unreadCount, markAllRead, markRead } =
     useNotifications();
+  const { lang, t } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  function timeAgo(iso: string) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.round(diff / 60000);
+    if (mins < 1) return t("notif.justNow");
+    if (mins < 60) return t("notif.mAgo", { n: mins });
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return t("notif.hAgo", { n: hrs });
+    const days = Math.round(hrs / 24);
+    return t("notif.dAgo", { n: days });
+  }
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -62,7 +65,7 @@ export function NotificationBell() {
         <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-cream border border-line shadow-[0_12px_32px_-12px_rgba(34,30,25,0.4)] z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b border-line">
             <p className="text-xs uppercase tracking-[0.15em] text-ink-soft">
-              Notifications
+              {t("notif.title")}
             </p>
             {unreadCount > 0 && (
               <button
@@ -70,14 +73,14 @@ export function NotificationBell() {
                 onClick={() => markAllRead()}
                 className="text-[11px] uppercase tracking-[0.1em] text-moss-deep hover:text-accent transition-colors"
               >
-                Mark all read
+                {t("notif.markAll")}
               </button>
             )}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <p className="text-sm text-ink-soft text-center py-8">
-                Nothing new right now.
+                {t("notif.empty")}
               </p>
             ) : (
               notifications.map((n) => (
@@ -97,7 +100,9 @@ export function NotificationBell() {
                       <span className="mt-1.5 h-2 w-2 rounded-full bg-accent shrink-0" />
                     )}
                     <div className={n.read ? "pl-4" : ""}>
-                      <p className="text-sm leading-snug">{n.text}</p>
+                      <p className="text-sm leading-snug">
+                        {seedTextById(lang, n.id, n.text)}
+                      </p>
                       <p className="text-[10px] uppercase tracking-[0.1em] text-ink-soft mt-1">
                         {timeAgo(n.createdAt)}
                       </p>

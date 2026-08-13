@@ -7,9 +7,7 @@ export const metadata = {
 export default function SportsPage() {
   return (
     <CategoryPage
-      eyebrow="Sports"
-      title="ATELIER TRAINING"
-      blurb="Track jackets, windbreakers, and technical fits — athletic silhouettes reworked with the same made-to-measure precision as everything else in the atelier."
+      categoryKey="sports"
       heroSrc="/photos/sports-hero.jpg"
       photos={[
         "/photos/sports-1.jpg",

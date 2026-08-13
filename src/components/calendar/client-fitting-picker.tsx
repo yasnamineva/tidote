@@ -4,11 +4,13 @@ import { useState } from "react";
 import { MonthGrid } from "@/components/calendar/month-grid";
 import { useBooking } from "@/lib/booking";
 import { useAuth } from "@/lib/auth";
+import { useLang } from "@/lib/i18n";
 import type { Order } from "@/lib/mock-data";
 
 export function ClientFittingPicker({ order }: { order: Order }) {
   const { availability, bookSlot } = useBooking();
   const { session } = useAuth();
+  const { t } = useLang();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   function isSelectable(date: string) {
@@ -38,7 +40,7 @@ export function ClientFittingPicker({ order }: { order: Order }) {
   return (
     <div className="border border-accent/30 bg-accent/5 px-4 py-4 mt-3">
       <p className="text-xs uppercase tracking-[0.15em] text-accent mb-3">
-        Ready for fitting &mdash; book a slot
+        {t("picker.readyBook")}
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
         <MonthGrid
@@ -62,9 +64,7 @@ export function ClientFittingPicker({ order }: { order: Order }) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-ink-soft">
-              Pick a highlighted day to see open times.
-            </p>
+            <p className="text-sm text-ink-soft">{t("picker.pickDay")}</p>
           )}
         </div>
       </div>

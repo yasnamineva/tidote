@@ -2,7 +2,7 @@ export function Marquee({ tone = "ink" }: { tone?: "ink" | "moss" }) {
   const items = Array.from({ length: 8 }).map((_, i) => (
     <span key={i} className="flex items-center">
       <span className="flex items-baseline gap-2 px-6">
-        <span className="font-gothic text-lg md:text-xl tracking-wide">
+        <span className="font-gothic text-lg md:text-xl tracking-wide text-moss">
           TIDOTE
         </span>
         <span className="font-round font-medium text-lg md:text-xl tracking-wide">

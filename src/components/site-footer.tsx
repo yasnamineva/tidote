@@ -1,8 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Wordmark } from "@/components/wordmark";
+import { useLang } from "@/lib/i18n";
 
 export function SiteFooter() {
+  const { t } = useLang();
   return (
     <footer className="bg-ink text-cream">
       <div className="mx-auto max-w-7xl px-6 py-16 grid gap-12 md:grid-cols-5">
@@ -18,14 +22,13 @@ export function SiteFooter() {
             <Wordmark size="md" className="[&_span:last-child]:text-cream/60" />
           </div>
           <p className="text-cream/70 max-w-sm text-sm leading-relaxed">
-            The anTIDOTE to mediocrity. Unique streetstyle to match your main
-            character energy.
+            {t("footer.tagline")}
           </p>
         </div>
 
         <div>
           <h3 className="text-xs uppercase tracking-[0.2em] text-cream/50 mb-4">
-            Explore
+            {t("footer.explore")}
           </h3>
           <ul className="space-y-3 text-sm">
             <li>
@@ -33,15 +36,7 @@ export function SiteFooter() {
                 href="/#about"
                 className="link-underline hover:text-moss transition-colors"
               >
-                About
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/#new-vibes"
-                className="link-underline hover:text-moss transition-colors"
-              >
-                New Vibes
+                {t("nav.about")}
               </Link>
             </li>
             <li>
@@ -49,7 +44,7 @@ export function SiteFooter() {
                 href="/#gallery"
                 className="link-underline hover:text-moss transition-colors"
               >
-                Gallery
+                {t("nav.gallery")}
               </Link>
             </li>
             <li>
@@ -57,7 +52,7 @@ export function SiteFooter() {
                 href="/login"
                 className="link-underline hover:text-moss transition-colors"
               >
-                Login / Track Order
+                {t("header.login")}
               </Link>
             </li>
           </ul>
@@ -65,7 +60,7 @@ export function SiteFooter() {
 
         <div>
           <h3 className="text-xs uppercase tracking-[0.2em] text-cream/50 mb-4">
-            Shop
+            {t("footer.shop")}
           </h3>
           <ul className="space-y-3 text-sm">
             <li>
@@ -73,7 +68,7 @@ export function SiteFooter() {
                 href="/casual"
                 className="link-underline hover:text-moss transition-colors"
               >
-                Casual
+                {t("nav.casual")}
               </Link>
             </li>
             <li>
@@ -81,7 +76,7 @@ export function SiteFooter() {
                 href="/sports"
                 className="link-underline hover:text-moss transition-colors"
               >
-                Sports
+                {t("nav.sports")}
               </Link>
             </li>
           </ul>
@@ -89,7 +84,7 @@ export function SiteFooter() {
 
         <div>
           <h3 className="text-xs uppercase tracking-[0.2em] text-cream/50 mb-4">
-            Connect
+            {t("footer.connect")}
           </h3>
           <ul className="space-y-3 text-sm">
             <li>
@@ -114,7 +109,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-cream/10 px-6 py-6 text-center text-xs uppercase tracking-[0.2em] text-cream/40">
-        &copy; {new Date().getFullYear()} Tidote Atelier. All rights reserved.
+        {t("footer.rights", { year: new Date().getFullYear() })}
       </div>
     </footer>
   );

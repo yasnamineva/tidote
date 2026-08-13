@@ -1,32 +1,33 @@
 import type { Metadata } from "next";
-import { Anton, Inter, Pirata_One, Quicksand } from "next/font/google";
+import { Cousine, Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
 import { NotificationProvider } from "@/lib/notifications";
 import { BookingProvider } from "@/lib/booking";
 import { SmoothScrollProvider } from "@/lib/smooth-scroll";
 
-const anton = Anton({
-  variable: "--font-anton",
-  weight: "400",
-  subsets: ["latin"],
+// Authentic typewriter face (Courier-style slab monospace) — used for every
+// headline, the wordmark, and the typed-out About animation. Full Latin +
+// Cyrillic coverage, with a true bold for display sizes.
+const typewriter = Cousine({
+  variable: "--font-typewriter",
+  weight: ["400", "700"],
+  subsets: ["latin", "cyrillic"],
 });
 
+// Fancy display serif reserved for the brand name ("TIDOTE" / "Тидот").
+// Latin + Cyrillic, with bold/black weights for the wordmark.
+const brand = Playfair_Display({
+  variable: "--font-brand",
+  weight: ["700", "900"],
+  subsets: ["latin", "cyrillic"],
+});
+
+// Highly readable body face (Latin + Cyrillic).
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const pirata = Pirata_One({
-  variable: "--font-pirata",
-  weight: "400",
-  subsets: ["latin"],
-});
-
-const quicksand = Quicksand({
-  variable: "--font-quicksand",
-  weight: ["500", "600"],
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
 });
 
 export const metadata: Metadata = {
@@ -43,19 +44,21 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${anton.variable} ${inter.variable} ${pirata.variable} ${quicksand.variable} h-full antialiased`}
+      className={`${typewriter.variable} ${brand.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream text-ink">
         <noscript>
           <style>{`.reveal{opacity:1 !important;transform:none !important;}`}</style>
         </noscript>
-        <AuthProvider>
-          <NotificationProvider>
-            <BookingProvider>
-              <SmoothScrollProvider>{children}</SmoothScrollProvider>
-            </BookingProvider>
-          </NotificationProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <BookingProvider>
+                <SmoothScrollProvider>{children}</SmoothScrollProvider>
+              </BookingProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -6,12 +6,14 @@ import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useAuth } from "@/lib/auth";
+import { useLang } from "@/lib/i18n";
 import { ADMIN, CLIENTS } from "@/lib/mock-data";
 
 const DEMO_CLIENT = CLIENTS[0];
 
 export default function LoginPage() {
   const { session, ready, login } = useAuth();
+  const { t } = useLang();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +29,7 @@ export default function LoginPage() {
     e.preventDefault();
     const result = login(email, password);
     if (!result.ok) {
-      setError(result.error ?? "Something went wrong.");
+      setError(result.error ?? t("auth.badLogin"));
       return;
     }
     setError(null);
@@ -53,10 +55,10 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-md animate-[fade-up_0.6s_cubic-bezier(0.16,1,0.3,1)_both]">
           <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-3 text-center">
-            Client Access
+            {t("login.eyebrow")}
           </p>
           <h1 className="font-display text-3xl md:text-4xl mb-8 text-center">
-            LOGIN TO TRACK YOUR ORDER
+            {t("login.title")}
           </h1>
 
           <form
@@ -65,7 +67,7 @@ export default function LoginPage() {
           >
             <div className="flex flex-col gap-2">
               <label htmlFor="email" className="text-xs uppercase tracking-[0.15em]">
-                Email
+                {t("login.email")}
               </label>
               <input
                 id="email"
@@ -73,14 +75,14 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border border-line bg-cream px-4 py-3 text-sm transition-colors focus:outline-none focus:border-moss-deep"
+                className="border border-line-strong bg-cream px-4 py-3 text-sm transition-colors focus:outline-none focus:border-moss-deep"
                 placeholder="you@email.com"
               />
             </div>
 
             <div className="flex flex-col gap-2">
               <label htmlFor="password" className="text-xs uppercase tracking-[0.15em]">
-                Password
+                {t("login.password")}
               </label>
               <input
                 id="password"
@@ -88,7 +90,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border border-line bg-cream px-4 py-3 text-sm transition-colors focus:outline-none focus:border-moss-deep"
+                className="border border-line-strong bg-cream px-4 py-3 text-sm transition-colors focus:outline-none focus:border-moss-deep"
                 placeholder="••••••••"
               />
             </div>
@@ -103,7 +105,7 @@ export default function LoginPage() {
               type="submit"
               className="btn-sweep mt-2 bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5"
             >
-              Login
+              {t("login.submit")}
             </button>
 
             <div className="flex items-center justify-center gap-4">
@@ -112,29 +114,29 @@ export default function LoginPage() {
                 onClick={fillClientDemo}
                 className="text-xs uppercase tracking-[0.15em] text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
               >
-                Use client demo
+                {t("login.useClientDemo")}
               </button>
               <button
                 type="button"
                 onClick={fillAdminDemo}
                 className="text-xs uppercase tracking-[0.15em] text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
               >
-                Use admin demo
+                {t("login.useAdminDemo")}
               </button>
             </div>
           </form>
 
           <p className="text-xs text-ink-soft text-center mt-6">
-            This is a prototype login for design review. Demo credentials
-            &mdash; client: <span className="text-ink">{DEMO_CLIENT.email}</span> /{" "}
-            <span className="text-ink">{DEMO_CLIENT.password}</span>, admin:{" "}
-            <span className="text-ink">{ADMIN.email}</span> /{" "}
+            {t("login.demoNote")} {t("login.demoClient")}:{" "}
+            <span className="text-ink">{DEMO_CLIENT.email}</span> /{" "}
+            <span className="text-ink">{DEMO_CLIENT.password}</span>,{" "}
+            {t("login.demoAdmin")}: <span className="text-ink">{ADMIN.email}</span> /{" "}
             <span className="text-ink">{ADMIN.password}</span>
           </p>
 
           <p className="text-sm text-center mt-8">
             <Link href="/" className="link-underline text-ink-soft hover:text-ink">
-              &larr; Back to home
+              {t("login.back")}
             </Link>
           </p>
         </div>

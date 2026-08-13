@@ -1,37 +1,26 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminTopBar } from "@/components/admin/admin-shell";
 import { MessageThread } from "@/components/messages/message-thread";
-import { useAuth } from "@/lib/auth";
+import { useLang } from "@/lib/i18n";
 import { useNotifications } from "@/lib/notifications";
 import { getAllClientsWithLiveData, sendStudioMessage } from "@/lib/admin-data";
 import { getMessages } from "@/lib/messages";
 import { markReadWhere } from "@/lib/notifications-data";
+import { seedTextById } from "@/lib/translations";
 import type { Client, Message } from "@/lib/mock-data";
 
 export default function AdminInboxPage() {
-  const { session, ready } = useAuth();
+  const { t, lang } = useLang();
   const { notifications, refresh: refreshBell } = useNotifications();
-  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
-    if (ready && (!session || session.role !== "admin")) {
-      router.replace("/login");
-    }
-  }, [ready, session, router]);
-
-  useEffect(() => {
-    if (ready && session?.role === "admin") {
-      setClients(getAllClientsWithLiveData());
-    }
-  }, [ready, session]);
+    setClients(getAllClientsWithLiveData());
+  }, []);
 
   function openConversation(clientId: string) {
     setSelected(clientId);
@@ -49,20 +38,6 @@ export default function AdminInboxPage() {
     if (!selected) return;
     sendStudioMessage(selected, text);
     setMessages(getMessages(selected));
-  }
-
-  if (!ready || !session || session.role !== "admin") {
-    return (
-      <>
-        <SiteHeader />
-        <main className="flex-1 flex items-center justify-center py-24">
-          <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-            Loading&hellip;
-          </p>
-        </main>
-        <SiteFooter />
-      </>
-    );
   }
 
   const unreadByClient = new Set(
@@ -87,24 +62,12 @@ export default function AdminInboxPage() {
 
   return (
     <>
-      <SiteHeader />
-      <AdminNav />
-      <main className="flex-1">
-        <section className="border-b border-line bg-paper">
-          <div className="mx-auto max-w-7xl px-6 py-10">
-            <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
-              Studio Admin
-            </p>
-            <h1 className="font-display text-3xl md:text-4xl">Inbox</h1>
-            <p className="text-sm text-ink-soft mt-3">
-              All client conversations in one place.
-            </p>
-          </div>
-        </section>
+      <AdminTopBar title={t("inbox.title")} />
+      <p className="text-sm text-ink-soft mb-8 -mt-4">{t("inbox.sub")}</p>
 
-        <section className="mx-auto max-w-7xl px-6 py-12 grid md:grid-cols-5 gap-8">
-          {/* conversation list */}
-          <div className="md:col-span-2 flex flex-col gap-2">
+      <div className="grid md:grid-cols-5 gap-8">
+        {/* conversation list */}
+        <div className="md:col-span-2 flex flex-col gap-2">
             {conversations.map(({ client, last }) => (
               <button
                 key={client.id}
@@ -124,8 +87,8 @@ export default function AdminInboxPage() {
                 </div>
                 <p className="text-sm text-ink-soft truncate">
                   {last
-                    ? `${last.sender === "studio" ? "You: " : ""}${last.text}`
-                    : "No messages yet."}
+                    ? `${last.sender === "studio" ? t("inbox.you") : ""}${seedTextById(lang, last.id, last.text)}`
+                    : t("inbox.noMessages")}
                 </p>
               </button>
             ))}
@@ -142,18 +105,18 @@ export default function AdminInboxPage() {
                   messages={messages}
                   viewerSender="studio"
                   onSend={handleSend}
-                  placeholder={`Message ${selectedClient.name}…`}
+                  placeholder={t("adminclient.msgPlaceholder", {
+                    name: selectedClient.name,
+                  })}
                 />
               </>
             ) : (
               <p className="text-sm text-ink-soft border border-line bg-paper px-6 py-10 text-center">
-                Select a conversation to read and reply.
+                {t("inbox.select")}
               </p>
             )}
           </div>
-        </section>
-      </main>
-      <SiteFooter />
+      </div>
     </>
   );
 }

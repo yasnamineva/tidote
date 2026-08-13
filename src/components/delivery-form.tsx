@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useLang } from "@/lib/i18n";
 import type { DeliveryInfo } from "@/lib/mock-data";
 
-const FIELDS: { key: keyof Omit<DeliveryInfo, "notes" | "updatedAt">; label: string }[] = [
-  { key: "address", label: "Address" },
-  { key: "city", label: "City" },
-  { key: "postalCode", label: "Postal Code" },
-  { key: "phone", label: "Phone" },
+const FIELDS: { key: keyof Omit<DeliveryInfo, "notes" | "updatedAt">; labelKey: string }[] = [
+  { key: "address", labelKey: "deliv.address" },
+  { key: "city", labelKey: "deliv.city" },
+  { key: "postalCode", labelKey: "deliv.postal" },
+  { key: "phone", labelKey: "deliv.phone" },
 ];
 
 export function DeliveryForm() {
   const { delivery, updateDeliveryInfo } = useAuth();
+  const { t } = useLang();
   const [form, setForm] = useState<DeliveryInfo>(delivery);
   const [saved, setSaved] = useState(false);
 
@@ -45,7 +47,7 @@ export function DeliveryForm() {
               htmlFor={`delivery-${field.key}`}
               className="text-xs uppercase tracking-[0.1em] text-ink-soft"
             >
-              {field.label}
+              {t(field.labelKey)}
             </label>
             <input
               id={`delivery-${field.key}`}
@@ -54,7 +56,7 @@ export function DeliveryForm() {
               onChange={(e) =>
                 setForm((f) => ({ ...f, [field.key]: e.target.value }))
               }
-              className="border border-line bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep"
+              className="border border-line-strong bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep"
             />
           </div>
         ))}
@@ -65,14 +67,14 @@ export function DeliveryForm() {
           htmlFor="delivery-notes"
           className="text-xs uppercase tracking-[0.1em] text-ink-soft"
         >
-          Delivery Notes
+          {t("deliv.notes")}
         </label>
         <textarea
           id="delivery-notes"
           rows={2}
           value={form.notes}
           onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-          className="border border-line bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep resize-none"
+          className="border border-line-strong bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep resize-none"
         />
       </div>
 
@@ -80,11 +82,11 @@ export function DeliveryForm() {
         type="submit"
         className="mt-2 bg-moss text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-all duration-300 hover:-translate-y-0.5 hover:bg-moss-deep"
       >
-        Save Delivery Info
+        {t("deliv.save")}
       </button>
       {saved && (
         <p className="text-sm text-moss-deep animate-[fade-up_0.3s_ease-out_both]">
-          Delivery info updated &mdash; thank you!
+          {t("deliv.saved")}
         </p>
       )}
     </form>

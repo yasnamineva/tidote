@@ -5,26 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useLang } from "@/lib/i18n";
+import { LANGS } from "@/lib/translations";
 import { useLenis } from "@/lib/smooth-scroll";
 import { useScrollSpy } from "@/lib/use-scroll-spy";
 import { Wordmark } from "@/components/wordmark";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const NAV_LINKS = [
-  { href: "/#about", id: "about", label: "About", type: "anchor" as const, sectionId: "about" },
-  {
-    href: "/#new-vibes",
-    id: "new-vibes",
-    label: "New Vibes",
-    type: "anchor" as const,
-    sectionId: "new-vibes",
-  },
-  { href: "/casual", id: "casual", label: "Casual", type: "page" as const, sectionId: "shop" },
-  { href: "/sports", id: "sports", label: "Sports", type: "page" as const, sectionId: "shop" },
+  { href: "/casual", id: "casual", key: "nav.casual", type: "page" as const, sectionId: "shop" },
+  { href: "/sports", id: "sports", key: "nav.sports", type: "page" as const, sectionId: "shop" },
+  { href: "/#how", id: "how", key: "nav.how", type: "anchor" as const, sectionId: "how" },
+  { href: "/#about", id: "about", key: "nav.about", type: "anchor" as const, sectionId: "about" },
   {
     href: "/#gallery",
     id: "gallery",
-    label: "Gallery",
+    key: "nav.gallery",
     type: "anchor" as const,
     sectionId: "gallery",
   },
@@ -34,8 +30,31 @@ const SPY_SECTION_IDS = Array.from(
   new Set(NAV_LINKS.map((l) => l.sectionId))
 );
 
+function LanguageToggle({ className = "" }: { className?: string }) {
+  const { lang, setLang } = useLang();
+  return (
+    <div className={`flex items-center gap-1 text-xs uppercase tracking-[0.15em] ${className}`}>
+      {LANGS.map((l, i) => (
+        <span key={l} className="flex items-center gap-1">
+          {i > 0 && <span className="text-line">|</span>}
+          <button
+            type="button"
+            onClick={() => setLang(l)}
+            className={`transition-colors ${
+              lang === l ? "text-accent" : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            {l === "bg" ? "БГ" : "EN"}
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function SiteHeader() {
   const { session, ready } = useAuth();
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const lenis = useLenis();
@@ -44,6 +63,28 @@ export function SiteHeader() {
   function isActive(link: (typeof NAV_LINKS)[number]) {
     if (pathname === link.href) return true;
     return pathname === "/" && activeId === link.sectionId;
+  }
+
+  const accountHref =
+    ready && session
+      ? session.role === "admin"
+        ? "/admin"
+        : "/dashboard"
+      : "/login";
+
+  // Clicking a link to the page you're already on is a dead click — scroll to the
+  // top instead. Used by both the logo and the account button.
+  function handleSamePageClick(
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) {
+    if (pathname !== href) return;
+    e.preventDefault();
+    if (lenis) {
+      lenis.scrollTo(0, { duration: 0.9 });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   function handleNavClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
@@ -68,7 +109,7 @@ export function SiteHeader() {
         />
       </div>
       <div className="hidden md:flex items-center justify-between px-6 py-2 text-[11px] uppercase tracking-[0.2em] bg-ink text-cream">
-        <span>Made to order &middot; Sofia, BG</span>
+        <span>{t("header.tagline")}</span>
         <a
           href="https://www.instagram.com/tidote.atelier/"
           target="_blank"
@@ -79,13 +120,17 @@ export function SiteHeader() {
         </a>
       </div>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link
+          href="/"
+          onClick={(e) => handleSamePageClick(e, "/")}
+          className="flex items-center gap-3 group"
+        >
           <Image
             src="/brand/logo.png"
             alt="Tidote Atelier monogram"
             width={80}
             height={80}
-            className="h-14 w-14 md:h-20 md:w-20 object-contain transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-105"
+            className="brand-anim h-14 w-14 md:h-20 md:w-20 object-contain transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-105"
             priority
           />
           <Wordmark size="md" />
@@ -101,26 +146,28 @@ export function SiteHeader() {
                 isActive(link) ? "text-accent" : "hover:text-accent"
               }`}
             >
-              {link.label}
+              {t(link.key)}
             </Link>
           ))}
         </nav>
 
         <div className="hidden lg:flex items-center gap-4">
+          <LanguageToggle />
           {ready && session && <NotificationBell />}
           {ready && session ? (
             <Link
-              href={session.role === "admin" ? "/admin" : "/dashboard"}
+              href={accountHref}
+              onClick={(e) => handleSamePageClick(e, accountHref)}
               className="btn-sweep btn-sweep-moss text-sm uppercase tracking-[0.15em] border border-ink px-4 py-2 transition-colors duration-300 hover:text-cream"
             >
-              {session.role === "admin" ? "Studio Admin" : "My Account"}
+              {session.role === "admin" ? t("header.studioAdmin") : t("header.account")}
             </Link>
           ) : (
             <Link
               href="/login"
               className="btn-sweep text-sm uppercase tracking-[0.15em] border border-ink px-4 py-2 transition-colors duration-300 hover:text-cream"
             >
-              Login / Track Order
+              {t("header.login")}
             </Link>
           )}
         </div>
@@ -168,26 +215,24 @@ export function SiteHeader() {
               }}
               className={isActive(link) ? "text-accent" : ""}
             >
-              {link.label}
+              {t(link.key)}
             </Link>
           ))}
           <Link
-            href={
-              ready && session
-                ? session.role === "admin"
-                  ? "/admin"
-                  : "/dashboard"
-                : "/login"
-            }
-            onClick={() => setOpen(false)}
+            href={accountHref}
+            onClick={(e) => {
+              setOpen(false);
+              handleSamePageClick(e, accountHref);
+            }}
             className="border border-ink px-4 py-2 text-center"
           >
             {ready && session
               ? session.role === "admin"
-                ? "Studio Admin"
-                : "My Account"
-              : "Login / Track Order"}
+                ? t("header.studioAdmin")
+                : t("header.account")
+              : t("header.login")}
           </Link>
+          <LanguageToggle className="pt-2" />
         </div>
       </div>
     </header>

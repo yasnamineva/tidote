@@ -2,28 +2,30 @@
 
 import { useState } from "react";
 import type { Message, MessageSender } from "@/lib/mock-data";
-
-function formatTimestamp(iso: string) {
-  return new Date(iso).toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { useLang } from "@/lib/i18n";
+import { seedTextById } from "@/lib/translations";
 
 export function MessageThread({
   messages,
   viewerSender,
   onSend,
-  placeholder = "Type a message…",
+  placeholder,
 }: {
   messages: Message[];
   viewerSender: MessageSender;
   onSend: (text: string) => void;
   placeholder?: string;
 }) {
+  const { lang, t } = useLang();
   const [text, setText] = useState("");
+
+  const formatTimestamp = (iso: string) =>
+    new Date(iso).toLocaleString(lang === "bg" ? "bg-BG" : "en-GB", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +39,7 @@ export function MessageThread({
       <div className="flex flex-col gap-3 px-5 py-5 max-h-96 overflow-y-auto">
         {messages.length === 0 && (
           <p className="text-sm text-ink-soft text-center py-6">
-            No messages yet &mdash; say hello!
+            {t("msg.empty")}
           </p>
         )}
         {messages.map((m) => {
@@ -49,7 +51,7 @@ export function MessageThread({
                   mine ? "bg-moss text-cream" : "bg-cream border border-line text-ink"
                 }`}
               >
-                <p>{m.text}</p>
+                <p>{seedTextById(lang, m.id, m.text)}</p>
                 <p
                   className={`text-[10px] mt-1 uppercase tracking-[0.1em] ${
                     mine ? "text-cream/60" : "text-ink-soft"
@@ -70,14 +72,14 @@ export function MessageThread({
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={placeholder}
-          className="flex-1 border border-line bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep"
+          placeholder={placeholder ?? t("msg.placeholder")}
+          className="flex-1 border border-line-strong bg-cream px-3 py-2 text-sm transition-colors focus:outline-none focus:border-moss-deep"
         />
         <button
           type="submit"
           className="bg-ink text-cream px-4 py-2 text-xs uppercase tracking-[0.15em] transition-colors hover:bg-moss-deep"
         >
-          Send
+          {t("msg.send")}
         </button>
       </form>
     </div>

@@ -1,21 +1,7 @@
-const STEPS = [
-  {
-    title: "Take & Update Measurements",
-    copy: "Log your measurements so every made-to-measure piece is cut to fit.",
-  },
-  {
-    title: "Place an Order",
-    copy: "Pick a category, describe the piece, and attach reference photos if you like.",
-  },
-  {
-    title: "Come for a Fitting",
-    copy: "Once your piece is ready we'll notify you — book a fitting slot that works.",
-  },
-  {
-    title: "Add Delivery Info",
-    copy: "Tell us where to send the finished piece, or arrange pickup at the atelier.",
-  },
-];
+"use client";
+
+import { Fragment } from "react";
+import { useLang } from "@/lib/i18n";
 
 const STEP_ICON_PATHS: React.ReactNode[] = [
   <g key="measure">
@@ -46,24 +32,31 @@ function StepIcon({
   index,
   isCurrent,
   isDone,
+  size = "lg",
 }: {
   index: number;
   isCurrent: boolean;
   isDone: boolean;
+  size?: "lg" | "sm";
 }) {
   const colorClass = isCurrent
     ? "text-accent"
     : isDone
       ? "text-moss-deep"
       : "text-ink-soft/40";
+  const box = size === "lg" ? "h-14 w-14" : "h-9 w-9";
+  const svg = size === "lg" ? "h-9 w-9" : "h-6 w-6";
+  const ping = size === "lg" ? "h-11 w-11" : "h-8 w-8";
   return (
-    <div className="relative flex items-center justify-center h-14 w-14 shrink-0">
+    <div className={`relative flex items-center justify-center shrink-0 ${box}`}>
       {isCurrent && (
-        <span className="absolute h-11 w-11 rounded-full bg-accent/20 animate-ping" />
+        <span
+          className={`absolute ${ping} rounded-full bg-accent/20 animate-ping`}
+        />
       )}
       <svg
         viewBox="0 0 32 32"
-        className={`relative h-9 w-9 transition-colors duration-500 ${colorClass}`}
+        className={`relative transition-colors duration-500 ${svg} ${colorClass}`}
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
@@ -78,21 +71,83 @@ function StepIcon({
 
 export function JourneyStepper({
   activeStep,
+  compact = false,
   className = "",
+  onStepClick,
 }: {
   activeStep?: number;
+  compact?: boolean;
   className?: string;
+  /** Supply on the dashboard to make each step jump to its section. */
+  onStepClick?: (step: number) => void;
 }) {
+  const { t } = useLang();
+  const steps = [1, 2, 3, 4];
+
+  if (compact) {
+    // Slim horizontal bar for the sticky dashboard header — labels/icons only,
+    // current step lit up. Copy is hidden.
+    // Connectors are siblings of the steps, not children of them: every line is
+    // its own flex-1 track, so they all end up the same width no matter how long
+    // the neighbouring labels are.
+    return (
+      <div
+        className={`flex items-center justify-between sm:justify-start ${className}`}
+      >
+        {steps.map((n, i) => {
+          const isCurrent = activeStep === n;
+          const isDone = activeStep !== undefined && n < activeStep;
+          const inner = (
+            <>
+              <StepIcon index={i} isCurrent={isCurrent} isDone={isDone} size="sm" />
+              <span
+                className={`hidden sm:block text-[11px] uppercase tracking-[0.12em] truncate transition-colors ${
+                  isCurrent ? "text-accent" : isDone ? "text-ink" : "text-ink-soft"
+                }`}
+              >
+                {n}. {t(`journey.${n}.short`)}
+              </span>
+            </>
+          );
+          return (
+            <Fragment key={n}>
+              {i > 0 && (
+                <div
+                  className={`hidden sm:block h-px flex-1 basis-0 min-w-4 mx-2 transition-colors duration-500 ${
+                    isDone || isCurrent ? "bg-moss-deep" : "bg-line"
+                  }`}
+                />
+              )}
+              {onStepClick ? (
+                <button
+                  type="button"
+                  onClick={() => onStepClick(n)}
+                  aria-current={isCurrent ? "step" : undefined}
+                  className="flex items-center gap-2 min-w-0 px-1 rounded transition-opacity focus:outline-none focus-visible:ring-1 focus-visible:ring-moss-deep"
+                >
+                  {inner}
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 min-w-0 px-1">
+                  {inner}
+                </div>
+              )}
+            </Fragment>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className={`grid grid-cols-2 md:flex md:items-start gap-y-10 gap-x-4 md:gap-0 ${className}`}>
-      {STEPS.map((step, i) => {
-        const stepNum = i + 1;
-        const isCurrent = activeStep === stepNum;
-        const isDone = activeStep !== undefined && stepNum < activeStep;
+      {steps.map((n, i) => {
+        const isCurrent = activeStep === n;
+        const isDone = activeStep !== undefined && n < activeStep;
 
         return (
           <div
-            key={step.title}
+            key={n}
             className="flex flex-col items-center text-center md:flex-1 md:px-3"
           >
             <div className="hidden md:flex items-center w-full">
@@ -104,7 +159,7 @@ export function JourneyStepper({
               <StepIcon index={i} isCurrent={isCurrent} isDone={isDone} />
               <div
                 className={`flex-1 h-px transition-colors duration-500 ${
-                  i === STEPS.length - 1 ? "opacity-0" : isDone ? "bg-moss-deep" : "bg-line"
+                  i === steps.length - 1 ? "opacity-0" : isDone ? "bg-moss-deep" : "bg-line"
                 }`}
               />
             </div>
@@ -117,9 +172,11 @@ export function JourneyStepper({
                 isCurrent ? "text-accent" : "text-ink"
               }`}
             >
-              {stepNum}. {step.title}
+              {n}. {t(`journey.${n}.title`)}
             </p>
-            <p className="mt-2 text-sm text-ink-soft max-w-[200px]">{step.copy}</p>
+            <p className="mt-2 text-sm text-ink-soft max-w-[200px]">
+              {t(`journey.${n}.copy`)}
+            </p>
           </div>
         );
       })}
