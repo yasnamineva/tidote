@@ -2,7 +2,8 @@ export type Lang = "en" | "bg";
 
 export const LANGS: Lang[] = ["en", "bg"];
 
-const LANG_KEY = "tidote_lang";
+/** Shared with the pre-hydration snippet in the root layout. */
+export const LANG_KEY = "tidote_lang";
 
 type Dict = Record<string, string>;
 
@@ -959,15 +960,49 @@ export function translate(
   return str;
 }
 
+function isLang(value: unknown): value is Lang {
+  return value === "en" || value === "bg";
+}
+
+/** The language the browser asks for, ignoring any choice the visitor saved. */
+export function detectBrowserLang(): Lang {
+  if (typeof navigator === "undefined") return "en";
+  const tags = navigator.languages?.length
+    ? navigator.languages
+    : [navigator.language];
+  return tags.some((tag) => tag?.toLowerCase().startsWith("bg")) ? "bg" : "en";
+}
+
+/**
+ * The visitor's language, in precedence order: a choice they made here, then
+ * what their browser asks for, then English.
+ *
+ * A detected language is deliberately not written back to storage — only an
+ * explicit pick via the header toggle is, so a visitor who never chooses keeps
+ * following their browser rather than being frozen on first-visit detection.
+ *
+ * The pre-hydration snippet in the root layout resolves this same order; the
+ * two must stay in step or <html lang> and the rendered copy would disagree.
+ */
 export function getStoredLang(): Lang {
   if (typeof window === "undefined") return "en";
-  const raw = window.localStorage.getItem(LANG_KEY);
-  return raw === "bg" ? "bg" : "en";
+  try {
+    const raw = window.localStorage.getItem(LANG_KEY);
+    if (isLang(raw)) return raw;
+  } catch {
+    // Storage can throw when the browser blocks it (private mode, embedded
+    // contexts). Fall through to detection rather than taking the page down.
+  }
+  return detectBrowserLang();
 }
 
 export function setStoredLang(lang: Lang) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(LANG_KEY, lang);
+  try {
+    window.localStorage.setItem(LANG_KEY, lang);
+  } catch {
+    // Non-fatal: the choice just won't survive a reload.
+  }
 }
 
 // enum + demo-data helpers
