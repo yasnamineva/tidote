@@ -8,6 +8,7 @@ import { BookingProvider } from "@/lib/booking";
 import { SmoothScrollProvider } from "@/lib/smooth-scroll";
 import { LANG_KEY } from "@/lib/translations";
 import { Analytics } from "@vercel/analytics/next";
+import { structuredDataJson } from "@/lib/structured-data";
 
 // Authentic typewriter face (Courier-style slab monospace) — used for every
 // headline, the wordmark, and the typed-out About animation. Full Latin +
@@ -102,6 +103,10 @@ export default function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LANG_BOOTSTRAP }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: structuredDataJson() }}
+        />
       </head>
       <body className="min-h-full flex flex-col bg-cream text-ink">
         <noscript>
