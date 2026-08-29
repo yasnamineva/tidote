@@ -99,10 +99,10 @@ export function SiteFooter() {
             </li>
             <li>
               <a
-                href="mailto:hello@tidote.atelier"
+                href="mailto:hello@tidoteatelier.com"
                 className="link-underline hover:text-moss transition-colors"
               >
-                hello@tidote.atelier
+                hello@tidoteatelier.com
               </a>
             </li>
           </ul>

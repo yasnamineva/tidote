@@ -1,7 +1,18 @@
+import type { Metadata } from "next";
 import { CategoryPage } from "@/components/category-page";
 
-export const metadata = {
-  title: "Casual — Tidote Atelier",
+export const metadata: Metadata = {
+  title: "Casual",
+  description:
+    "Made-to-measure casual and everyday pieces, cut to your measurements at Tidote Atelier.",
+  alternates: { canonical: "/casual" },
+  openGraph: {
+    title: "Casual — Tidote Atelier",
+    description:
+      "Made-to-measure casual and everyday pieces, cut to your measurements at Tidote Atelier.",
+    url: "/casual",
+    images: "/opengraph-image",
+  },
 };
 
 export default function CasualPage() {

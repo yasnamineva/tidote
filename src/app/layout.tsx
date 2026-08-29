@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cousine, Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
@@ -30,10 +30,47 @@ const inter = Inter({
   subsets: ["latin", "cyrillic"],
 });
 
+const SITE_URL = "https://tidoteatelier.com";
+const TAGLINE =
+  "The anTIDOTE to mediocrity — unique streetstyle to match your main character energy.";
+
 export const metadata: Metadata = {
-  title: "Tidote Atelier",
-  description:
-    "The anTIDOTE to mediocrity — unique streetstyle to match your main character energy.",
+  metadataBase: new URL(SITE_URL),
+  // Child segments set a bare title ("Sports"); the template adds the brand.
+  title: {
+    default: "Tidote Atelier — Made-to-measure streetstyle",
+    template: "%s — Tidote Atelier",
+  },
+  description: TAGLINE,
+  applicationName: "Tidote Atelier",
+  keywords: [
+    "Tidote Atelier",
+    "made-to-measure",
+    "custom clothing",
+    "streetwear",
+    "atelier",
+    "tailoring",
+    "Bulgaria",
+    "ателие",
+    "шивашко ателие",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: "Tidote Atelier",
+    title: "Tidote Atelier — Made-to-measure streetstyle",
+    description: TAGLINE,
+    locale: "en_US",
+    alternateLocale: ["bg_BG"],
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f7f4ef",
 };
 
 export default function RootLayout({
