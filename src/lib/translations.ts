@@ -27,6 +27,14 @@ const en: Dict = {
   "footer.connect": "Connect",
   "footer.rights": "© {year} Tidote Atelier. All rights reserved.",
 
+  // 404
+  "nf.eyebrow": "Error 404",
+  "nf.title": "This piece doesn't exist",
+  "nf.body":
+    "The page you're after has been moved, renamed, or never existed. The rest of the atelier is still here.",
+  "nf.home": "Back to home",
+  "nf.browse": "Browse the collection",
+
   // hero
   "hero.tagline":
     "The anTIDOTE to mediocrity — made-to-measure streetwear cut for your main character energy.",
@@ -494,6 +502,14 @@ const bg: Dict = {
   "footer.shop": "Магазин",
   "footer.connect": "Контакти",
   "footer.rights": "© {year} Tidote Atelier. Всички права запазени.",
+
+  // 404
+  "nf.eyebrow": "Грешка 404",
+  "nf.title": "Тази бройка не съществува",
+  "nf.body":
+    "Страницата, която търсиш, е преместена, преименувана или никога не е съществувала. Останалото от ателието е тук.",
+  "nf.home": "Обратно към началото",
+  "nf.browse": "Разгледай колекцията",
 
   // hero
   "hero.tagline":

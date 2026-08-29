@@ -7,6 +7,7 @@ import { NotificationProvider } from "@/lib/notifications";
 import { BookingProvider } from "@/lib/booking";
 import { SmoothScrollProvider } from "@/lib/smooth-scroll";
 import { LANG_KEY } from "@/lib/translations";
+import { Analytics } from "@vercel/analytics/next";
 
 // Authentic typewriter face (Courier-style slab monospace) — used for every
 // headline, the wordmark, and the typed-out About animation. Full Latin +
@@ -115,6 +116,8 @@ export default function RootLayout({
             </NotificationProvider>
           </AuthProvider>
         </LanguageProvider>
+        {/* Cookieless, so the site needs no consent banner under GDPR. */}
+        <Analytics />
       </body>
     </html>
   );
