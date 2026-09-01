@@ -443,39 +443,12 @@ export const CLIENTS: Client[] = [
   },
 ];
 
-export const SEED_AVAILABILITY: DayAvailability[] = [
-  {
-    date: "2026-07-28",
-    open: true,
-    slots: [
-      { id: "s1", time: "10:00" },
-      { id: "s2", time: "13:00" },
-      { id: "s3", time: "15:30" },
-    ],
-  },
-  {
-    date: "2026-07-30",
-    open: true,
-    slots: [
-      { id: "s4", time: "11:00" },
-      { id: "s5", time: "14:00" },
-    ],
-  },
-  {
-    date: "2026-08-03",
-    open: true,
-    slots: [
-      { id: "s6", time: "10:30" },
-      { id: "s7", time: "12:00" },
-      { id: "s8", time: "16:00" },
-    ],
-  },
-  {
-    date: "2026-08-05",
-    open: false,
-    slots: [],
-  },
-];
+/**
+ * Per-date exceptions only. Ordinary days come from the weekly pattern in
+ * lib/hours.ts, so there is nothing to seed here — a fresh studio already has
+ * fittings open on its usual days.
+ */
+export const SEED_AVAILABILITY: DayAvailability[] = [];
 
 export const SEED_BOOKINGS: Booking[] = [];
 

@@ -8,23 +8,21 @@ import { useLang } from "@/lib/i18n";
 import type { Order } from "@/lib/mock-data";
 
 export function ClientFittingPicker({ order }: { order: Order }) {
-  const { availability, bookSlot } = useBooking();
+  const { resolveDay, bookSlot } = useBooking();
   const { session } = useAuth();
   const { t } = useLang();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   function isSelectable(date: string) {
-    const day = availability.find((d) => d.date === date);
-    return Boolean(day?.open && day.slots.length > 0);
+    const day = resolveDay(date);
+    return day.open && day.slots.length > 0;
   }
 
   function dayClassName(date: string) {
     return isSelectable(date) ? "bg-moss-soft text-moss-deep" : "";
   }
 
-  const selectedDay = selectedDate
-    ? availability.find((d) => d.date === selectedDate)
-    : null;
+  const selectedDay = selectedDate ? resolveDay(selectedDate) : null;
 
   function handleBook(time: string) {
     if (!session?.clientId || !selectedDate) return;

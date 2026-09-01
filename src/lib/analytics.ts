@@ -28,8 +28,18 @@ export function parseTotal(total: string): number {
   return Number.isFinite(value) ? value : 0;
 }
 
-function monthKey(d: Date): string {
+export function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** A fixed 12-month window ending on `now`, so an empty month shows as a gap. */
+export function lastTwelveMonths(now = new Date()): { key: string; date: Date }[] {
+  const months: { key: string; date: Date }[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ key: monthKey(d), date: d });
+  }
+  return months;
 }
 
 /** Denied orders never became work, so they stay out of every money figure. */
@@ -83,11 +93,26 @@ export function computeAnalytics(clients: Client[], now = new Date()): Analytics
   };
 }
 
+/** Rounded to whole euros — for summaries, chart axes and asking prices. */
 export function formatMoney(value: number, lang: string): string {
   return new Intl.NumberFormat(lang === "bg" ? "bg-BG" : "en-GB", {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/**
+ * Cents kept. Anything that is or sums an actual invoice amount uses this — a
+ * ledger whose rows round to something other than its own total is worse than
+ * useless when the accountant checks it.
+ */
+export function formatMoneyExact(value: number, lang: string): string {
+  return new Intl.NumberFormat(lang === "bg" ? "bg-BG" : "en-GB", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value);
 }
 

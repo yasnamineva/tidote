@@ -314,7 +314,13 @@ const en: Dict = {
   "adminnav.analytics": "Analytics",
   "adminnav.logout": "Log Out",
   "an.title": "Analytics",
-  "an.sub": "How the studio is doing, at a glance.",
+  "an.tab.overview": "Overview",
+  "an.tab.money": "Money",
+  "an.tab.documents": "Documents",
+  "an.sub.overview": "How the studio is doing, at a glance.",
+  "an.sub.money": "What came in, what went out, and what is left.",
+  "an.sub.documents":
+    "The paperwork a Bulgarian atelier is expected to keep, and where each piece stands.",
   "an.revenueToDate": "Revenue to date",
   "an.declinedExcluded": "Declined orders excluded",
   "an.quotePending": "{n} still awaiting a quote",
@@ -330,6 +336,196 @@ const en: Dict = {
   "an.tableView": "Table view",
   "an.month": "Month",
   "an.noData": "No orders yet.",
+
+  // ready to wear
+  "adminnav.ready": "Ready Pieces",
+  "ready.title": "Ready Pieces",
+  "ready.sub":
+    "Finished garments on the rail, ready to leave today. Commissions still run through Orders — this is only what already exists.",
+  "ready.newPiece": "New Piece",
+  "ready.newTitle": "Add a Ready Piece",
+  "ready.editTitle": "Edit Ready Piece",
+  "ready.name": "Piece",
+  "ready.namePlaceholder": "e.g. Olive Cargo Set",
+  "ready.category": "Category",
+  "ready.size": "Size",
+  "ready.price": "Price (€)",
+  "ready.addedOn": "Finished on",
+  "ready.status": "Status",
+  "ready.heldFor": "Held for",
+  "ready.soldTo": "Sold to",
+  "ready.notes": "Notes",
+  "ready.photos": "Photos (up to {max})",
+  "ready.removePhoto": "Remove photo",
+  "ready.save": "Save Piece",
+  "ready.status.available": "On the rail",
+  "ready.status.reserved": "Reserved",
+  "ready.status.sold": "Sold",
+  "ready.oneSize": "One size",
+  "ready.noPrice": "No price yet",
+  "ready.heldForName": "Held for {name}",
+  "ready.soldToName": "Sold to {name}",
+  "ready.edit": "Edit",
+  "ready.delete": "Delete",
+  "ready.confirmDelete": "Delete this piece?",
+  "ready.filter.all": "All",
+  "ready.empty": "Nothing on the rail yet. Press “+ New Piece”.",
+  "ready.emptyFilter": "No pieces with this status.",
+  "ready.stat.onRail": "On the rail",
+  "ready.stat.reserved": "Reserved",
+  "ready.stat.sold": "Sold",
+  "ready.stat.stockValue": "Stock value",
+
+  // expenses
+  "exp.income": "Income",
+  "exp.spend": "Expenses",
+  "exp.net": "Net",
+  "exp.missingDocs": "Missing documents",
+  "exp.reconTitle": "Where the net figure comes from",
+  "exp.fromOrders": "Accepted commissions",
+  "exp.fromReady": "Ready pieces sold",
+  "exp.reconNote":
+    "Declined orders and pieces still unsold are left out. Commissions count from the day the order was placed, ready pieces from the day they were marked sold.",
+  "exp.missingCallout":
+    "{n} expenses worth {value} have no invoice filed. Without a document behind it, an expense cannot be deducted — chase these before the year closes.",
+  "exp.perMonth": "Expenses per month",
+  "exp.byCategory": "Expenses by category",
+  "exp.listTitle": "All expenses",
+  "exp.listSub": "{n} recorded.",
+  "exp.filterMissing": "Missing documents",
+  "exp.newExpense": "New Expense",
+  "exp.empty": "No expenses recorded yet.",
+  "exp.emptyFilter": "Every expense has its document. Nothing to chase.",
+  "exp.newTitle": "Record an Expense",
+  "exp.editTitle": "Edit Expense",
+  "exp.date": "Date",
+  "exp.category": "Category",
+  "exp.vendor": "Supplier",
+  "exp.vendorPlaceholder": "Who was paid",
+  "exp.description": "What for",
+  "exp.amount": "Amount (€)",
+  "exp.document": "Document",
+  "exp.onFile": "On file",
+  "exp.noDocument": "None",
+  "exp.hasDocument": "Invoice or receipt is filed",
+  "exp.hasDocumentHint":
+    "Untick this and the expense is flagged until the document turns up.",
+  "exp.documentNo": "Document no.",
+  "exp.save": "Save Expense",
+  "exp.badAmount": "Enter an amount greater than zero.",
+  "exp.cat.materials": "Fabric & materials",
+  "exp.cat.trims": "Trims & thread",
+  "exp.cat.equipment": "Machines & equipment",
+  "exp.cat.rent": "Rent",
+  "exp.cat.utilities": "Utilities",
+  "exp.cat.shipping": "Courier",
+  "exp.cat.packaging": "Packaging & labels",
+  "exp.cat.marketing": "Marketing",
+  "exp.cat.software": "Software & subscriptions",
+  "exp.cat.accounting": "Accounting",
+  "exp.cat.socialSecurity": "Social security",
+  "exp.cat.taxes": "Taxes",
+  "exp.cat.subcontract": "Subcontractors",
+  "exp.cat.transport": "Transport",
+  "exp.cat.other": "Other",
+
+  // administrative documents
+  "doc.status": "Status",
+  "doc.details": "Details",
+  "doc.notes": "Notes",
+  "doc.notesPlaceholder": "Reference numbers, who is handling it, where it is filed…",
+  "doc.dueOn": "Due on",
+  "doc.remove": "Remove",
+  "doc.section": "Section",
+  "doc.stat.done": "Done",
+  "doc.stat.outstanding": "Outstanding",
+  "doc.stat.notApplicable": "Doesn’t apply",
+  "doc.disclaimer":
+    "A working checklist, not tax or legal advice. The figures and deadlines here are the ones in force in 2026 — confirm anything you are about to act on with your accountant, and mark whatever doesn’t apply to you as such.",
+  "doc.status.todo": "Not started",
+  "doc.status.in_progress": "In progress",
+  "doc.status.done": "Done",
+  "doc.status.na": "Doesn’t apply",
+  "doc.every.once": "One-time",
+  "doc.every.monthly": "Monthly",
+  "doc.every.annual": "Annual",
+  "doc.group.setup": "Business setup",
+  "doc.group.setup.sub": "The atelier on paper.",
+  "doc.group.tax": "Tax & VAT",
+  "doc.group.tax.sub": "Invoices, thresholds and the annual filings.",
+  "doc.group.social": "Social security",
+  "doc.group.social.sub": "Your own contributions as a self-insured person.",
+  "doc.group.consumer": "Selling & consumers",
+  "doc.group.consumer.sub": "Selling to consumers, online and in person.",
+  "doc.group.product": "Product & brand",
+  "doc.group.product.sub": "The garments, and the name on them.",
+  "doc.group.data": "Personal data",
+  "doc.group.data.sub": "Client measurements, contacts and addresses.",
+  "doc.addTitle": "Add your own",
+  "doc.addSub": "Anything specific to the atelier that the list above misses.",
+  "doc.newTitleLabel": "What needs doing",
+  "doc.newTitlePlaceholder": "e.g. Renew the fire safety certificate",
+  "doc.add": "Add",
+
+  "doc.company.title": "Business registered (ЕИК)",
+  "doc.company.desc":
+    "A company in the Trade Register, or a BULSTAT registration if you work as a freelancer. The number goes on every invoice you issue.",
+  "doc.bank.title": "Business bank account",
+  "doc.bank.desc":
+    "Keeps the atelier’s money separate from your own. Your accountant works from these statements, and since 1 January 2026 everything is in euro.",
+  "doc.accountant.title": "Accountant engaged",
+  "doc.accountant.desc":
+    "Declarations 1 and 6 go to НАП every month. Almost every deadline below is theirs to hit — but the documents are yours to hand over on time.",
+  "doc.lease.title": "Atelier lease agreement",
+  "doc.lease.desc":
+    "A signed contract for the space, plus the landlord’s monthly invoice filed with the rest of the expenses.",
+  "doc.insurance.title": "Insurance for the atelier",
+  "doc.insurance.desc":
+    "Optional. Covers the machines, the stock on the rail and the space itself. Worth pricing once the rail holds real value.",
+
+  "doc.okd5.title": "ОКД-5 filed with НАП",
+  "doc.okd5.desc":
+    "Registers you as a self-insured person. Due within 7 days of starting activity — filed late, you lose sickness and maternity cover for that period.",
+  "doc.contributions.title": "Monthly social security contributions",
+  "doc.contributions.desc":
+    "Paid on your chosen insurable income by the 25th of the following month. The single most common thing to fall behind on.",
+
+  "doc.invoices.title": "Invoices issued and filed",
+  "doc.invoices.desc":
+    "Sequential numbering with no gaps, in euro, with your ЕИК on each. Keep the copies — they are what proves the income figures in the Money tab.",
+  "doc.vatThreshold.title": "Watch the VAT threshold",
+  "doc.vatThreshold.desc":
+    "Registration becomes mandatory once taxable turnover passes €51,130 in a calendar year, and you then have 7 days to apply. Worth checking the running total every month.",
+  "doc.fiscal.title": "Cash register or fiscal device",
+  "doc.fiscal.desc":
+    "Required the moment you take cash, card or cash-on-delivery. Bank transfer alone is exempt — which is why many small ateliers invoice and take transfers only.",
+  "doc.annualReturn.title": "Annual tax return",
+  "doc.annualReturn.desc":
+    "Companies file under чл. 92 ЗКПО between 1 March and 30 June. As a sole trader or an individual you file under чл. 50 ЗДДФЛ instead.",
+  "doc.gfo.title": "Publish the annual financial statement",
+  "doc.gfo.desc":
+    "The ГФО goes to the Trade Register by 30 September, separately from the tax return. Missing it carries a fine even in a year with no activity.",
+
+  "doc.eshop.title": "Declare the online shop to НАП",
+  "doc.eshop.desc":
+    "Required under Наредба Н-18 before you take online orders that need a receipt. Not needed while the site only collects enquiries and fittings.",
+  "doc.terms.title": "Terms, returns and the 14-day rule",
+  "doc.terms.desc":
+    "Distance buyers get 14 days to withdraw — but a garment cut to a customer’s own measurements is exempt. A ready piece off the rail is not, so say which is which in writing.",
+
+  "doc.labelling.title": "Fibre composition labels",
+  "doc.labelling.desc":
+    "Every garment carries its fibre composition, in Bulgarian, on a durable label. Care symbols customarily go alongside it.",
+  "doc.trademark.title": "Trademark for the name",
+  "doc.trademark.desc":
+    "Optional. Registering Tidote with the Patent Office covers Bulgaria; EUIPO covers the whole EU. Cheapest before somebody else wants the name.",
+
+  "doc.privacy.title": "Privacy policy on the site",
+  "doc.privacy.desc":
+    "You hold measurements, contact details and addresses — all personal data. Say what you collect, why, how long you keep it, and how someone asks for it back.",
+  "doc.processingRegister.title": "Register of processing activities",
+  "doc.processingRegister.desc":
+    "An internal record of what data you hold and on what basis. A short document, but the first one an inspector asks for. Review it once a year.",
 
   // admin shell / dashboard
   "admin.group.clients": "Clients",
@@ -376,7 +572,7 @@ const en: Dict = {
   // calendar
   "cal.title": "Fitting Calendar",
   "cal.sub":
-    "Open or close days, add fitting slots, and see order due-dates and booked fittings at a glance.",
+    "Fittings follow your weekly hours. Change a single date below when you need an exception, and see order due-dates and booked fittings at a glance.",
   "cal.back": "← Back to Overview",
   "cal.selectDate":
     "Select a date to open/close it and manage fitting slots.",
@@ -386,9 +582,28 @@ const en: Dict = {
   "cal.remove": "Remove",
   "cal.noSlots": "No open slots yet.",
   "cal.bookedFittings": "Booked Fittings",
-  "cal.legend.open": "Open",
+  "cal.customDay": "Set by hand for this date.",
+  "cal.followingWeekly": "Following your weekly hours.",
+  "cal.useWeekly": "Use weekly hours",
+  "cal.legend.open": "Weekly hours",
+  "cal.legend.custom": "Changed by hand",
   "cal.legend.orderDue": "Order due",
   "cal.legend.booked": "Fitting booked",
+
+  // weekly hours
+  "hours.title": "Weekly Hours",
+  "hours.sub":
+    "The standing schedule fittings are offered on. Every date follows this until you change that date on the calendar.",
+  "hours.restore": "Restore defaults",
+  "hours.from": "from",
+  "hours.to": "to",
+  "hours.closed": "Closed",
+  "hours.tooShort": "Window too short",
+  "hours.slotCount": "{n} slots",
+  "hours.slotLength": "Fitting length",
+  "hours.minutes": "{n} min",
+  "hours.overrideNote":
+    "Changing a single date on the calendar affects that date only — the weekly pattern stays as it is.",
   "picker.readyBook": "Ready for fitting — book a slot",
   "picker.pickDay": "Pick a highlighted day to see open times.",
 
@@ -481,6 +696,8 @@ const en: Dict = {
   "seed.note-TD-1058": "Waiting on fabric confirmation.",
   "seed.note-TD-1065":
     "Fabric arrived — book your fitting whenever works for you.",
+  "seed.ready-rp-seed-1": "Sample from the last run — never worn.",
+  "seed.ready-rp-seed-3": "Held until Friday.",
 };
 
 const bg: Dict = {
@@ -791,7 +1008,13 @@ const bg: Dict = {
   "adminnav.analytics": "Анализи",
   "adminnav.logout": "Изход",
   "an.title": "Анализи",
-  "an.sub": "Как върви ателието — накратко.",
+  "an.tab.overview": "Обзор",
+  "an.tab.money": "Пари",
+  "an.tab.documents": "Документи",
+  "an.sub.overview": "Как върви ателието — накратко.",
+  "an.sub.money": "Какво е влязло, какво е излязло и какво остава.",
+  "an.sub.documents":
+    "Документите, които едно ателие в България трябва да води, и докъде е стигнало всяко от тях.",
   "an.revenueToDate": "Оборот до момента",
   "an.declinedExcluded": "Без отказаните поръчки",
   "an.quotePending": "{n} още чакат оферта",
@@ -807,6 +1030,197 @@ const bg: Dict = {
   "an.tableView": "Таблица",
   "an.month": "Месец",
   "an.noData": "Все още няма поръчки.",
+
+  // готови модели
+  "adminnav.ready": "Готови модели",
+  "ready.title": "Готови модели",
+  "ready.sub":
+    "Завършени дрехи на закачалката, готови за днес. Поръчките по мярка си остават в „Поръчки“ — тук е само това, което вече е ушито.",
+  "ready.newPiece": "Нов модел",
+  "ready.newTitle": "Добави готов модел",
+  "ready.editTitle": "Редактирай готов модел",
+  "ready.name": "Модел",
+  "ready.namePlaceholder": "напр. Маслинен карго комплект",
+  "ready.category": "Категория",
+  "ready.size": "Размер",
+  "ready.price": "Цена (€)",
+  "ready.addedOn": "Завършен на",
+  "ready.status": "Статус",
+  "ready.heldFor": "Запазен за",
+  "ready.soldTo": "Продаден на",
+  "ready.notes": "Бележки",
+  "ready.photos": "Снимки (до {max})",
+  "ready.removePhoto": "Премахни снимката",
+  "ready.save": "Запази модела",
+  "ready.status.available": "На закачалката",
+  "ready.status.reserved": "Запазен",
+  "ready.status.sold": "Продаден",
+  "ready.oneSize": "Универсален",
+  "ready.noPrice": "Без цена",
+  "ready.heldForName": "Запазен за {name}",
+  "ready.soldToName": "Продаден на {name}",
+  "ready.edit": "Редактирай",
+  "ready.delete": "Изтрий",
+  "ready.confirmDelete": "Да изтрия ли този модел?",
+  "ready.filter.all": "Всички",
+  "ready.empty": "Все още няма нищо на закачалката. Натиснете „+ Нов модел“.",
+  "ready.emptyFilter": "Няма модели с този статус.",
+  "ready.stat.onRail": "На закачалката",
+  "ready.stat.reserved": "Запазени",
+  "ready.stat.sold": "Продадени",
+  "ready.stat.stockValue": "Стойност на наличността",
+
+  // разходи
+  "exp.income": "Приходи",
+  "exp.spend": "Разходи",
+  "exp.net": "Остава",
+  "exp.missingDocs": "Липсващи документи",
+  "exp.reconTitle": "Откъде идва тази сума",
+  "exp.fromOrders": "Приети поръчки",
+  "exp.fromReady": "Продадени готови модели",
+  "exp.reconNote":
+    "Отказаните поръчки и непродадените модели не влизат. Поръчките се броят от деня на заявката, готовите модели — от деня, в който са отбелязани като продадени.",
+  "exp.missingCallout":
+    "{n} разхода за {value} са без приложен документ. Разход без документ не може да се признае — потърсете фактурите, преди да приключи годината.",
+  "exp.perMonth": "Разходи по месеци",
+  "exp.byCategory": "Разходи по категория",
+  "exp.listTitle": "Всички разходи",
+  "exp.listSub": "{n} записани.",
+  "exp.filterMissing": "Без документ",
+  "exp.newExpense": "Нов разход",
+  "exp.empty": "Все още няма записани разходи.",
+  "exp.emptyFilter": "Всеки разход си има документ. Няма какво да гоните.",
+  "exp.newTitle": "Запиши разход",
+  "exp.editTitle": "Редактирай разход",
+  "exp.date": "Дата",
+  "exp.category": "Категория",
+  "exp.vendor": "Доставчик",
+  "exp.vendorPlaceholder": "На кого е платено",
+  "exp.description": "За какво",
+  "exp.amount": "Сума (€)",
+  "exp.document": "Документ",
+  "exp.onFile": "Приложен",
+  "exp.noDocument": "Няма",
+  "exp.hasDocument": "Фактурата или бележката е приложена",
+  "exp.hasDocumentHint":
+    "Ако махнете отметката, разходът се отбелязва, докато документът се появи.",
+  "exp.documentNo": "№ на документа",
+  "exp.save": "Запази разхода",
+  "exp.badAmount": "Въведете сума, по-голяма от нула.",
+  "exp.cat.materials": "Платове и материи",
+  "exp.cat.trims": "Аксесоари и конци",
+  "exp.cat.equipment": "Машини и оборудване",
+  "exp.cat.rent": "Наем",
+  "exp.cat.utilities": "Ток, вода, интернет",
+  "exp.cat.shipping": "Куриери",
+  "exp.cat.packaging": "Опаковки и етикети",
+  "exp.cat.marketing": "Реклама",
+  "exp.cat.software": "Софтуер и абонаменти",
+  "exp.cat.accounting": "Счетоводство",
+  "exp.cat.socialSecurity": "Осигуровки",
+  "exp.cat.taxes": "Данъци",
+  "exp.cat.subcontract": "Подизпълнители",
+  "exp.cat.transport": "Транспорт",
+  "exp.cat.other": "Друго",
+
+  // административни документи
+  "doc.status": "Статус",
+  "doc.details": "Подробности",
+  "doc.notes": "Бележки",
+  "doc.notesPlaceholder": "Номера, кой го движи, къде е подреден…",
+  "doc.dueOn": "Срок",
+  "doc.remove": "Премахни",
+  "doc.section": "Раздел",
+  "doc.stat.done": "Готови",
+  "doc.stat.outstanding": "Остават",
+  "doc.stat.notApplicable": "Не се отнасят",
+  "doc.disclaimer":
+    "Работен списък, а не данъчен или правен съвет. Сумите и сроковете тук са тези в сила през 2026 г. — потвърдете със счетоводителя си всичко, по което ще действате, и отбележете като „Не се отнася“ това, което не важи за вас.",
+  "doc.status.todo": "Предстои",
+  "doc.status.in_progress": "В процес",
+  "doc.status.done": "Готово",
+  "doc.status.na": "Не се отнася",
+  "doc.every.once": "Еднократно",
+  "doc.every.monthly": "Месечно",
+  "doc.every.annual": "Годишно",
+  "doc.group.setup": "Регистрация и основи",
+  "doc.group.setup.sub": "Ателието на хартия.",
+  "doc.group.tax": "Данъци и ДДС",
+  "doc.group.tax.sub": "Фактури, прагове и годишните подавания.",
+  "doc.group.social": "Осигуряване",
+  "doc.group.social.sub":
+    "Вашите осигуровки като самоосигуряващо се лице.",
+  "doc.group.consumer": "Продажби и потребители",
+  "doc.group.consumer.sub": "Продажба на потребители — онлайн и на място.",
+  "doc.group.product": "Продукт и марка",
+  "doc.group.product.sub": "Дрехите и името върху тях.",
+  "doc.group.data": "Лични данни",
+  "doc.group.data.sub": "Мерки, контакти и адреси на клиентите.",
+  "doc.addTitle": "Добавете свое",
+  "doc.addSub": "Нещо специфично за ателието, което списъкът горе изпуска.",
+  "doc.newTitleLabel": "Какво трябва да се свърши",
+  "doc.newTitlePlaceholder": "напр. Подновяване на противопожарното становище",
+  "doc.add": "Добави",
+
+  "doc.company.title": "Регистрирана дейност (ЕИК)",
+  "doc.company.desc":
+    "Фирма в Търговския регистър или регистрация в БУЛСТАТ, ако работите на свободна практика. Номерът стои на всяка издадена фактура.",
+  "doc.bank.title": "Банкова сметка за бизнеса",
+  "doc.bank.desc":
+    "Държи парите на ателието отделно от личните. Счетоводителят работи по тези извлечения, а от 1 януари 2026 г. всичко е в евро.",
+  "doc.accountant.title": "Нает счетоводител",
+  "doc.accountant.desc":
+    "Декларации обр. 1 и 6 се подават в НАП всеки месец. Почти всички срокове по-долу са негова работа — но документите са ваша грижа и трябва да стигат навреме.",
+  "doc.lease.title": "Договор за наем на ателието",
+  "doc.lease.desc":
+    "Подписан договор за помещението плюс месечната фактура от наемодателя, подредена при останалите разходи.",
+  "doc.insurance.title": "Застраховка на ателието",
+  "doc.insurance.desc":
+    "По желание. Покрива машините, наличността на закачалката и самото помещение. Струва си да се остойности, когато на закачалката има реална стойност.",
+
+  "doc.okd5.title": "Подадена ОКД-5 в НАП",
+  "doc.okd5.desc":
+    "Регистрира ви като самоосигуряващо се лице. Подава се до 7 дни от започване на дейността — при закъснение губите правото на обезщетение за болест и майчинство за този период.",
+  "doc.contributions.title": "Месечни осигуровки",
+  "doc.contributions.desc":
+    "Плащат се върху избрания осигурителен доход до 25-о число на следващия месец. Нещото, по което най-често се изостава.",
+
+  "doc.invoices.title": "Издадени и подредени фактури",
+  "doc.invoices.desc":
+    "Последователна номерация без пропуски, в евро, с вашия ЕИК на всяка. Пазете копията — те доказват приходите в раздел „Пари“.",
+  "doc.vatThreshold.title": "Следене на прага за ДДС",
+  "doc.vatThreshold.desc":
+    "Регистрацията става задължителна при облагаем оборот над 51 130 € за календарната година, а оттам имате 7 дни да подадете заявление. Проверявайте текущия сбор всеки месец.",
+  "doc.fiscal.title": "Касов апарат или фискално устройство",
+  "doc.fiscal.desc":
+    "Задължително в момента, в който приемате плащане в брой, с карта или наложен платеж. Само банков превод е изключение — затова много малки ателиета работят с фактура и превод.",
+  "doc.annualReturn.title": "Годишна данъчна декларация",
+  "doc.annualReturn.desc":
+    "Фирмите подават по чл. 92 ЗКПО между 1 март и 30 юни. Като ЕТ или физическо лице подавате по чл. 50 ЗДДФЛ.",
+  "doc.gfo.title": "Обявен годишен финансов отчет",
+  "doc.gfo.desc":
+    "ГФО се обявява в Търговския регистър до 30 септември, отделно от данъчната декларация. Пропускът се глобява дори в година без дейност.",
+
+  "doc.eshop.title": "Деклариран електронен магазин в НАП",
+  "doc.eshop.desc":
+    "Изисква се по Наредба Н-18, преди да приемате онлайн поръчки, за които се издава бележка. Не е нужно, докато сайтът само събира запитвания и часове за проба.",
+  "doc.terms.title": "Общи условия, връщане и 14-те дни",
+  "doc.terms.desc":
+    "При онлайн покупка клиентът има 14 дни да се откаже — но дреха, ушита по негови мерки, е изключение. Готов модел от закачалката не е, затова го напишете ясно.",
+
+  "doc.labelling.title": "Етикети със състав",
+  "doc.labelling.desc":
+    "Всяка дреха носи състава си на български, върху траен етикет. Символите за поддръжка по обичай вървят с него.",
+  "doc.trademark.title": "Марка за името",
+  "doc.trademark.desc":
+    "По желание. Регистрация на Tidote в Патентното ведомство покрива България, EUIPO — целия ЕС. Най-евтино е, преди някой друг да поиска името.",
+
+  "doc.privacy.title": "Политика за поверителност на сайта",
+  "doc.privacy.desc":
+    "Съхранявате мерки, контакти и адреси — всичко това са лични данни. Опишете какво събирате, защо, колко го пазите и как човек може да го поиска обратно.",
+  "doc.processingRegister.title": "Регистър на дейностите по обработване",
+  "doc.processingRegister.desc":
+    "Вътрешен опис какви данни държите и на какво основание. Кратък документ, но първият, който проверяващият иска. Преглеждайте го веднъж годишно.",
 
   // admin shell / dashboard
   "admin.group.clients": "Клиенти",
@@ -853,7 +1267,7 @@ const bg: Dict = {
   // calendar
   "cal.title": "Календар за проби",
   "cal.sub":
-    "Отваряйте и затваряйте дни, добавяйте часове за проби и виждайте крайните срокове и записаните проби с един поглед.",
+    "Пробите следват седмичното ви разписание. Променете конкретна дата по-долу, когато имате изключение, и вижте крайните срокове и записаните проби с един поглед.",
   "cal.back": "← Обратно към обзора",
   "cal.selectDate":
     "Изберете дата, за да я отворите или затворите и да управлявате часовете за проби.",
@@ -863,9 +1277,28 @@ const bg: Dict = {
   "cal.remove": "Премахни",
   "cal.noSlots": "Все още няма свободни часове.",
   "cal.bookedFittings": "Записани проби",
-  "cal.legend.open": "Отворен",
+  "cal.customDay": "Зададен ръчно за тази дата.",
+  "cal.followingWeekly": "Следва седмичното разписание.",
+  "cal.useWeekly": "Върни към разписанието",
+  "cal.legend.open": "По разписание",
+  "cal.legend.custom": "Ръчно променен",
   "cal.legend.orderDue": "Краен срок",
   "cal.legend.booked": "Записана проба",
+
+  // седмично разписание
+  "hours.title": "Седмично разписание",
+  "hours.sub":
+    "Стандартните часове за проби. Всяка дата следва това разписание, докато не промените самата дата в календара.",
+  "hours.restore": "Върни по подразбиране",
+  "hours.from": "от",
+  "hours.to": "до",
+  "hours.closed": "Затворено",
+  "hours.tooShort": "Твърде кратък интервал",
+  "hours.slotCount": "{n} часа",
+  "hours.slotLength": "Времетраене на проба",
+  "hours.minutes": "{n} мин",
+  "hours.overrideNote":
+    "Промяна на конкретна дата в календара важи само за нея — седмичното разписание остава непроменено.",
   "picker.readyBook": "Готова за проба — запазете час",
   "picker.pickDay": "Изберете маркиран ден, за да видите свободните часове.",
 
@@ -958,6 +1391,8 @@ const bg: Dict = {
   "seed.note-TD-1058": "Чакаме потвърждение за плата.",
   "seed.note-TD-1065":
     "Платът пристигна — запазете си час за проба, когато ви е удобно.",
+  "seed.ready-rp-seed-1": "Мостра от последната серия — необличана.",
+  "seed.ready-rp-seed-3": "Запазен до петък.",
 };
 
 export const DICT: Record<Lang, Dict> = { en, bg };

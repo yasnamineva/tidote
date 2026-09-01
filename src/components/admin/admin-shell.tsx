@@ -9,6 +9,7 @@ import { useLang } from "@/lib/i18n";
 import { useNotifications } from "@/lib/notifications";
 import { categoryLabel } from "@/lib/translations";
 import { getAllClientsWithLiveData } from "@/lib/admin-data";
+import { getReadyPieces } from "@/lib/ready-pieces";
 import {
   ORDER_CATEGORIES,
   type Client,
@@ -67,6 +68,12 @@ const ICONS: Record<string, React.ReactNode> = {
     <>
       <rect x="4" y="5" width="16" height="16" rx="2" />
       <path d="M4 10h16M9 3v4M15 3v4" />
+    </>
+  ),
+  hanger: (
+    <>
+      <path d="M12 6a1.8 1.8 0 1 1 1.3 1.73L12 9" />
+      <path d="M12 9 3.6 15.2A1 1 0 0 0 4.2 17h15.6a1 1 0 0 0 .6-1.8z" />
     </>
   ),
   chart: (
@@ -148,6 +155,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const [readyInStock, setReadyInStock] = useState(0);
   const [filterCategory, setFilterCategory] = useState<OrderCategory | null>(
     null
   );
@@ -161,6 +169,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (ready && session?.role === "admin") {
       setClients(getAllClientsWithLiveData());
+      // Sold pieces have left the rail, so the badge counts what is still here.
+      setReadyInStock(
+        getReadyPieces().filter((p) => p.status !== "sold").length
+      );
     }
   }, [ready, session, pathname]);
 
@@ -245,6 +257,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           label={t("adminnav.inbox")}
           badge={unread}
           active={pathname.startsWith("/admin/inbox")}
+          onNavigate={close}
+        />
+        <NavItem
+          href="/admin/ready"
+          icon="hanger"
+          label={t("adminnav.ready")}
+          badge={readyInStock}
+          active={pathname.startsWith("/admin/ready")}
           onNavigate={close}
         />
         <NavItem

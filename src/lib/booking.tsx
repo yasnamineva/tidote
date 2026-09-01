@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import {
@@ -14,10 +15,19 @@ import {
   type DayAvailability,
   type TimeSlot,
 } from "@/lib/mock-data";
+import {
+  DEFAULT_WEEKLY_HOURS,
+  derivedDay,
+  normalizeWeeklyHours,
+  resolveDay as resolveDayFrom,
+  todayKey,
+  type WeeklyHours,
+} from "@/lib/hours";
 import { readJSON, writeJSON } from "@/lib/storage";
 
 const AVAILABILITY_KEY = "tidote_availability";
 const BOOKINGS_KEY = "tidote_bookings";
+const HOURS_KEY = "tidote_hours";
 
 type BookSlotInput = {
   date: string;
@@ -28,12 +38,21 @@ type BookSlotInput = {
 };
 
 type BookingContextValue = {
-  availability: DayAvailability[];
+  /** Per-date exceptions. Days absent from this list follow `weeklyHours`. */
+  overrides: DayAvailability[];
   bookings: Booking[];
+  weeklyHours: WeeklyHours;
   ready: boolean;
+  /** The day as it should be shown: override or weekly pattern, minus bookings. */
+  resolveDay: (date: string) => DayAvailability;
+  /** True when the studio has edited this date away from the weekly pattern. */
+  isCustomDay: (date: string) => boolean;
   toggleDayOpen: (date: string) => void;
   addSlot: (date: string, time: string) => void;
   removeSlot: (date: string, slotId: string) => void;
+  /** Drops the override so the date follows the weekly pattern again. */
+  resetDay: (date: string) => void;
+  saveWeeklyHours: (next: WeeklyHours) => void;
   bookSlot: (input: BookSlotInput) => void;
 };
 
@@ -43,78 +62,141 @@ function sortSlots(slots: TimeSlot[]) {
   return [...slots].sort((a, b) => a.time.localeCompare(b.time));
 }
 
-function findOrCreateDay(
-  list: DayAvailability[],
-  date: string
-): DayAvailability[] {
-  if (list.some((d) => d.date === date)) return list;
-  return [...list, { date, open: false, slots: [] }];
-}
-
 export function BookingProvider({ children }: { children: React.ReactNode }) {
-  const [availability, setAvailability] =
+  const [overrides, setOverrides] =
     useState<DayAvailability[]>(SEED_AVAILABILITY);
   const [bookings, setBookings] = useState<Booking[]>(SEED_BOOKINGS);
+  const [weeklyHours, setWeeklyHours] = useState<WeeklyHours>(
+    DEFAULT_WEEKLY_HOURS
+  );
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setAvailability(readJSON(AVAILABILITY_KEY, SEED_AVAILABILITY));
+    setOverrides(readJSON(AVAILABILITY_KEY, SEED_AVAILABILITY));
     setBookings(readJSON(BOOKINGS_KEY, SEED_BOOKINGS));
+    setWeeklyHours(
+      normalizeWeeklyHours(readJSON(HOURS_KEY, DEFAULT_WEEKLY_HOURS))
+    );
     setReady(true);
   }, []);
 
-  const toggleDayOpen = useCallback((date: string) => {
-    setAvailability((prev) => {
-      const next = findOrCreateDay(prev, date).map((d) =>
-        d.date === date ? { ...d, open: !d.open } : d
-      );
-      writeJSON(AVAILABILITY_KEY, next);
-      return next;
-    });
-  }, []);
+  const bookedByDate = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const b of bookings) {
+      const set = map.get(b.date) ?? new Set<string>();
+      set.add(b.time);
+      map.set(b.date, set);
+    }
+    return map;
+  }, [bookings]);
 
-  const addSlot = useCallback((date: string, time: string) => {
-    setAvailability((prev) => {
-      const next = findOrCreateDay(prev, date).map((d) =>
-        d.date === date
-          ? {
-              ...d,
+  const resolveDay = useCallback(
+    (date: string) =>
+      resolveDayFrom(
+        date,
+        overrides,
+        weeklyHours,
+        bookedByDate.get(date) ?? new Set(),
+        todayKey()
+      ),
+    [overrides, weeklyHours, bookedByDate]
+  );
+
+  const isCustomDay = useCallback(
+    (date: string) => overrides.some((d) => d.date === date),
+    [overrides]
+  );
+
+  /**
+   * Editing a date that is still following the weekly pattern turns it into an
+   * override first, so the edit has something concrete to apply to. `edit`
+   * receives the day the studio currently sees, bookings included — dropping a
+   * booked slot back in here would double-book it.
+   */
+  const editDay = useCallback(
+    (date: string, edit: (day: DayAvailability) => DayAvailability) => {
+      setOverrides((prev) => {
+        const existing = prev.find((d) => d.date === date);
+        const booked = bookedByDate.get(date) ?? new Set<string>();
+        const base =
+          existing ??
+          (date < todayKey()
+            ? { date, open: false, slots: [] }
+            : derivedDay(date, weeklyHours));
+        const visible = {
+          ...base,
+          slots: base.slots.filter((s) => !booked.has(s.time)),
+        };
+        const updated = edit(visible);
+        const next = existing
+          ? prev.map((d) => (d.date === date ? updated : d))
+          : [...prev, updated];
+        writeJSON(AVAILABILITY_KEY, next);
+        return next;
+      });
+    },
+    [bookedByDate, weeklyHours]
+  );
+
+  const toggleDayOpen = useCallback(
+    (date: string) => {
+      editDay(date, (day) => ({ ...day, open: !day.open }));
+    },
+    [editDay]
+  );
+
+  const addSlot = useCallback(
+    (date: string, time: string) => {
+      editDay(date, (day) =>
+        day.slots.some((s) => s.time === time)
+          ? { ...day, open: true }
+          : {
+              ...day,
               open: true,
               slots: sortSlots([
-                ...d.slots,
+                ...day.slots,
                 { id: `${date}-${time}-${Date.now()}`, time },
               ]),
             }
-          : d
       );
+    },
+    [editDay]
+  );
+
+  const removeSlot = useCallback(
+    (date: string, slotId: string) => {
+      editDay(date, (day) => ({
+        ...day,
+        slots: day.slots.filter((s) => s.id !== slotId),
+      }));
+    },
+    [editDay]
+  );
+
+  const resetDay = useCallback((date: string) => {
+    setOverrides((prev) => {
+      const next = prev.filter((d) => d.date !== date);
       writeJSON(AVAILABILITY_KEY, next);
       return next;
     });
   }, []);
 
-  const removeSlot = useCallback((date: string, slotId: string) => {
-    setAvailability((prev) => {
-      const next = prev.map((d) =>
-        d.date === date
-          ? { ...d, slots: d.slots.filter((s) => s.id !== slotId) }
-          : d
-      );
-      writeJSON(AVAILABILITY_KEY, next);
-      return next;
-    });
+  const saveWeeklyHours = useCallback((next: WeeklyHours) => {
+    setWeeklyHours(next);
+    writeJSON(HOURS_KEY, next);
   }, []);
 
+  /**
+   * Booking only records the booking. The slot disappears because `resolveDay`
+   * filters booked times out, which keeps working for days that follow the
+   * weekly pattern instead of freezing them into overrides.
+   */
   const bookSlot = useCallback((input: BookSlotInput) => {
-    setAvailability((prev) => {
-      const next = prev.map((d) =>
-        d.date === input.date
-          ? { ...d, slots: d.slots.filter((s) => s.time !== input.time) }
-          : d
-      );
-      writeJSON(AVAILABILITY_KEY, next);
-      return next;
-    });
     setBookings((prev) => {
+      const taken = prev.some(
+        (b) => b.date === input.date && b.time === input.time
+      );
+      if (taken) return prev;
       const next: Booking[] = [
         ...prev,
         {
@@ -135,12 +217,17 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   return (
     <BookingContext.Provider
       value={{
-        availability,
+        overrides,
         bookings,
+        weeklyHours,
         ready,
+        resolveDay,
+        isCustomDay,
         toggleDayOpen,
         addSlot,
         removeSlot,
+        resetDay,
+        saveWeeklyHours,
         bookSlot,
       }}
     >
