@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useLang } from "@/lib/i18n";
 import { categoryLabel } from "@/lib/translations";
+import { importPhotos, photoWarning } from "@/lib/images";
 import { ORDER_CATEGORIES, type OrderCategory, type OwnedItem } from "@/lib/mock-data";
 
 const MAX_PHOTOS = 4;
-const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
 
 type AddInput = {
   name: string;
@@ -34,30 +34,13 @@ export function WardrobeSection({
   const [photos, setPhotos] = useState<string[]>([]);
   const [warning, setWarning] = useState<string | null>(null);
 
-  function handleFiles(fileList: FileList | null) {
+  async function handleFiles(fileList: FileList | null) {
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - photos.length;
-    if (fileList.length > room) {
-      setWarning(t("neworder.warnMax", { max: MAX_PHOTOS, room }));
-    }
-    Array.from(fileList)
-      .slice(0, room)
-      .forEach((file) => {
-        if (file.size > MAX_FILE_BYTES) {
-          setWarning(t("neworder.warnLarge", { name: file.name }));
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") {
-            setPhotos((prev) =>
-              prev.length >= MAX_PHOTOS ? prev : [...prev, reader.result as string]
-            );
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+    const result = await importPhotos(Array.from(fileList), room);
+    setWarning(photoWarning(t, result, MAX_PHOTOS, room));
+    setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }
 
   function handleSubmit(e: React.FormEvent) {

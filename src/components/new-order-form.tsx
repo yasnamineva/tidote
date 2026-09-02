@@ -5,10 +5,10 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { categoryLabel } from "@/lib/translations";
+import { importPhotos, photoWarning } from "@/lib/images";
 import { ORDER_CATEGORIES, type OrderCategory } from "@/lib/mock-data";
 
 const MAX_PHOTOS = 4;
-const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
 
 export function NewOrderForm() {
   const { addOrder } = useAuth();
@@ -20,31 +20,13 @@ export function NewOrderForm() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [warning, setWarning] = useState<string | null>(null);
 
-  function handleFiles(fileList: FileList | null) {
+  async function handleFiles(fileList: FileList | null) {
     if (!fileList) return;
-    const files = Array.from(fileList);
     setWarning(null);
-
     const room = MAX_PHOTOS - photos.length;
-    if (files.length > room) {
-      setWarning(t("neworder.warnMax", { max: MAX_PHOTOS, room }));
-    }
-
-    files.slice(0, room).forEach((file) => {
-      if (file.size > MAX_FILE_BYTES) {
-        setWarning(t("neworder.warnLarge", { name: file.name }));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          setPhotos((prev) =>
-            prev.length >= MAX_PHOTOS ? prev : [...prev, reader.result as string]
-          );
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    const result = await importPhotos(Array.from(fileList), room);
+    setWarning(photoWarning(t, result, MAX_PHOTOS, room));
+    setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }
 
   function removePhoto(index: number) {

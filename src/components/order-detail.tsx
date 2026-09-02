@@ -20,9 +20,9 @@ import {
   pieceLabel,
   statusLabel,
 } from "@/lib/translations";
+import { importPhotos, photoWarning } from "@/lib/images";
 
 const MAX_PHOTOS = 4;
-const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
 
 const STATUS_PILL: Record<string, string> = {
   received: "bg-line/50 text-ink-soft",
@@ -75,30 +75,13 @@ export function OrderDetail({
   const [reason, setReason] = useState("");
   const [eta, setEta] = useState("");
 
-  function handleFiles(fileList: FileList | null) {
+  async function handleFiles(fileList: FileList | null) {
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - notePhotos.length;
-    if (fileList.length > room) {
-      setWarning(t("neworder.warnMax", { max: MAX_PHOTOS, room }));
-    }
-    Array.from(fileList)
-      .slice(0, room)
-      .forEach((file) => {
-        if (file.size > MAX_FILE_BYTES) {
-          setWarning(t("neworder.warnLarge", { name: file.name }));
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") {
-            setNotePhotos((prev) =>
-              prev.length >= MAX_PHOTOS ? prev : [...prev, reader.result as string]
-            );
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+    const result = await importPhotos(Array.from(fileList), room);
+    setWarning(photoWarning(t, result, MAX_PHOTOS, room));
+    setNotePhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }
 
   function submitNote(e: React.FormEvent) {

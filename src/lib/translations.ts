@@ -255,7 +255,15 @@ const en: Dict = {
   "neworder.back": "← Back to My Account",
   "neworder.warnMax":
     "You can attach up to {max} reference photos — only the first {room} were added.",
-  "neworder.warnLarge": "\"{name}\" is too large (max 1.5MB) — skipped.",
+  "neworder.warnLarge": "\"{name}\" is too large (max 20MB) — skipped.",
+  "neworder.warnUnreadable":
+    "\"{name}\" could not be read — try saving it as a JPEG or PNG.",
+
+  // storage
+  "storage.fullTitle": "Not saved.",
+  "storage.fullBody":
+    "This browser has run out of storage, so your last change was not kept. Remove a few photos and try again.",
+  "storage.dismiss": "Dismiss",
 
   // order detail
   "od.placed": "Placed",
@@ -949,7 +957,15 @@ const bg: Dict = {
   "neworder.back": "← Обратно към профила",
   "neworder.warnMax":
     "Можете да прикачите до {max} снимки — добавени са само първите {room}.",
-  "neworder.warnLarge": "„{name}“ е твърде голяма (макс. 1.5MB) — пропусната.",
+  "neworder.warnLarge": "„{name}“ е твърде голяма (макс. 20MB) — пропусната.",
+  "neworder.warnUnreadable":
+    "„{name}“ не може да бъде прочетена — запишете я като JPEG или PNG.",
+
+  // съхранение
+  "storage.fullTitle": "Не е запазено.",
+  "storage.fullBody":
+    "Мястото в този браузър свърши и последната промяна не беше запазена. Премахнете няколко снимки и опитайте отново.",
+  "storage.dismiss": "Скрий",
 
   // order detail
   "od.placed": "Поръчана",
