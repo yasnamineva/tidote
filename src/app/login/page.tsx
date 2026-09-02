@@ -112,14 +112,14 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={fillClientDemo}
-                className="text-xs uppercase tracking-[0.15em] text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
+                className="text-xs uppercase tracking-[0.15em] py-2 -my-1 text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
               >
                 {t("login.useClientDemo")}
               </button>
               <button
                 type="button"
                 onClick={fillAdminDemo}
-                className="text-xs uppercase tracking-[0.15em] text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
+                className="text-xs uppercase tracking-[0.15em] py-2 -my-1 text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
               >
                 {t("login.useAdminDemo")}
               </button>
@@ -135,7 +135,7 @@ export default function LoginPage() {
           </p>
 
           <p className="text-sm text-center mt-8">
-            <Link href="/" className="link-underline text-ink-soft hover:text-ink">
+            <Link href="/" className="link-underline inline-block py-2 text-ink-soft hover:text-ink">
               {t("login.back")}
             </Link>
           </p>

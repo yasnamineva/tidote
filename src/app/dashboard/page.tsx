@@ -491,7 +491,7 @@ export default function DashboardPage() {
                       <div className="mt-4 pt-4 border-t border-line">
                         <Link
                           href={`/dashboard/orders/${order.id}`}
-                          className="link-underline text-xs uppercase tracking-[0.15em] text-moss-deep hover:text-accent transition-colors"
+                          className="link-underline inline-block py-2 text-xs uppercase tracking-[0.15em] text-moss-deep hover:text-accent transition-colors"
                         >
                           {t("order.detailsPhotos")}
                         </Link>

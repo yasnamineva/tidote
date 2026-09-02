@@ -103,7 +103,7 @@ export function ReadyPieceCard({
             );
             onChanged();
           }}
-          className="border border-line-strong bg-cream px-2 py-1.5 text-xs transition-colors focus:outline-none focus:border-moss-deep"
+          className="border border-line-strong bg-cream px-2 py-2 text-xs transition-colors focus:outline-none focus:border-moss-deep"
         >
           {READY_STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -113,7 +113,7 @@ export function ReadyPieceCard({
         </select>
 
         {confirming ? (
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
             <span className="text-ink-soft">{t("ready.confirmDelete")}</span>
             <span className="flex gap-3">
               <button
@@ -136,18 +136,18 @@ export function ReadyPieceCard({
             </span>
           </div>
         ) : (
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
             <button
               type="button"
               onClick={onEdit}
-              className="uppercase tracking-[0.1em] text-ink-soft hover:text-ink transition-colors"
+              className="uppercase tracking-[0.1em] py-1.5 -my-1.5 text-ink-soft hover:text-ink transition-colors"
             >
               {t("ready.edit")}
             </button>
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="uppercase tracking-[0.1em] text-ink-soft hover:text-accent transition-colors"
+              className="uppercase tracking-[0.1em] py-1.5 -my-1.5 text-ink-soft hover:text-accent transition-colors"
             >
               {t("ready.delete")}
             </button>

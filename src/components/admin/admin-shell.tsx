@@ -325,7 +325,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Open menu"
-            className="flex flex-col gap-1.5 p-1"
+            className="flex flex-col justify-center gap-1.5 -m-2 p-2 min-h-11 min-w-11"
           >
             <span className="block h-0.5 w-6 bg-ink" />
             <span className="block h-0.5 w-6 bg-ink" />

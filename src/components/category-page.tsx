@@ -78,7 +78,7 @@ export function CategoryPage({
               href={INSTAGRAM_URL}
               target="_blank"
               rel="noreferrer"
-              className="link-underline text-sm uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
+              className="link-underline inline-block py-2 text-sm uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
             >
               {t("catpage.follow")} &rarr;
             </a>

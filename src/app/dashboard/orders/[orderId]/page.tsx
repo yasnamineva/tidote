@@ -48,7 +48,7 @@ export default function ClientOrderPage() {
         <section className="mx-auto max-w-5xl px-6 py-12">
           <Link
             href="/dashboard"
-            className="link-underline text-sm text-ink-soft hover:text-ink"
+            className="link-underline inline-block py-2 text-sm text-ink-soft hover:text-ink"
           >
             {t("od.backToAccount")}
           </Link>

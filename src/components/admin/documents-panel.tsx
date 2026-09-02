@@ -90,7 +90,7 @@ function DocRow({
                 setComplianceStatus(item.id, e.target.value as DocStatus);
                 onChanged();
               }}
-              className="border border-line-strong bg-cream px-2 py-1 text-xs transition-colors focus:outline-none focus:border-moss-deep"
+              className="border border-line-strong bg-cream px-2 py-1.5 text-xs transition-colors focus:outline-none focus:border-moss-deep"
             >
               {DOC_STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -114,7 +114,7 @@ function DocRow({
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
-              className="text-[10px] uppercase tracking-[0.1em] text-ink-soft hover:text-ink transition-colors"
+              className="text-[10px] uppercase tracking-[0.1em] py-2 -my-1 text-ink-soft hover:text-ink transition-colors"
             >
               {open ? "− " : "+ "}
               {t("doc.details")}
@@ -192,7 +192,7 @@ function DocRow({
                   <button
                     type="button"
                     onClick={() => setConfirming(true)}
-                    className="text-xs uppercase tracking-[0.1em] text-ink-soft hover:text-accent transition-colors"
+                    className="text-xs uppercase tracking-[0.1em] py-1.5 -my-1.5 text-ink-soft hover:text-accent transition-colors"
                   >
                     {t("doc.remove")}
                   </button>

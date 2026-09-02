@@ -34,7 +34,7 @@ export function SiteFooter() {
             <li>
               <Link
                 href="/#about"
-                className="link-underline hover:text-moss transition-colors"
+                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
               >
                 {t("nav.about")}
               </Link>
@@ -42,7 +42,7 @@ export function SiteFooter() {
             <li>
               <Link
                 href="/#gallery"
-                className="link-underline hover:text-moss transition-colors"
+                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
               >
                 {t("nav.gallery")}
               </Link>
@@ -50,7 +50,7 @@ export function SiteFooter() {
             <li>
               <Link
                 href="/login"
-                className="link-underline hover:text-moss transition-colors"
+                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
               >
                 {t("header.login")}
               </Link>
@@ -66,7 +66,7 @@ export function SiteFooter() {
             <li>
               <Link
                 href="/casual"
-                className="link-underline hover:text-moss transition-colors"
+                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
               >
                 {t("nav.casual")}
               </Link>
@@ -74,7 +74,7 @@ export function SiteFooter() {
             <li>
               <Link
                 href="/sports"
-                className="link-underline hover:text-moss transition-colors"
+                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
               >
                 {t("nav.sports")}
               </Link>
@@ -92,7 +92,7 @@ export function SiteFooter() {
                 href="https://www.instagram.com/tidote.atelier/"
                 target="_blank"
                 rel="noreferrer"
-                className="link-underline hover:text-moss transition-colors"
+                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
               >
                 Instagram
               </a>
@@ -100,7 +100,7 @@ export function SiteFooter() {
             <li>
               <a
                 href="mailto:support@tidoteatelier.com"
-                className="link-underline hover:text-moss transition-colors"
+                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
               >
                 support@tidoteatelier.com
               </a>

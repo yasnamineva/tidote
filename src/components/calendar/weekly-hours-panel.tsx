@@ -47,17 +47,7 @@ export function WeeklyHoursPanel() {
 
   return (
     <div className="border border-line bg-paper px-6 py-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
-        <h2 className="font-display text-xl">{t("hours.title")}</h2>
-        <button
-          type="button"
-          onClick={() => saveWeeklyHours(DEFAULT_WEEKLY_HOURS)}
-          disabled={isDefault}
-          className="text-xs uppercase tracking-[0.15em] text-ink-soft hover:text-ink transition-colors disabled:opacity-40 disabled:hover:text-ink-soft"
-        >
-          {t("hours.restore")}
-        </button>
-      </div>
+      <h2 className="font-display text-xl mb-1">{t("hours.title")}</h2>
       <p className="text-xs text-ink-soft mb-5 max-w-md">{t("hours.sub")}</p>
 
       <ul className="flex flex-col divide-y divide-line/60 border-y border-line/60">
@@ -71,7 +61,7 @@ export function WeeklyHoursPanel() {
           return (
             <li
               key={weekday}
-              className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.1fr_auto_auto] items-center gap-x-3 gap-y-1.5 py-3"
+              className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.1fr_auto_auto] sm:items-center gap-x-3 gap-y-2 py-3"
             >
               <label className="flex items-center gap-2.5 min-w-0 cursor-pointer">
                 <input
@@ -81,15 +71,13 @@ export function WeeklyHoursPanel() {
                   className="h-4 w-4 accent-[var(--moss-deep)] shrink-0"
                 />
                 <span
-                  className={`text-sm capitalize truncate ${
-                    day.open ? "" : "text-ink-soft"
-                  }`}
+                  className={`text-sm capitalize ${day.open ? "" : "text-ink-soft"}`}
                 >
                   {weekdayName(weekday, lang)}
                 </span>
               </label>
 
-              <div className="flex items-center gap-1.5 justify-self-end">
+              <div className="col-span-2 flex items-center gap-1.5 sm:col-span-1 sm:order-2 sm:justify-self-end">
                 <input
                   type="time"
                   aria-label={`${weekdayName(weekday, lang)} — ${t("hours.from")}`}
@@ -113,7 +101,7 @@ export function WeeklyHoursPanel() {
                 />
               </div>
 
-              <span className="col-span-2 sm:col-span-1 text-xs text-ink-soft sm:text-right sm:min-w-[7.5rem] tabular-nums">
+              <span className="text-xs text-ink-soft text-right sm:order-3 sm:min-w-[7.5rem] tabular-nums whitespace-nowrap">
                 {!day.open
                   ? t("hours.closed")
                   : invalid
@@ -125,7 +113,8 @@ export function WeeklyHoursPanel() {
         })}
       </ul>
 
-      <div className="flex items-center gap-3 mt-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap mt-5">
+        <div className="flex items-center gap-3">
         <label
           htmlFor="slot-length"
           className="text-xs uppercase tracking-[0.1em] text-ink-soft"
@@ -149,6 +138,15 @@ export function WeeklyHoursPanel() {
             </option>
           ))}
         </select>
+        </div>
+        <button
+          type="button"
+          onClick={() => saveWeeklyHours(DEFAULT_WEEKLY_HOURS)}
+          disabled={isDefault}
+          className="text-xs uppercase tracking-[0.15em] py-2 text-ink-soft hover:text-ink transition-colors disabled:opacity-40 disabled:hover:text-ink-soft"
+        >
+          {t("hours.restore")}
+        </button>
       </div>
 
       <p className="text-xs text-ink-soft mt-4">{t("hours.overrideNote")}</p>

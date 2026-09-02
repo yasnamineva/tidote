@@ -67,20 +67,20 @@ export default function AdminInboxPage() {
 
       <div className="grid md:grid-cols-5 gap-8">
         {/* conversation list */}
-        <div className="md:col-span-2 flex flex-col gap-2">
+        <div className="md:col-span-2 min-w-0 flex flex-col gap-2">
             {conversations.map(({ client, last }) => (
               <button
                 key={client.id}
                 type="button"
                 onClick={() => openConversation(client.id)}
-                className={`text-left border px-4 py-3 transition-colors ${
+                className={`text-left border px-4 py-3 min-w-0 transition-colors ${
                   selected === client.id
                     ? "border-moss-deep bg-moss-soft"
                     : "border-line bg-paper hover:border-moss-deep"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-display text-lg">{client.name}</p>
+                  <p className="font-display text-lg truncate">{client.name}</p>
                   {unreadByClient.has(client.id) && (
                     <span className="h-2 w-2 rounded-full bg-accent shrink-0" />
                   )}
@@ -95,7 +95,7 @@ export default function AdminInboxPage() {
           </div>
 
           {/* thread */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-3 min-w-0">
             {selectedClient ? (
               <>
                 <h2 className="font-display text-2xl mb-4">

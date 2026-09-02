@@ -52,7 +52,7 @@ export default function NewOrderPage() {
             <NewOrderForm />
           </Reveal>
           <p className="text-sm text-center mt-8">
-            <Link href="/dashboard" className="link-underline text-ink-soft hover:text-ink">
+            <Link href="/dashboard" className="link-underline inline-block py-2 text-ink-soft hover:text-ink">
               {t("neworder.back")}
             </Link>
           </p>

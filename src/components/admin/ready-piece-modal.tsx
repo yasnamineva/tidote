@@ -239,7 +239,7 @@ export function ReadyPieceModal({
                         setPhotos((prev) => prev.filter((_, n) => n !== i))
                       }
                       aria-label={t("ready.removePhoto")}
-                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-ink text-cream text-xs leading-none"
+                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-ink text-cream text-xs leading-none before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
                     >
                       ×
                     </button>

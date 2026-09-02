@@ -89,7 +89,7 @@ export default function Home() {
                       </Link>
                       <Link
                         href={c.href}
-                        className="link-underline text-xs uppercase tracking-[0.2em] text-cream/80 hover:text-cream transition-colors pointer-events-auto"
+                        className="link-underline inline-block py-2 text-xs uppercase tracking-[0.2em] text-cream/80 hover:text-cream transition-colors pointer-events-auto"
                       >
                         {t("shop.viewLookbook")} &rarr;
                       </Link>
@@ -216,7 +216,7 @@ export default function Home() {
               href={INSTAGRAM_URL}
               target="_blank"
               rel="noreferrer"
-              className="link-underline text-sm uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
+              className="link-underline inline-block py-2 text-sm uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
             >
               {t("gallery.follow")} &rarr;
             </a>

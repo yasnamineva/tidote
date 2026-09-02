@@ -112,7 +112,7 @@ export function AnalyticsOverview({ clients }: { clients: Client[] }) {
           <button
             type="button"
             onClick={() => setShowTable((v) => !v)}
-            className="text-xs uppercase tracking-[0.15em] text-ink-soft hover:text-ink transition-colors"
+            className="text-xs uppercase tracking-[0.15em] py-1.5 -my-1.5 text-ink-soft hover:text-ink transition-colors"
             aria-expanded={showTable}
           >
             {showTable ? "− " : "+ "}

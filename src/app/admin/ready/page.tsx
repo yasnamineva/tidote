@@ -125,7 +125,7 @@ export default function AdminReadyPage() {
         </div>
       ) : (
         <Reveal>
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {visible.map((piece) => (
               <ReadyPieceCard
                 key={piece.id}

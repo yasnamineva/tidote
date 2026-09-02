@@ -100,7 +100,7 @@ export function WardrobeSection({
                   type="button"
                   onClick={() => onRemove?.(item.id)}
                   aria-label={t("wardrobe.remove")}
-                  className="absolute top-2 right-2 h-6 w-6 rounded-full bg-ink/90 text-cream text-sm leading-none flex items-center justify-center hover:bg-accent transition-colors"
+                  className="absolute top-2 right-2 h-6 w-6 rounded-full bg-ink/90 text-cream text-sm leading-none flex items-center justify-center hover:bg-accent transition-colors before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
                 >
                   &times;
                 </button>
@@ -206,7 +206,7 @@ export function WardrobeSection({
                         setPhotos((prev) => prev.filter((_, j) => j !== i))
                       }
                       aria-label={t("wardrobe.remove")}
-                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-ink text-cream text-xs leading-none flex items-center justify-center"
+                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-ink text-cream text-xs leading-none flex items-center justify-center before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
                     >
                       &times;
                     </button>

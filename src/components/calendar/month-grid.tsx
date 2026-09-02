@@ -85,7 +85,7 @@ export function MonthGrid({
               type="button"
               disabled={!selectable}
               onClick={() => onSelectDay?.(key)}
-              className={`aspect-square flex flex-col items-center justify-center text-[11px] rounded-sm border transition-colors ${
+              className={`aspect-square min-h-9 flex flex-col items-center justify-center text-[11px] rounded-sm border transition-colors ${
                 selectable
                   ? "cursor-pointer hover:border-moss-deep"
                   : "cursor-default opacity-40 border-transparent"

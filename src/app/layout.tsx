@@ -109,7 +109,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: structuredDataJson() }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-cream text-ink">
+      <body className="min-h-full flex flex-col overflow-x-clip bg-cream text-ink">
         <noscript>
           <style>{`.reveal{opacity:1 !important;transform:none !important;}`}</style>
         </noscript>

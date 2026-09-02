@@ -40,7 +40,7 @@ function LanguageToggle({ className = "" }: { className?: string }) {
           <button
             type="button"
             onClick={() => setLang(l)}
-            className={`transition-colors ${
+            className={`px-1.5 py-2 -my-1 transition-colors ${
               lang === l ? "text-accent" : "text-ink-soft hover:text-ink"
             }`}
           >
@@ -201,7 +201,7 @@ export function SiteHeader() {
 
       <div
         className={`lg:hidden overflow-hidden border-t border-line transition-[max-height] duration-300 ease-in-out ${
-          open ? "max-h-80" : "max-h-0 border-t-0"
+          open ? "max-h-[32rem]" : "max-h-0 border-t-0"
         }`}
       >
         <div className="px-6 py-4 flex flex-col gap-4 text-sm uppercase tracking-[0.15em]">
@@ -213,7 +213,7 @@ export function SiteHeader() {
                 setOpen(false);
                 handleNavClick(e, link.href);
               }}
-              className={isActive(link) ? "text-accent" : ""}
+              className={`block py-1.5 ${isActive(link) ? "text-accent" : ""}`}
             >
               {t(link.key)}
             </Link>
