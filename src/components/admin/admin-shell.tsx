@@ -87,6 +87,13 @@ const ICONS: Record<string, React.ReactNode> = {
       <path d="M16 17l5-5-5-5M21 12H9" />
     </>
   ),
+  home: (
+    <>
+      <path d="M3 11l9-7 9 7" />
+      <path d="M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9" />
+      <path d="M10 20v-6h4v6" />
+    </>
+  ),
 };
 
 function NavIcon({ name }: { name: string }) {
@@ -283,13 +290,24 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         />
       </div>
 
+      {/* Leaving the panel is not the same as leaving the account: she often
+          wants to look at the live site and come straight back. */}
+      <Link
+        href="/"
+        onClick={close}
+        className="flex items-center gap-2.5 px-3 py-2 mt-2 rounded text-sm text-ink-soft hover:text-ink hover:bg-ink/[0.04] transition-colors"
+      >
+        <NavIcon name="home" />
+        {t("adminnav.viewSite")}
+      </Link>
+
       <button
         type="button"
         onClick={() => {
           logout();
           router.push("/");
         }}
-        className="flex items-center gap-2.5 px-3 py-2 mt-2 rounded text-sm text-ink-soft hover:text-accent hover:bg-ink/[0.04] transition-colors"
+        className="flex items-center gap-2.5 px-3 py-2 rounded text-sm text-ink-soft hover:text-accent hover:bg-ink/[0.04] transition-colors"
       >
         <NavIcon name="logout" />
         {t("adminnav.logout")}

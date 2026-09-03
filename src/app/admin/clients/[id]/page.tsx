@@ -229,7 +229,11 @@ export default function AdminClientPage() {
             {t("wardrobe.adminTitle")}
           </h2>
           <p className="text-sm text-ink-soft mb-6">{t("wardrobe.adminSub")}</p>
-          <WardrobeSection items={client.items} editable={false} />
+          <WardrobeSection
+            items={client.items}
+            orders={client.orders}
+            editable={false}
+          />
         </Reveal>
 
       </div>

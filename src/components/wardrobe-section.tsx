@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { useLang } from "@/lib/i18n";
-import { categoryLabel } from "@/lib/translations";
+import { categoryLabel, pieceLabel } from "@/lib/translations";
 import { importPhotos, photoWarning } from "@/lib/images";
-import { ORDER_CATEGORIES, type OrderCategory, type OwnedItem } from "@/lib/mock-data";
+import {
+  ORDER_CATEGORIES,
+  type Order,
+  type OrderCategory,
+  type OwnedItem,
+} from "@/lib/mock-data";
 
 const MAX_PHOTOS = 4;
 
@@ -15,18 +20,57 @@ type AddInput = {
   photos: string[];
 };
 
+/** One tile in the grid, whichever of the two places it came from. */
+type WardrobeCard = {
+  key: string;
+  name: string;
+  category: OrderCategory;
+  photo?: string;
+  notes?: string;
+  /** We made it and handed it over, so it is hers to keep but not to delete. */
+  fromAtelier: boolean;
+  removeId?: string;
+};
+
 export function WardrobeSection({
   items,
+  orders = [],
   editable,
   onAdd,
   onRemove,
 }: {
   items: OwnedItem[];
+  /** Orders to fold in — the delivered ones are part of the wardrobe too. */
+  orders?: Order[];
   editable: boolean;
   onAdd?: (input: AddInput) => void;
   onRemove?: (id: string) => void;
 }) {
   const { lang, t } = useLang();
+
+  // A piece that has arrived is something she owns; making her re-enter it by
+  // hand would be asking her to type back what we already know.
+  const delivered: WardrobeCard[] = orders
+    .filter((o) => o.reviewStatus === "accepted" && o.status === "delivered")
+    .map((o) => ({
+      key: `order-${o.id}`,
+      name: pieceLabel(lang, o.piece),
+      category: o.category,
+      photo: o.photos[0],
+      fromAtelier: true,
+    }));
+
+  const added: WardrobeCard[] = items.map((item) => ({
+    key: item.id,
+    name: item.name,
+    category: item.category,
+    photo: item.photos[0],
+    notes: item.notes,
+    fromAtelier: false,
+    removeId: item.id,
+  }));
+
+  const cards = [...delivered, ...added];
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState<OrderCategory>(ORDER_CATEGORIES[0]);
@@ -61,23 +105,23 @@ export function WardrobeSection({
 
   return (
     <div className="flex flex-col gap-6">
-      {items.length === 0 ? (
+      {cards.length === 0 ? (
         <p className="text-sm text-ink-soft border border-line bg-paper px-6 py-8 text-center">
           {editable ? t("wardrobe.empty") : t("wardrobe.emptyAdmin")}
         </p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {items.map((item) => (
+          {cards.map((card) => (
             <div
-              key={item.id}
+              key={card.key}
               className="relative border border-line bg-paper flex flex-col"
             >
               <div className="aspect-[3/4] overflow-hidden bg-line/20">
-                {item.photos.length > 0 ? (
+                {card.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element -- data: URL uploads
                   <img
-                    src={item.photos[0]}
-                    alt={item.name}
+                    src={card.photo}
+                    alt={card.name}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -87,18 +131,25 @@ export function WardrobeSection({
                 )}
               </div>
               <div className="px-3 py-3 flex flex-col gap-1.5">
-                <span className="inline-block w-fit text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-line/50 text-ink-soft">
-                  {categoryLabel(lang, item.category)}
-                </span>
-                <p className="font-display text-base leading-tight">{item.name}</p>
-                {item.notes && (
-                  <p className="text-xs text-ink-soft italic">{item.notes}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="inline-block w-fit text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-line/50 text-ink-soft">
+                    {categoryLabel(lang, card.category)}
+                  </span>
+                  {card.fromAtelier && (
+                    <span className="inline-block w-fit text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-moss-soft text-moss-deep">
+                      {t("wardrobe.fromAtelier")}
+                    </span>
+                  )}
+                </div>
+                <p className="font-display text-base leading-tight">{card.name}</p>
+                {card.notes && (
+                  <p className="text-xs text-ink-soft italic">{card.notes}</p>
                 )}
               </div>
-              {editable && (
+              {editable && card.removeId && (
                 <button
                   type="button"
-                  onClick={() => onRemove?.(item.id)}
+                  onClick={() => onRemove?.(card.removeId!)}
                   aria-label={t("wardrobe.remove")}
                   className="absolute top-2 right-2 h-6 w-6 rounded-full bg-ink/90 text-cream text-sm leading-none flex items-center justify-center hover:bg-accent transition-colors before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
                 >

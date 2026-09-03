@@ -25,7 +25,11 @@ import {
 } from "@/lib/translations";
 import { useSectionSpy } from "@/lib/use-section-spy";
 import { useLenis } from "@/lib/smooth-scroll";
-import { ORDER_STATUS_SEQUENCE, type Measurements } from "@/lib/mock-data";
+import {
+  ORDER_STATUS_SEQUENCE,
+  type Measurements,
+  type Order,
+} from "@/lib/mock-data";
 import { measurementField, type MeasurementKey } from "@/lib/measurements";
 
 const MEASUREMENT_GROUPS: { titleKey: string; fields: MeasurementKey[] }[] = [
@@ -94,6 +98,26 @@ function OrderTimeline({ status }: { status: string }) {
 const STEP_ANCHORS = ["measurements", "orders", "fitting", "delivery"] as const;
 const SPY_IDS = [...STEP_ANCHORS, "wardrobe"];
 
+/** Orders you are still waiting on come before orders already in your hands.
+ *  Ones the studio hasn't answered yet lead — you are waiting on us — and a
+ *  declined order sinks to the bottom, since there is nothing left to do. */
+function waitingRank(order: Order) {
+  if (order.reviewStatus === "pending") return 0;
+  if (order.reviewStatus === "denied") return 3;
+  return order.status === "delivered" ? 2 : 1;
+}
+
+function byArrival(a: Order, b: Order) {
+  const rank = waitingRank(a) - waitingRank(b);
+  if (rank !== 0) return rank;
+  // Within a group, the one furthest along is the one about to need you.
+  const progress =
+    ORDER_STATUS_SEQUENCE.indexOf(b.status) -
+    ORDER_STATUS_SEQUENCE.indexOf(a.status);
+  if (progress !== 0) return progress;
+  return b.placedOn.localeCompare(a.placedOn);
+}
+
 export default function DashboardPage() {
   const {
     session,
@@ -154,14 +178,14 @@ export default function DashboardPage() {
 
   const stickyOffset = headerH + barH + 12;
   const activeId = useSectionSpy(SPY_IDS, stickyOffset + 24);
-  // Wardrobe sits between orders and delivery but has no step of its own, so it
-  // keeps the stepper on "orders" rather than jumping ahead.
+  // Wardrobe closes the page and has no step of its own, so it holds the
+  // stepper on the last one rather than sending it back up the journey.
   const anchorStep: Record<string, number> = {
     measurements: 1,
     orders: 2,
-    wardrobe: 2,
     fitting: 3,
     delivery: 4,
+    wardrobe: 4,
   };
   const activeStep = activeId ? anchorStep[activeId] ?? 1 : 1;
 
@@ -401,7 +425,7 @@ export default function DashboardPage() {
                 </p>
               )}
               <div className="flex flex-col gap-4">
-                {orders.map((order, i) => (
+                {[...orders].sort(byArrival).map((order, i) => (
                   <Reveal key={order.id} delay={i * 100}>
                     <div className="group border border-line bg-paper px-6 py-5 transition-all duration-300 hover:border-moss-deep hover:shadow-[0_8px_24px_-12px_rgba(74,82,56,0.35)]">
                       <div className="flex items-start justify-between gap-4">
@@ -503,22 +527,6 @@ export default function DashboardPage() {
             </Reveal>
           </div>
 
-          {/* My Wardrobe */}
-          <div id="wardrobe" style={{ scrollMarginTop: stickyOffset }}>
-            <Reveal delay={100}>
-              <h2 className="font-display text-2xl mb-2">
-                {t("wardrobe.title")}
-              </h2>
-              <p className="text-sm text-ink-soft mb-6">{t("wardrobe.sub")}</p>
-              <WardrobeSection
-                items={items}
-                editable
-                onAdd={addItem}
-                onRemove={removeItem}
-              />
-            </Reveal>
-          </div>
-
           {/* Delivery Info */}
           <div id="delivery" style={{ scrollMarginTop: stickyOffset }}>
             <Reveal delay={100}>
@@ -532,6 +540,23 @@ export default function DashboardPage() {
                 {t("dash.delivery.use")}
               </p>
               <DeliveryForm />
+            </Reveal>
+          </div>
+
+          {/* My Wardrobe */}
+          <div id="wardrobe" style={{ scrollMarginTop: stickyOffset }}>
+            <Reveal delay={100}>
+              <h2 className="font-display text-2xl mb-2">
+                {t("wardrobe.title")}
+              </h2>
+              <p className="text-sm text-ink-soft mb-6">{t("wardrobe.sub")}</p>
+              <WardrobeSection
+                items={items}
+                orders={orders}
+                editable
+                onAdd={addItem}
+                onRemove={removeItem}
+              />
             </Reveal>
           </div>
 

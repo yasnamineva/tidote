@@ -2,9 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Path-agnostic scroll spy: returns the id of the last section whose top has
-// passed `offset` px below the viewport top. Used for the dashboard's sticky
-// progress stepper.
+function documentTop(el: HTMLElement) {
+  return el.getBoundingClientRect().top + window.scrollY;
+}
+
+// Path-agnostic scroll spy: returns the id of the section that is currently
+// under `offset`. The winner is picked by where each section actually sits on
+// the page, not by where it sits in `ids` — the caller's array is a set, not a
+// running order, and a section nested inside another one (the fitting picker
+// lives inside an order card) has no fixed place in it at all.
 export function useSectionSpy(ids: string[], offset = 160) {
   const [activeId, setActiveId] = useState<string | null>(ids[0] ?? null);
   const frame = useRef<number | null>(null);
@@ -12,11 +18,29 @@ export function useSectionSpy(ids: string[], offset = 160) {
 
   useEffect(() => {
     function update() {
-      const y = window.scrollY;
-      let current: string | null = ids[0] ?? null;
+      const line = window.scrollY + offset;
+      let current: string | null = null;
+      let currentTop = -Infinity;
       for (const id of ids) {
         const el = document.getElementById(id);
-        if (el && y + offset >= el.offsetTop) current = id;
+        if (!el) continue;
+        const top = documentTop(el);
+        if (line >= top && top >= currentTop) {
+          current = id;
+          currentTop = top;
+        }
+      }
+      // Above the first section, stay on whichever one comes first on the page.
+      if (!current) {
+        for (const id of ids) {
+          const el = document.getElementById(id);
+          if (!el) continue;
+          const top = documentTop(el);
+          if (currentTop === -Infinity || top < currentTop) {
+            current = id;
+            currentTop = top;
+          }
+        }
       }
       setActiveId(current);
       frame.current = null;

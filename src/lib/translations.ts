@@ -252,13 +252,14 @@ const en: Dict = {
   // wardrobe
   "wardrobe.title": "My Wardrobe",
   "wardrobe.sub":
-    "Add pieces you already own so the atelier can reference your style and fit.",
+    "Pieces we have delivered show up here on their own. Add anything else you already own so the atelier can reference your style and fit.",
   "wardrobe.adminTitle": "Wardrobe — Reference",
   "wardrobe.adminSub":
-    "Pieces this client already owns, for style and fit reference.",
+    "What this client owns — pieces delivered from the atelier, plus anything they added themselves.",
   "wardrobe.empty":
-    "No items yet. Add pieces you already own so we can reference them.",
-  "wardrobe.emptyAdmin": "This client hasn't added any items yet.",
+    "Nothing here yet. Delivered orders appear on their own — add pieces you already own so we can reference them.",
+  "wardrobe.emptyAdmin": "Nothing delivered yet, and this client hasn't added any items.",
+  "wardrobe.fromAtelier": "From the atelier",
   "wardrobe.addTitle": "Add an item",
   "wardrobe.name": "Item name",
   "wardrobe.namePlaceholder": "e.g. Black Wool Overcoat",
@@ -346,6 +347,7 @@ const en: Dict = {
   "adminnav.inbox": "Inbox",
   "adminnav.calendar": "Calendar",
   "adminnav.analytics": "Analytics",
+  "adminnav.viewSite": "View Site",
   "adminnav.logout": "Log Out",
   "an.title": "Analytics",
   "an.tab.overview": "Overview",
@@ -980,13 +982,14 @@ const bg: Dict = {
   // wardrobe
   "wardrobe.title": "Моят гардероб",
   "wardrobe.sub":
-    "Добавете модели, които вече притежавате, за да може ателието да се ориентира по вашия стил и кройка.",
+    "Доставените поръчки се появяват тук автоматично. Добавете и други модели, които вече притежавате, за да може ателието да се ориентира по вашия стил и кройка.",
   "wardrobe.adminTitle": "Гардероб — референция",
   "wardrobe.adminSub":
-    "Модели, които клиентът вече притежава — за ориентир по стил и кройка.",
+    "Какво притежава клиентът — доставените от ателието модели плюс всичко, което е добавил сам.",
   "wardrobe.empty":
-    "Все още няма модели. Добавете дрехи, които вече притежавате, за да ги ползваме за ориентир.",
-  "wardrobe.emptyAdmin": "Този клиент все още не е добавил модели.",
+    "Все още няма модели. Доставените поръчки се появяват сами — добавете и дрехи, които вече притежавате, за да ги ползваме за ориентир.",
+  "wardrobe.emptyAdmin": "Още няма доставени поръчки, а клиентът не е добавил модели.",
+  "wardrobe.fromAtelier": "От ателието",
   "wardrobe.addTitle": "Добавете модел",
   "wardrobe.name": "Име на модела",
   "wardrobe.namePlaceholder": "напр. Черно вълнено палто",
@@ -1074,6 +1077,7 @@ const bg: Dict = {
   "adminnav.inbox": "Съобщения",
   "adminnav.calendar": "Календар",
   "adminnav.analytics": "Анализи",
+  "adminnav.viewSite": "Към сайта",
   "adminnav.logout": "Изход",
   "an.title": "Анализи",
   "an.tab.overview": "Обзор",
