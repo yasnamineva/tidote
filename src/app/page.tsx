@@ -99,6 +99,29 @@ export default function Home() {
               </Reveal>
             ))}
           </div>
+          {/* The third way in. Commissions get the two big tiles; the rail gets
+              a band under them so it is on the homepage, not just in the nav. */}
+          <Reveal>
+            <Link
+              href="/in-stock"
+              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-cream/15 px-8 md:px-12 py-8 text-cream transition-colors hover:bg-ink/25"
+            >
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-cream/60 mb-2">
+                  {t("instock.eyebrow")}
+                </p>
+                <h3 className="font-display text-3xl md:text-4xl tracking-wide">
+                  {t("nav.inStock")}
+                </h3>
+                <p className="text-sm text-cream/80 mt-2 max-w-md">
+                  {t("shop.inStockCopy")}
+                </p>
+              </div>
+              <span className="link-underline text-xs uppercase tracking-[0.2em] whitespace-nowrap transition-transform duration-300 group-hover:translate-x-1">
+                {t("shop.inStockCta")} &rarr;
+              </span>
+            </Link>
+          </Reveal>
         </section>
 
         {/* How a Piece Comes Together */}

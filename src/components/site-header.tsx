@@ -12,23 +12,59 @@ import { useScrollSpy } from "@/lib/use-scroll-spy";
 import { Wordmark } from "@/components/wordmark";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 
-const NAV_LINKS = [
-  { href: "/casual", id: "casual", key: "nav.casual", type: "page" as const, sectionId: "shop" },
-  { href: "/sports", id: "sports", key: "nav.sports", type: "page" as const, sectionId: "shop" },
-  { href: "/#how", id: "how", key: "nav.how", type: "anchor" as const, sectionId: "how" },
-  { href: "/#about", id: "about", key: "nav.about", type: "anchor" as const, sectionId: "about" },
+type NavChild = { href: string; key: string };
+
+type NavLink = {
+  href: string;
+  id: string;
+  key: string;
+  /** Homepage section this link tracks, for the scroll spy. Pages have none. */
+  sectionId?: string;
+  children?: NavChild[];
+};
+
+/**
+ * The two ways to buy sit at the top level and stay there: a commission
+ * (Custom Pieces, which opens onto the casual and sports lookbooks) and
+ * whatever is finished and on the rail today (In Stock).
+ */
+const NAV_LINKS: NavLink[] = [
   {
-    href: "/#gallery",
-    id: "gallery",
-    key: "nav.gallery",
-    type: "anchor" as const,
-    sectionId: "gallery",
+    href: "/#shop",
+    id: "custom",
+    key: "nav.custom",
+    sectionId: "shop",
+    children: [
+      { href: "/casual", key: "nav.casual" },
+      { href: "/sports", key: "nav.sports" },
+    ],
   },
+  { href: "/in-stock", id: "instock", key: "nav.inStock" },
+  { href: "/#how", id: "how", key: "nav.how", sectionId: "how" },
+  { href: "/#about", id: "about", key: "nav.about", sectionId: "about" },
+  { href: "/#gallery", id: "gallery", key: "nav.gallery", sectionId: "gallery" },
 ];
 
 const SPY_SECTION_IDS = Array.from(
-  new Set(NAV_LINKS.map((l) => l.sectionId))
+  new Set(NAV_LINKS.map((l) => l.sectionId).filter((id) => id !== undefined))
 );
+
+function Chevron() {
+  return (
+    <svg
+      viewBox="0 0 12 12"
+      aria-hidden="true"
+      className="h-2.5 w-2.5 shrink-0 transition-transform duration-300 group-hover:rotate-180 group-focus-within:rotate-180"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2.5 4.5 6 8l3.5-3.5" />
+    </svg>
+  );
+}
 
 function LanguageToggle({ className = "" }: { className?: string }) {
   const { lang, setLang } = useLang();
@@ -60,9 +96,11 @@ export function SiteHeader() {
   const lenis = useLenis();
   const { progress, activeId } = useScrollSpy(SPY_SECTION_IDS);
 
-  function isActive(link: (typeof NAV_LINKS)[number]) {
+  function isActive(link: NavLink) {
     if (pathname === link.href) return true;
-    return pathname === "/" && activeId === link.sectionId;
+    // A parent stays lit while you are inside one of its lookbooks.
+    if (link.children?.some((c) => c.href === pathname)) return true;
+    return pathname === "/" && !!link.sectionId && activeId === link.sectionId;
   }
 
   const accountHref =
@@ -137,18 +175,52 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-sm uppercase tracking-[0.15em]">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={(e) => handleNavClick(e, link.href)}
-              className={`link-underline transition-colors whitespace-nowrap ${
-                isActive(link) ? "text-accent" : "hover:text-accent"
-              }`}
-            >
-              {t(link.key)}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) =>
+            link.children ? (
+              <div key={link.href} className="relative group">
+                <Link
+                  href={link.href}
+                  onClick={(e) => handleNavClick(e, link.href)}
+                  className={`link-underline flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+                    isActive(link) ? "text-accent" : "hover:text-accent"
+                  }`}
+                >
+                  {t(link.key)}
+                  <Chevron />
+                </Link>
+                {/* The padding is the bridge: without it the pointer crosses a
+                    dead gap on its way down and the panel closes underneath it. */}
+                <div className="absolute left-0 top-full pt-4 opacity-0 invisible translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0">
+                  <div className="min-w-44 border border-line bg-cream shadow-[0_18px_40px_-24px_rgba(34,30,25,0.6)] py-1.5">
+                    {link.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className={`block px-4 py-2.5 text-xs tracking-[0.15em] transition-colors hover:bg-moss-soft ${
+                          pathname === child.href
+                            ? "text-accent"
+                            : "text-ink-soft hover:text-ink"
+                        }`}
+                      >
+                        {t(child.key)}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className={`link-underline transition-colors whitespace-nowrap ${
+                  isActive(link) ? "text-accent" : "hover:text-accent"
+                }`}
+              >
+                {t(link.key)}
+              </Link>
+            )
+          )}
         </nav>
 
         <div className="hidden lg:flex items-center gap-4">
@@ -177,7 +249,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="flex flex-col gap-1.5 p-2"
+            className="flex flex-col items-center justify-center gap-1.5 -m-2 p-2 min-h-11 min-w-11"
             aria-label="Toggle menu"
           >
           <span
@@ -201,22 +273,37 @@ export function SiteHeader() {
 
       <div
         className={`lg:hidden overflow-hidden border-t border-line transition-[max-height] duration-300 ease-in-out ${
-          open ? "max-h-[32rem]" : "max-h-0 border-t-0"
+          open ? "max-h-[40rem]" : "max-h-0 border-t-0"
         }`}
       >
         <div className="px-6 py-4 flex flex-col gap-4 text-sm uppercase tracking-[0.15em]">
           {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={(e) => {
-                setOpen(false);
-                handleNavClick(e, link.href);
-              }}
-              className={`block py-1.5 ${isActive(link) ? "text-accent" : ""}`}
-            >
-              {t(link.key)}
-            </Link>
+            <div key={link.href} className="flex flex-col">
+              <Link
+                href={link.href}
+                onClick={(e) => {
+                  setOpen(false);
+                  handleNavClick(e, link.href);
+                }}
+                className={`block py-1.5 ${isActive(link) ? "text-accent" : ""}`}
+              >
+                {t(link.key)}
+              </Link>
+              {/* Sub-items sit open rather than behind another tap — there are
+                  two of them, and a menu you have to hunt through is no menu. */}
+              {link.children?.map((child) => (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  onClick={() => setOpen(false)}
+                  className={`block py-1.5 pl-4 text-xs border-l border-line ml-0.5 ${
+                    pathname === child.href ? "text-accent" : "text-ink-soft"
+                  }`}
+                >
+                  {t(child.key)}
+                </Link>
+              ))}
+            </div>
           ))}
           <Link
             href={accountHref}

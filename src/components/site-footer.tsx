@@ -79,6 +79,14 @@ export function SiteFooter() {
                 {t("nav.sports")}
               </Link>
             </li>
+            <li>
+              <Link
+                href="/in-stock"
+                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
+              >
+                {t("nav.inStock")}
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -98,9 +106,12 @@ export function SiteFooter() {
               </a>
             </li>
             <li>
+              {/* The 5-column grid leaves ~105px per column at md, and the
+                  address is wider than that. Let it break rather than push the
+                  page 45px wide (which `overflow-x: clip` then hides). */}
               <a
                 href="mailto:support@tidoteatelier.com"
-                className="link-underline inline-block py-1.5 hover:text-moss transition-colors"
+                className="link-underline inline-block break-all py-1.5 hover:text-moss transition-colors"
               >
                 support@tidoteatelier.com
               </a>

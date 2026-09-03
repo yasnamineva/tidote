@@ -15,6 +15,8 @@ const en: Dict = {
   "nav.how": "How It Works",
   "nav.about": "About",
   "nav.gallery": "Gallery",
+  "nav.custom": "Custom Pieces",
+  "nav.inStock": "In Stock",
   "header.login": "Login / Track Order",
   "header.account": "My Account",
   "header.studioAdmin": "Studio Admin",
@@ -62,6 +64,30 @@ const en: Dict = {
   "cat.sports.piecesTitle": "Sports Pieces",
   "catpage.lookbook": "The Lookbook",
   "catpage.follow": "Follow",
+
+  // in stock (public rail)
+  "instock.eyebrow": "Ready to wear",
+  "instock.pageTitle": "IN STOCK",
+  "instock.blurb":
+    "Finished pieces, already cut and sewn in the Sofia studio. One of each, in the size listed \u2014 when it is gone, it is gone.",
+  "instock.railTitle": "On the Rail",
+  "instock.count": "{n} pieces",
+  "instock.countOne": "1 piece",
+  "instock.reserved": "Reserved",
+  "instock.available": "Available",
+  "instock.priceOnRequest": "Price on request",
+  "instock.ask": "Enquire",
+  "instock.empty": "The rail is empty right now.",
+  "instock.emptySub":
+    "Everything here started as a commission. Tell us what you want and we will cut it for you.",
+  "instock.commissionTitle": "Not your size?",
+  "instock.commissionCopy":
+    "Every piece the studio makes is cut to measure. Start a commission and we will build it to yours.",
+  "instock.commissionCta": "Start a commission",
+  "instock.lookbook": "See the lookbook",
+  "shop.inStockCta": "See what's in stock",
+  "shop.inStockCopy":
+    "Not everything has to be waited for \u2014 some pieces are finished and on the rail today.",
 
   // process
   "home.process.title": "How a Piece Comes Together",
@@ -716,6 +742,8 @@ const bg: Dict = {
   "nav.about": "За нас",
   "nav.how": "Как работим",
   "nav.gallery": "Галерия",
+  "nav.custom": "По поръчка",
+  "nav.inStock": "Готови модели",
   "header.login": "Вход",
   "header.account": "Моят профил",
   "header.studioAdmin": "Админски панел",
@@ -763,6 +791,30 @@ const bg: Dict = {
   "cat.sports.piecesTitle": "Спортни модели",
   "catpage.lookbook": "Колекцията",
   "catpage.follow": "Последвай",
+
+  // in stock (public rail)
+  "instock.eyebrow": "Готови за носене",
+  "instock.pageTitle": "ГОТОВИ МОДЕЛИ",
+  "instock.blurb":
+    "Завършени модели, ушити в ателието в София. По един брой от всеки, в посочения размер \u2014 щом се вземе, няма друг.",
+  "instock.railTitle": "На закачалката",
+  "instock.count": "{n} модела",
+  "instock.countOne": "1 модел",
+  "instock.reserved": "Запазен",
+  "instock.available": "Свободен",
+  "instock.priceOnRequest": "Цена при запитване",
+  "instock.ask": "Запитване",
+  "instock.empty": "В момента закачалката е празна.",
+  "instock.emptySub":
+    "Всичко тук е започнало като поръчка. Кажи какво искаш и ще го ушием за теб.",
+  "instock.commissionTitle": "Не е твоят размер?",
+  "instock.commissionCopy":
+    "Всеки модел на ателието се шие по мярка. Започни поръчка и ще го направим по твоите мерки.",
+  "instock.commissionCta": "Започни поръчка",
+  "instock.lookbook": "Виж колекцията",
+  "shop.inStockCta": "Виж наличните модели",
+  "shop.inStockCopy":
+    "Не за всичко се чака \u2014 някои модели са готови и висят на закачалката днес.",
 
   // process
   "home.process.title": "Как изработваме всяка дреха",

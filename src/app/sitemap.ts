@@ -21,5 +21,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    // The rail turns over faster than the lookbooks do.
+    {
+      url: `${SITE_URL}/in-stock`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
   ];
 }
