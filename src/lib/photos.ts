@@ -25,6 +25,20 @@ function isDirectUrl(ref: string) {
   return ref.startsWith("/") || ref.startsWith("data:") || ref.startsWith("http");
 }
 
+/**
+ * Whether this photo may be served from a shared cache.
+ *
+ * True for assets shipped with the site and for the rail, which is on a public
+ * page anyone can open. False for everything belonging to a client — those are
+ * private, reached through URLs that expire, and must not be copied onto a CDN
+ * that serves them to whoever asks.
+ */
+export function isPubliclyCacheable(ref: string | undefined): boolean {
+  if (!ref) return false;
+  if (ref.startsWith("data:")) return false;
+  return ref.startsWith("/") || ref.startsWith(`${STOCK_BUCKET}/`);
+}
+
 function split(ref: string): { bucket: string; path: string } | null {
   const slash = ref.indexOf("/");
   if (slash < 1) return null;
@@ -96,6 +110,12 @@ export async function deletePhotos(refs: string[]): Promise<void> {
  * should stop working.
  */
 export async function resolvePhotoUrls(refs: string[]): Promise<string[]> {
+  // Only reach for a client if something here actually needs one. A site asset
+  // or a legacy data URL is already a URL, and asking for the database to
+  // resolve it would make every seed photo depend on the database being
+  // configured — which they do not.
+  if (refs.every(isDirectUrl)) return refs;
+
   const supabase = getSupabase();
   return Promise.all(
     refs.map(async (ref) => {

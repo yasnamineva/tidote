@@ -44,6 +44,8 @@ export function ReadyPieceCard({
       <div className="relative aspect-[4/5] bg-line/20">
         {piece.photos.length > 0 ? (
           <Photo
+            cdn
+            sizes="(max-width: 768px) 50vw, 25vw"
             src={piece.photos[0]}
             alt={pieceLabel(lang, piece.name)}
             className="h-full w-full object-cover"

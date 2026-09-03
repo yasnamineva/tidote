@@ -138,6 +138,8 @@ function StockCard({ piece }: { piece: ReadyPiece }) {
       <div className="relative aspect-[4/5] overflow-hidden bg-line/20">
         {piece.photos.length > 0 ? (
           <Photo
+            cdn
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             src={piece.photos[0]}
             alt={pieceLabel(lang, piece.name)}
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
