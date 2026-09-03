@@ -1,0 +1,9 @@
+# What never leaves this machine.
+#
+# `vercel --prod` uploads the working directory, not the git tree, so
+# .gitignore alone would not stop these being sent. Anything here stays local
+# even if the folder reappears.
+
+design-reference/
+*.mov
+*.mp4
