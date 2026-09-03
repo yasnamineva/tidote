@@ -733,6 +733,10 @@ const en: Dict = {
   "gen.notif.noteFromClient": "{name} added info to \"{piece}\".",
   "gen.notif.noteFromStudio": "The studio added a note to \"{piece}\".",
   "auth.badLogin": "That email/password doesn't match our records.",
+  "auth.noBackend":
+    "The site is not connected to its database yet, so nobody can sign in. See SETUP.md.",
+  "auth.unreachable":
+    "Could not reach the database. Check your connection and try again.",
 
   // Garment names the studio reuses. Anything else passes through.
   "piece.Burgundy Track Jacket": "Burgundy Track Jacket",
@@ -1473,6 +1477,10 @@ const bg: Dict = {
   "gen.notif.noteFromClient": "{name} добави информация към „{piece}“.",
   "gen.notif.noteFromStudio": "Ателието добави бележка към „{piece}“.",
   "auth.badLogin": "Имейлът или паролата не са верни.",
+  "auth.noBackend":
+    "Сайтът още не е свързан с базата данни, така че никой не може да влезе. Вижте SETUP.md.",
+  "auth.unreachable":
+    "Няма връзка с базата данни. Проверете интернет връзката и опитайте отново.",
 
   // Имена на модели, които ателието използва често.
   "piece.Burgundy Track Jacket": "Бордо спортно яке",

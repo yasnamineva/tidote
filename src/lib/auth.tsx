@@ -177,13 +177,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session, loadClientData]);
 
   const login = useCallback(async (email: string, password: string) => {
+    const lang = getStoredLang();
+    // "Wrong password" is the wrong thing to say when the database simply is
+    // not connected — it sends someone hunting for a typo that isn't there.
+    if (!isSupabaseConfigured()) {
+      return { ok: false, error: translate(lang, "auth.noBackend") };
+    }
     const supabase = getSupabase();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    if (error || !data.user) {
-      return { ok: false, error: translate(getStoredLang(), "auth.badLogin") };
+    let data, error;
+    try {
+      ({ data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      }));
+    } catch {
+      // Never reached the server at all: offline, or the project is paused.
+      return { ok: false, error: translate(lang, "auth.unreachable") };
+    }
+    if (error || !data?.user) {
+      // Distinguish "we asked and were told no" from "we could not ask".
+      const unreachable =
+        error && (error.status === undefined || error.status === 0);
+      return {
+        ok: false,
+        error: translate(lang, unreachable ? "auth.unreachable" : "auth.badLogin"),
+      };
     }
     const { data: profile } = await supabase
       .from("profiles")

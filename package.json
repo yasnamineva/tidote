@@ -9,7 +9,8 @@
     "preview": "next build && next start",
     "deploy": "npx vercel --prod",
     "lint": "eslint",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "test:db": "./supabase/tests/run.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
