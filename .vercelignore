@@ -1,9 +1,29 @@
 # What never leaves this machine.
 #
-# `vercel --prod` uploads the working directory, not the git tree, so
-# .gitignore alone would not stop these being sent. Anything here stays local
-# even if the folder reappears.
+# This matters more than it looks: deploying with the CLI (`npm run deploy`)
+# uploads the working directory and does NOT read .gitignore. Only Vercel's own
+# defaults are excluded — .git, node_modules, .next, and .env.local. Everything
+# else in the folder goes up unless it is named here.
 
+# Working material: a saved Instagram page, screen recordings, reference shots.
+# Not ours to redistribute, and nothing builds from it.
 design-reference/
 *.mov
 *.mp4
+
+# Secrets. .env.local is already a Vercel default; the rest is belt and braces,
+# and the build reads its variables from the dashboard, not from a file.
+.env
+.env.*
+.env.example
+
+# Root-level scratch nothing imports — 6.8 MB of superseded diagrams and a
+# one-off script.
+drive10.mjs
+example_admin_view.png
+guide-arms-old.png
+guide-front-old.png
+
+# Editor and OS noise
+.DS_Store
+.claude/
