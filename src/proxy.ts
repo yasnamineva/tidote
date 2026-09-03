@@ -58,9 +58,18 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except static assets and image files — without this the redirect
-  // above would fire for stylesheets and photos too.
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|ttf|woff2?)$).*)",
-  ],
+  /*
+   * Only the routes that actually have a session to refresh.
+   *
+   * The usual advice is to match everything, and on a pure app that is right.
+   * Here most traffic is the marketing site, where nobody is signed in and
+   * there is nothing to refresh — and this function makes a network call to
+   * Supabase on every request it sees. Matching everything would put a
+   * round trip in front of every visitor's homepage, and bill for it: edge
+   * requests over 10ms of CPU are charged, and the call adds origin transfer.
+   *
+   * Signed-in browsers refresh their own token client-side, so the pages left
+   * out here lose nothing.
+   */
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/login", "/api/:path*"],
 };
