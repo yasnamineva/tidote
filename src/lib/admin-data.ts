@@ -15,6 +15,9 @@ import {
   writeJSON,
 } from "@/lib/storage";
 import { getBaseClientById, getBaseClients } from "@/lib/clients";
+import { todayKey } from "@/lib/hours";
+import { parseTotal } from "@/lib/analytics";
+import { removeReturnedPiece, saveReadyPiece } from "@/lib/ready-pieces";
 import { appendMessage } from "@/lib/messages";
 import { pushNotification } from "@/lib/notifications-data";
 import {
@@ -210,6 +213,88 @@ export function appendOrderNote(
     });
   }
   return { ...client, orders: nextOrders };
+}
+
+export type ReturnOptions = {
+  /** Put the piece straight back on the rail. On unless she says otherwise. */
+  toStock: boolean;
+  size: string;
+  /** EUR asking price. Empty falls back to what the order was billed at. */
+  price: string;
+};
+
+/**
+ * The client changed their mind and the garment came back.
+ *
+ * Recording the return does two things at once, because in the workshop they
+ * are one thing: the piece stops being the client's — it leaves their wardrobe
+ * and stops counting as income — and, unless she says otherwise, it goes onto
+ * the rail as stock, since a finished garment nobody owns is exactly what the
+ * In Stock page is for.
+ */
+export function returnOrder(
+  clientId: string,
+  orderId: string,
+  options: ReturnOptions
+): Client | undefined {
+  const client = getClientWithLiveData(clientId);
+  if (!client) return undefined;
+  const order = client.orders.find((o) => o.id === orderId);
+  if (!order || order.returnedOn) return undefined;
+
+  const today = todayKey();
+  const nextOrders = client.orders.map((o) =>
+    o.id === orderId ? { ...o, returnedOn: today } : o
+  );
+  writeJSON(ordersKey(clientId), nextOrders);
+
+  if (options.toStock) {
+    const asked = Number.parseFloat(options.price.replace(",", "."));
+    saveReadyPiece({
+      id: generateId("rp"),
+      name: order.piece,
+      category: order.category,
+      size: options.size,
+      price:
+        Number.isFinite(asked) && asked > 0 ? asked : parseTotal(order.total),
+      status: "available",
+      // The studio's own reference shots, never the client's photos of
+      // themselves — those are theirs and carry their own permission.
+      photos: order.photos ?? [],
+      notes: "",
+      addedOn: today,
+      heldFor: "",
+      soldOn: "",
+      fromOrderId: orderId,
+    });
+  }
+
+  const lang = getStoredLang();
+  pushNotification("client", clientId, {
+    kind: "status_changed",
+    text: translate(lang, "gen.notif.returned", {
+      piece: pieceLabel(lang, order.piece),
+    }),
+    href: `/dashboard/orders/${orderId}`,
+  });
+  return { ...client, orders: nextOrders };
+}
+
+/** Undo a return recorded by mistake, taking the rail piece back off with it. */
+export function undoOrderReturn(
+  clientId: string,
+  orderId: string
+): { client?: Client; stockRemoved: boolean } {
+  const client = getClientWithLiveData(clientId);
+  if (!client) return { stockRemoved: false };
+  const order = client.orders.find((o) => o.id === orderId);
+  if (!order) return { stockRemoved: false };
+  const nextOrders = client.orders.map((o) =>
+    o.id === orderId ? { ...o, returnedOn: "" } : o
+  );
+  writeJSON(ordersKey(clientId), nextOrders);
+  const stockRemoved = removeReturnedPiece(orderId);
+  return { client: { ...client, orders: nextOrders }, stockRemoved };
 }
 
 export function sendStudioMessage(clientId: string, text: string) {

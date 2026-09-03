@@ -51,6 +51,22 @@ export type Order = {
   total: string;
   notes?: string;
   updates: OrderNote[];
+  /**
+   * Photos the client took of the finished piece, uploaded from their own
+   * account. Kept apart from `photos` (the studio's reference shots) because
+   * they are the client's, and from note attachments because those are a
+   * conversation, not a gallery.
+   */
+  wearPhotos: string[];
+  /**
+   * Whether the client has agreed the atelier may show `wearPhotos` publicly.
+   * Off unless they have said yes, and theirs to withdraw at any time.
+   */
+  photoConsent: boolean;
+  /** "YYYY-MM-DD" the consent was last given; empty when it never was. */
+  photoConsentOn: string;
+  /** "YYYY-MM-DD" the piece came back to the atelier; empty while it has not. */
+  returnedOn: string;
 };
 
 // A garment the client already owns/received — a reference catalogue for the
@@ -199,7 +215,16 @@ export function normalizeOrder(o: Order): Order {
     eta: o.eta ?? "",
     total: o.total ?? "",
     updates: o.updates ?? [],
+    wearPhotos: o.wearPhotos ?? [],
+    photoConsent: o.photoConsent ?? false,
+    photoConsentOn: o.photoConsentOn ?? "",
+    returnedOn: o.returnedOn ?? "",
   };
+}
+
+/** A returned piece is back with the atelier, so it is no longer the client's. */
+export function isReturned(o: Order): boolean {
+  return Boolean(o.returnedOn);
 }
 
 /**
@@ -255,7 +280,25 @@ export const ADMIN: AdminAccount = {
   role: "admin",
 };
 
-export const CLIENTS: Client[] = [
+/**
+ * Seed orders are written without the fields a client only fills in once they
+ * have used the account, so the list below stays about the garments.
+ * `normalizeOrder` puts the floors back on the way out.
+ */
+type SeedOrder = Omit<
+  Order,
+  "wearPhotos" | "photoConsent" | "photoConsentOn" | "returnedOn"
+> &
+  Partial<
+    Pick<
+      Order,
+      "wearPhotos" | "photoConsent" | "photoConsentOn" | "returnedOn"
+    >
+  >;
+
+type SeedClient = Omit<Client, "orders"> & { orders: SeedOrder[] };
+
+const SEED_CLIENTS: SeedClient[] = [
   {
     id: "dimitar",
     name: "Dimitar Kolev",
@@ -281,6 +324,10 @@ export const CLIENTS: Client[] = [
         piece: "Olive Cargo Set",
         category: "Cargo Set",
         photos: ["/photos/gallery-4.jpg"],
+        // Sent his own photos of it and agreed they can be shown.
+        wearPhotos: ["/photos/casual-2.jpg", "/photos/casual-6.jpg"],
+        photoConsent: true,
+        photoConsentOn: "2026-06-04",
         placedOn: "2026-05-11",
         status: "delivered",
         reviewStatus: "accepted",
@@ -371,7 +418,10 @@ export const CLIENTS: Client[] = [
       },
       {
         id: "TD-0998",
-        piece: "Panelled Track Jacket",
+piece: "Panelled Track Jacket",
+        // Photos sent, but he has not agreed to them being published.
+        wearPhotos: ["/photos/men-1.jpg"],
+        photoConsent: false,
         category: "Jacket",
         photos: ["/photos/men-2.jpg"],
         placedOn: "2026-04-02",
@@ -442,6 +492,11 @@ export const CLIENTS: Client[] = [
     items: EMPTY_ITEMS,
   },
 ];
+
+export const CLIENTS: Client[] = SEED_CLIENTS.map((c) => ({
+  ...c,
+  orders: c.orders.map((o) => normalizeOrder(o as Order)),
+}));
 
 /**
  * Per-date exceptions only. Ordinary days come from the weekly pattern in

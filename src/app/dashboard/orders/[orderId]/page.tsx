@@ -12,7 +12,15 @@ import { useBooking } from "@/lib/booking";
 import { useLang } from "@/lib/i18n";
 
 export default function ClientOrderPage() {
-  const { session, ready, orders, addOrderNote } = useAuth();
+  const {
+    session,
+    ready,
+    orders,
+    addOrderNote,
+    addOrderPhotos,
+    removeOrderPhoto,
+    setOrderPhotoConsent,
+  } = useAuth();
   const { bookings } = useBooking();
   const { t } = useLang();
   const router = useRouter();
@@ -64,6 +72,9 @@ export default function ClientOrderPage() {
                   addOrderNote(order.id, text, photos)
                 }
                 onChange={() => {}}
+                onAddPhotos={(photos) => addOrderPhotos(order.id, photos)}
+                onRemovePhoto={(i) => removeOrderPhoto(order.id, i)}
+                onConsent={(consent) => setOrderPhotoConsent(order.id, consent)}
               />
             </Reveal>
           ) : (

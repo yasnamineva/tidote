@@ -75,6 +75,9 @@ type AuthContextValue = {
   addOrder: (input: NewOrderInput) => void;
   sendMessage: (text: string) => void;
   addOrderNote: (orderId: string, text: string, photos: string[]) => void;
+  addOrderPhotos: (orderId: string, photos: string[]) => void;
+  removeOrderPhoto: (orderId: string, index: number) => void;
+  setOrderPhotoConsent: (orderId: string, consent: boolean) => void;
   addItem: (input: NewItemInput) => void;
   removeItem: (id: string) => void;
 };
@@ -212,6 +215,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         total: "Quote pending",
         notes: input.notes,
         updates: [],
+        wearPhotos: [],
+        photoConsent: false,
+        photoConsentOn: "",
+        returnedOn: "",
       };
       setOrders((prev) => {
         const next = [order, ...prev];
@@ -259,6 +266,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (updated) setOrders(updated.orders);
     },
     [session]
+  );
+
+  /** One place to change a single order of the signed-in client, and only
+   *  their own — every caller below goes through it. */
+  const patchOrder = useCallback(
+    (orderId: string, patch: (order: Order) => Order) => {
+      if (!session?.clientId) return;
+      const clientId = session.clientId;
+      setOrders((prev) => {
+        const next = prev.map((o) => (o.id === orderId ? patch(o) : o));
+        writeJSON(ordersKey(clientId), next);
+        return next;
+      });
+    },
+    [session]
+  );
+
+  const addOrderPhotos = useCallback(
+    (orderId: string, photos: string[]) => {
+      patchOrder(orderId, (o) => ({
+        ...o,
+        wearPhotos: [...(o.wearPhotos ?? []), ...photos],
+      }));
+    },
+    [patchOrder]
+  );
+
+  const removeOrderPhoto = useCallback(
+    (orderId: string, index: number) => {
+      patchOrder(orderId, (o) => {
+        const wearPhotos = (o.wearPhotos ?? []).filter((_, i) => i !== index);
+        return {
+          ...o,
+          wearPhotos,
+          // Nothing left to permit, so the permission goes with the photos.
+          photoConsent: wearPhotos.length > 0 && o.photoConsent,
+          photoConsentOn: wearPhotos.length > 0 ? o.photoConsentOn : "",
+        };
+      });
+    },
+    [patchOrder]
+  );
+
+  /** Consent is dated when given and wiped when withdrawn, so the record only
+   *  ever says what is true right now. */
+  const setOrderPhotoConsent = useCallback(
+    (orderId: string, consent: boolean) => {
+      patchOrder(orderId, (o) => ({
+        ...o,
+        photoConsent: consent,
+        photoConsentOn: consent ? new Date().toISOString().slice(0, 10) : "",
+      }));
+    },
+    [patchOrder]
   );
 
   const addItem = useCallback(
@@ -312,6 +373,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         addOrder,
         sendMessage,
         addOrderNote,
+        addOrderPhotos,
+        removeOrderPhoto,
+        setOrderPhotoConsent,
         addItem,
         removeItem,
       }}

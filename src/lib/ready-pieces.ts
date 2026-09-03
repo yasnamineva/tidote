@@ -35,6 +35,12 @@ export type ReadyPiece = {
   heldFor: string;
   /** "YYYY-MM-DD", empty until the piece is marked sold. */
   soldOn: string;
+  /**
+   * The order this piece came back from, when it reached the rail as a return.
+   * Studio-side provenance only — it is never shown on the public page, and it
+   * is what lets an undone return take its piece back off the rail.
+   */
+  fromOrderId: string;
 };
 
 const READY_KEY = "tidote_ready_pieces";
@@ -52,6 +58,7 @@ export const SEED_READY_PIECES: ReadyPiece[] = [
     addedOn: "2026-07-14",
     heldFor: "",
     soldOn: "",
+    fromOrderId: "",
   },
   {
     id: "rp-seed-2",
@@ -65,6 +72,7 @@ export const SEED_READY_PIECES: ReadyPiece[] = [
     addedOn: "2026-07-28",
     heldFor: "",
     soldOn: "",
+    fromOrderId: "",
   },
   {
     id: "rp-seed-3",
@@ -78,6 +86,7 @@ export const SEED_READY_PIECES: ReadyPiece[] = [
     addedOn: "2026-08-02",
     heldFor: "Mila",
     soldOn: "",
+    fromOrderId: "",
   },
   {
     id: "rp-seed-4",
@@ -91,6 +100,7 @@ export const SEED_READY_PIECES: ReadyPiece[] = [
     addedOn: "2026-06-30",
     heldFor: "Kaloyan Ivanov",
     soldOn: "2026-08-11",
+    fromOrderId: "",
   },
 ];
 
@@ -111,6 +121,7 @@ function normalize(raw: Partial<ReadyPiece>): ReadyPiece {
     addedOn: raw.addedOn ?? "",
     heldFor: raw.heldFor ?? "",
     soldOn: raw.soldOn ?? "",
+    fromOrderId: raw.fromOrderId ?? "",
   };
 }
 
@@ -139,6 +150,22 @@ export function saveReadyPiece(piece: ReadyPiece): ReadyPiece[] {
 
 export function deleteReadyPiece(id: string): ReadyPiece[] {
   return persist(getReadyPieces().filter((p) => p.id !== id));
+}
+
+export function getReadyPieceByOrder(orderId: string): ReadyPiece | undefined {
+  return getReadyPieces().find((p) => p.fromOrderId === orderId);
+}
+
+/**
+ * Undoing a return should leave no trace on the rail, but only if nothing has
+ * happened to the piece since — a sold piece stays sold, whatever the paperwork
+ * says.
+ */
+export function removeReturnedPiece(orderId: string): boolean {
+  const piece = getReadyPieces().find((p) => p.fromOrderId === orderId);
+  if (!piece || piece.status === "sold") return false;
+  deleteReadyPiece(piece.id);
+  return true;
 }
 
 /**

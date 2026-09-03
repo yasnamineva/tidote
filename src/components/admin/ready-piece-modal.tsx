@@ -71,6 +71,7 @@ export function ReadyPieceModal({
       // Stamped the moment it is marked sold, and cleared if it comes back.
       soldOn:
         status === "sold" ? piece?.soldOn || todayKey() : "",
+      fromOrderId: piece?.fromOrderId ?? "",
     });
     onSaved();
     onClose();

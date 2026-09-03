@@ -676,6 +676,38 @@ const en: Dict = {
   "adminclient.notFound": "No client found with that id.",
   "adminclient.back": "Back to overview",
   "common.close": "Close",
+  "common.cancel": "Cancel",
+
+  "photos.title": "Photos of your piece",
+  "photos.sub":
+    "Wearing it? Add your own photos here. They stay between you and the atelier unless you say otherwise below.",
+  "photos.adminTitle": "Client photos",
+  "photos.adminSub": "Uploaded by the client from their own account.",
+  "photos.upload": "Add photos",
+  "photos.remove": "Remove photo",
+  "photos.view": "View photo {n}",
+  "photos.consent":
+    "Tidote Atelier may use these photos to show its work — website, social media and lookbooks.",
+  "photos.consentOn": "Turned on {date}. You can turn it off at any time.",
+  "photos.consentOff": "Off. The photos stay private to the atelier.",
+  "photos.mayUse": "The client agreed on {date} that these may be used publicly.",
+  "photos.mayNotUse": "Not for publication. The client has not agreed to these being used.",
+
+  "ret.title": "Return",
+  "ret.mark": "Mark as returned",
+  "ret.explain":
+    "The piece comes back to the atelier. It leaves the client's wardrobe and stops counting as income.",
+  "ret.toStock": "Put it on the rail as In Stock",
+  "ret.confirm": "Confirm return",
+  "ret.returnedOn": "Returned on {date}.",
+  "ret.undo": "Undo return",
+  "ret.undoKeptStock":
+    "The rail piece was already sold, so it stayed on the rail. Remove it by hand in Ready Pieces if that is wrong.",
+  "ret.clientNotice":
+    "This piece was returned to the atelier on {date}.",
+  "order.returned": "Returned",
+
+  "gen.notif.returned": "Your return of {piece} has been recorded.",
   "delclient.action": "Delete client",
   "delclient.title": "Delete {name}?",
   "delclient.intro": "This removes the client and everything filed under them:",
@@ -1407,6 +1439,38 @@ const bg: Dict = {
   "adminclient.notFound": "Клиентът не е намерен.",
   "adminclient.back": "Обратно към обзора",
   "common.close": "Затвори",
+  "common.cancel": "Отказ",
+
+  "photos.title": "Снимки на вашата дреха",
+  "photos.sub":
+    "Носите ли я? Добавете свои снимки тук. Остават само между вас и ателието, освен ако не решите друго по-долу.",
+  "photos.adminTitle": "Снимки от клиента",
+  "photos.adminSub": "Качени от клиента през неговия профил.",
+  "photos.upload": "Добави снимки",
+  "photos.remove": "Премахни снимката",
+  "photos.view": "Виж снимка {n}",
+  "photos.consent":
+    "Tidote Atelier може да използва тези снимки, за да показва работата си — сайт, социални мрежи и лукбукове.",
+  "photos.consentOn": "Включено на {date}. Може да го изключите по всяко време.",
+  "photos.consentOff": "Изключено. Снимките остават само за ателието.",
+  "photos.mayUse": "Клиентът се съгласи на {date} снимките да бъдат използвани публично.",
+  "photos.mayNotUse": "Не за публикуване. Клиентът не е дал съгласие за тези снимки.",
+
+  "ret.title": "Връщане",
+  "ret.mark": "Отбележи като върната",
+  "ret.explain":
+    "Дрехата се връща в ателието. Излиза от гардероба на клиента и спира да се брои като приход.",
+  "ret.toStock": "Сложи я на закачалката като „Готови модели“",
+  "ret.confirm": "Потвърди връщането",
+  "ret.returnedOn": "Върната на {date}.",
+  "ret.undo": "Отмени връщането",
+  "ret.undoKeptStock":
+    "Моделът вече е продаден, затова остава в готовите модели. Ако това е грешка, премахнете го ръчно от „Готови модели“.",
+  "ret.clientNotice":
+    "Тази дреха е върната в ателието на {date}.",
+  "order.returned": "Върната",
+
+  "gen.notif.returned": "Връщането на {piece} е отбелязано.",
   "delclient.action": "Изтрий клиента",
   "delclient.title": "Да изтрием ли {name}?",
   "delclient.intro": "Това премахва клиента и всичко, заведено към него:",

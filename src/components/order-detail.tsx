@@ -21,6 +21,8 @@ import {
   statusLabel,
 } from "@/lib/translations";
 import { importPhotos, photoWarning } from "@/lib/images";
+import { OrderPhotos } from "@/components/order-photos";
+import { OrderReturnPanel } from "@/components/admin/order-return-panel";
 
 const MAX_PHOTOS = 4;
 
@@ -40,6 +42,9 @@ export function OrderDetail({
   booking,
   onAddNote,
   onChange,
+  onAddPhotos,
+  onRemovePhoto,
+  onConsent,
 }: {
   order: Order;
   clientId: string;
@@ -48,6 +53,10 @@ export function OrderDetail({
   booking?: Booking;
   onAddNote: (text: string, photos: string[]) => void;
   onChange: () => void;
+  /** Client-side only — the piece photos are theirs to manage. */
+  onAddPhotos?: (photos: string[]) => void;
+  onRemovePhoto?: (index: number) => void;
+  onConsent?: (consent: boolean) => void;
 }) {
   const { lang, t } = useLang();
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -176,6 +185,11 @@ export function OrderDetail({
                   {t("order.declined")}
                 </span>
               )}
+              {order.returnedOn && (
+                <span className="text-xs uppercase tracking-[0.15em] px-3 py-1 rounded-full bg-accent-soft/40 text-accent">
+                  {t("order.returned")}
+                </span>
+              )}
             </div>
           </div>
 
@@ -210,6 +224,12 @@ export function OrderDetail({
             <p className="text-sm text-ink-soft italic border-t border-line pt-5">
               {note}
             </p>
+          )}
+
+          {!isAdmin && order.returnedOn && (
+            <div className="border border-line bg-paper px-4 py-3 text-sm text-ink-soft">
+              {t("ret.clientNotice", { date: order.returnedOn })}
+            </div>
           )}
 
           {!isAdmin && order.reviewStatus === "pending" && (
@@ -368,10 +388,27 @@ export function OrderDetail({
               ) : (
                 <p className="text-sm text-ink-soft">{t("od.deniedNoActions")}</p>
               )}
+
+              <div className="mt-6">
+                <OrderReturnPanel
+                  order={order}
+                  clientId={clientId}
+                  onChange={onChange}
+                />
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      <OrderPhotos
+        order={order}
+        role={role}
+        onAdd={onAddPhotos}
+        onRemove={onRemovePhoto}
+        onConsent={onConsent}
+        onOpen={setLightbox}
+      />
 
       {/* Activity thread */}
       <div>

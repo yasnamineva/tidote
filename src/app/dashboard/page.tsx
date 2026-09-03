@@ -103,7 +103,8 @@ const SPY_IDS = [...STEP_ANCHORS, "wardrobe"];
  *  declined order sinks to the bottom, since there is nothing left to do. */
 function waitingRank(order: Order) {
   if (order.reviewStatus === "pending") return 0;
-  if (order.reviewStatus === "denied") return 3;
+  if (order.reviewStatus === "denied") return 4;
+  if (order.returnedOn) return 3;
   return order.status === "delivered" ? 2 : 1;
 }
 
@@ -478,7 +479,13 @@ export default function DashboardPage() {
                         </span>
                       )}
 
-                      {order.reviewStatus === "accepted" && (
+                      {order.returnedOn && (
+                        <span className="inline-block w-fit text-xs uppercase tracking-[0.15em] px-3 py-1 rounded-full mt-4 bg-accent-soft/40 text-accent">
+                          {t("order.returned")}
+                        </span>
+                      )}
+
+                      {order.reviewStatus === "accepted" && !order.returnedOn && (
                         <>
                           <OrderTimeline status={order.status} />
                           <StatusPill status={order.status} />

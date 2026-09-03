@@ -51,12 +51,18 @@ export function WardrobeSection({
   // A piece that has arrived is something she owns; making her re-enter it by
   // hand would be asking her to type back what we already know.
   const delivered: WardrobeCard[] = orders
-    .filter((o) => o.reviewStatus === "accepted" && o.status === "delivered")
+    .filter(
+      (o) =>
+        o.reviewStatus === "accepted" &&
+        o.status === "delivered" &&
+        !o.returnedOn
+    )
     .map((o) => ({
       key: `order-${o.id}`,
       name: pieceLabel(lang, o.piece),
       category: o.category,
-      photo: o.photos[0],
+      // Their own photo of the finished piece says more than our reference shot.
+      photo: o.wearPhotos?.[0] ?? o.photos[0],
       fromAtelier: true,
     }));
 

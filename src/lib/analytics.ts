@@ -42,9 +42,12 @@ export function lastTwelveMonths(now = new Date()): { key: string; date: Date }[
   return months;
 }
 
-/** Denied orders never became work, so they stay out of every money figure. */
+/**
+ * Denied orders never became work and returned ones were handed back, so
+ * neither belongs in a money figure.
+ */
 function isBillable(o: Order): boolean {
-  return o.reviewStatus !== "denied";
+  return o.reviewStatus !== "denied" && !o.returnedOn;
 }
 
 export function computeAnalytics(clients: Client[], now = new Date()): Analytics {
