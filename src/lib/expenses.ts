@@ -1,6 +1,5 @@
 import { lastTwelveMonths, monthKey } from "@/lib/analytics";
-import { generateId } from "@/lib/mock-data";
-import { readJSON, writeJSON } from "@/lib/storage";
+import { getSupabase } from "@/lib/supabase/client";
 import { translate, type Lang } from "@/lib/translations";
 
 /**
@@ -62,118 +61,61 @@ export type Expense = {
   createdAt: string;
 };
 
-const EXPENSES_KEY = "tidote_expenses";
+type ExpenseRow = {
+  id: string; date: string; category: string; vendor: string;
+  description: string; amount: number | string;
+  has_document: boolean; document_no: string; created_at: string;
+};
 
-export const SEED_EXPENSES: Expense[] = [
-  {
-    id: "ex-seed-1",
-    date: "2026-08-04",
-    category: "materials",
-    vendor: "Textil Trade",
-    description: "Cotton twill, 24 m",
-    amount: 384,
-    hasDocument: true,
-    documentNo: "0000004512",
-    createdAt: "2026-08-04T09:00:00.000Z",
-  },
-  {
-    id: "ex-seed-2",
-    date: "2026-08-01",
-    category: "rent",
-    vendor: "Elin Vruh 16",
-    description: "Atelier rent — August",
-    amount: 450,
-    hasDocument: true,
-    documentNo: "0000000188",
-    createdAt: "2026-08-01T09:00:00.000Z",
-  },
-  {
-    id: "ex-seed-3",
-    date: "2026-08-12",
-    category: "trims",
-    vendor: "Merkuri",
-    description: "YKK zips, thread, labels",
-    amount: 96.4,
-    hasDocument: false,
-    documentNo: "",
-    createdAt: "2026-08-12T09:00:00.000Z",
-  },
-  {
-    id: "ex-seed-4",
-    date: "2026-08-15",
-    category: "shipping",
-    vendor: "Econt",
-    description: "Courier — August deliveries",
-    amount: 42.8,
-    hasDocument: true,
-    documentNo: "0000031244",
-    createdAt: "2026-08-15T09:00:00.000Z",
-  },
-  {
-    id: "ex-seed-5",
-    date: "2026-07-25",
-    category: "socialSecurity",
-    vendor: "НАП",
-    description: "Self-insured contributions — July",
-    amount: 178,
-    hasDocument: true,
-    documentNo: "",
-    createdAt: "2026-07-25T09:00:00.000Z",
-  },
-  {
-    id: "ex-seed-6",
-    date: "2026-07-18",
-    category: "equipment",
-    vendor: "Juki BG",
-    description: "Overlock servicing",
-    amount: 120,
-    hasDocument: false,
-    documentNo: "",
-    createdAt: "2026-07-18T09:00:00.000Z",
-  },
-];
-
-function normalize(raw: Partial<Expense>): Expense {
-  const category = EXPENSE_CATEGORIES.includes(raw.category as ExpenseCategory)
-    ? (raw.category as ExpenseCategory)
-    : "other";
+function toExpense(r: ExpenseRow): Expense {
   return {
-    id: raw.id ?? generateId("ex"),
-    date: raw.date ?? "",
-    category,
-    vendor: raw.vendor ?? "",
-    description: raw.description ?? "",
-    amount: Number.isFinite(raw.amount) ? Number(raw.amount) : 0,
-    hasDocument: raw.hasDocument === true,
-    documentNo: raw.documentNo ?? "",
-    createdAt: raw.createdAt ?? new Date().toISOString(),
+    id: r.id,
+    date: r.date,
+    category: r.category as ExpenseCategory,
+    vendor: r.vendor,
+    description: r.description,
+    amount: Number(r.amount) || 0,
+    hasDocument: r.has_document,
+    documentNo: r.document_no,
+    createdAt: r.created_at,
   };
 }
 
-/** Newest invoice date first. */
-export function getExpenses(): Expense[] {
-  return readJSON<Partial<Expense>[]>(EXPENSES_KEY, SEED_EXPENSES)
-    .map(normalize)
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+const COLUMNS =
+  "id,date,category,vendor,description,amount,has_document,document_no,created_at";
+
+/** Newest invoice first — the studio works backwards from what just arrived. */
+export async function getExpenses(): Promise<Expense[]> {
+  const { data, error } = await getSupabase()
+    .from("expenses")
+    .select(COLUMNS)
+    .order("date", { ascending: false });
+  if (error) throw error;
+  return (data as ExpenseRow[]).map(toExpense);
 }
 
-function persist(list: Expense[]): Expense[] {
-  writeJSON(EXPENSES_KEY, list);
-  return list.sort((a, b) => (a.date < b.date ? 1 : -1));
+export async function saveExpense(expense: Expense): Promise<Expense[]> {
+  const row = {
+    date: expense.date,
+    category: expense.category,
+    vendor: expense.vendor,
+    description: expense.description,
+    amount: expense.amount,
+    has_document: expense.hasDocument,
+    document_no: expense.documentNo,
+  };
+  const supabase = getSupabase();
+  const { error } = expense.id
+    ? await supabase.from("expenses").update(row).eq("id", expense.id)
+    : await supabase.from("expenses").insert(row);
+  if (error) throw error;
+  return getExpenses();
 }
 
-export function saveExpense(expense: Expense): Expense[] {
-  const current = getExpenses();
-  const exists = current.some((e) => e.id === expense.id);
-  return persist(
-    exists
-      ? current.map((e) => (e.id === expense.id ? expense : e))
-      : [expense, ...current]
-  );
-}
-
-export function deleteExpense(id: string): Expense[] {
-  return persist(getExpenses().filter((e) => e.id !== id));
+export async function deleteExpense(id: string): Promise<Expense[]> {
+  const { error } = await getSupabase().from("expenses").delete().eq("id", id);
+  if (error) throw error;
+  return getExpenses();
 }
 
 export type ExpenseSummary = {

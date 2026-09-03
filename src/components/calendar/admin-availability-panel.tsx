@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MonthGrid } from "@/components/calendar/month-grid";
 import { useBooking } from "@/lib/booking";
 import { useLang } from "@/lib/i18n";
 import { getAllClientsWithLiveData } from "@/lib/admin-data";
+import type { Client } from "@/lib/mock-data";
 
 export function AdminAvailabilityPanel() {
   const {
@@ -20,7 +21,10 @@ export function AdminAvailabilityPanel() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [newTime, setNewTime] = useState("16:00");
 
-  const clients = getAllClientsWithLiveData();
+  const [clients, setClients] = useState<Client[]>([]);
+  useEffect(() => {
+    void getAllClientsWithLiveData().then(setClients);
+  }, []);
   const etaDates = new Set(clients.flatMap((c) => c.orders.map((o) => o.eta)));
   const bookingDates = new Set(bookings.map((b) => b.date));
 

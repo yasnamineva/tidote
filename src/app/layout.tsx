@@ -7,7 +7,6 @@ import { NotificationProvider } from "@/lib/notifications";
 import { BookingProvider } from "@/lib/booking";
 import { SmoothScrollProvider } from "@/lib/smooth-scroll";
 import { LANG_KEY } from "@/lib/translations";
-import { StorageBanner } from "@/components/storage-banner";
 import { Analytics } from "@vercel/analytics/next";
 import { structuredDataJson } from "@/lib/structured-data";
 
@@ -119,7 +118,6 @@ export default function RootLayout({
               <BookingProvider>
                 <SmoothScrollProvider>{children}</SmoothScrollProvider>
                 {/* Inside LanguageProvider so its copy follows the toggle. */}
-                <StorageBanner />
               </BookingProvider>
             </NotificationProvider>
           </AuthProvider>

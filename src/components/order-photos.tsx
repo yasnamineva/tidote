@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Photo } from "@/components/photo";
 import { useLang } from "@/lib/i18n";
-import { importPhotos, photoWarning } from "@/lib/images";
+import { photoWarning } from "@/lib/images";
+import { importAndUpload } from "@/lib/photos";
 import type { Order, Role } from "@/lib/mock-data";
 
 const MAX_PHOTOS = 6;
@@ -20,6 +22,7 @@ const MAX_PHOTOS = 6;
  */
 export function OrderPhotos({
   order,
+  ownerId,
   role,
   onAdd,
   onRemove,
@@ -27,6 +30,8 @@ export function OrderPhotos({
   onOpen,
 }: {
   order: Order;
+  /** Whose folder the uploads belong in — also what the storage policy checks. */
+  ownerId: string;
   role: Role;
   onAdd?: (photos: string[]) => void;
   onRemove?: (index: number) => void;
@@ -51,7 +56,7 @@ export function OrderPhotos({
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - photos.length;
-    const result = await importPhotos(Array.from(fileList), room);
+    const result = await importAndUpload(Array.from(fileList), room, ownerId);
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     if (result.photos.length > 0) onAdd?.(result.photos.slice(0, room));
   }
@@ -89,8 +94,7 @@ export function OrderPhotos({
                 className="block h-full w-full overflow-hidden border border-line"
                 aria-label={t("photos.view", { n: i + 1 })}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element -- data: URL uploads */}
-                <img
+                                <Photo
                   src={src}
                   alt=""
                   className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"

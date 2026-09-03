@@ -2,16 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Photo } from "@/components/photo";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { categoryLabel } from "@/lib/translations";
-import { importPhotos, photoWarning } from "@/lib/images";
+import { photoWarning } from "@/lib/images";
+import { importAndUpload } from "@/lib/photos";
 import { ORDER_CATEGORIES, type OrderCategory } from "@/lib/mock-data";
 
 const MAX_PHOTOS = 4;
 
 export function NewOrderForm() {
-  const { addOrder } = useAuth();
+  const { addOrder, session } = useAuth();
   const { lang, t } = useLang();
   const router = useRouter();
   const [piece, setPiece] = useState("");
@@ -24,7 +26,11 @@ export function NewOrderForm() {
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - photos.length;
-    const result = await importPhotos(Array.from(fileList), room);
+    const result = await importAndUpload(
+      Array.from(fileList),
+      room,
+      session?.clientId ?? ""
+    );
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }
@@ -33,10 +39,10 @@ export function NewOrderForm() {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!piece.trim()) return;
-    addOrder({
+    await addOrder({
       piece: piece.trim(),
       category,
       notes: notes.trim() || undefined,
@@ -115,8 +121,7 @@ export function NewOrderForm() {
           <div className="grid grid-cols-4 gap-2 mt-1">
             {photos.map((src, i) => (
               <div key={i} className="relative aspect-square">
-                {/* eslint-disable-next-line @next/next/no-img-element -- data: URL preview, next/image can't optimize these */}
-                <img
+                                <Photo
                   src={src}
                   alt={`Reference ${i + 1}`}
                   className="h-full w-full object-cover border border-line"

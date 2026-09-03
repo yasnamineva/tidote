@@ -13,6 +13,7 @@ import {
   updateOrderDeadline,
   updateOrderStatus,
 } from "@/lib/admin-data";
+import { Photo } from "@/components/photo";
 import { useLang } from "@/lib/i18n";
 import {
   categoryLabel,
@@ -20,7 +21,8 @@ import {
   pieceLabel,
   statusLabel,
 } from "@/lib/translations";
-import { importPhotos, photoWarning } from "@/lib/images";
+import { photoWarning } from "@/lib/images";
+import { importAndUpload } from "@/lib/photos";
 import { OrderPhotos } from "@/components/order-photos";
 import { OrderReturnPanel } from "@/components/admin/order-return-panel";
 
@@ -88,7 +90,7 @@ export function OrderDetail({
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - notePhotos.length;
-    const result = await importPhotos(Array.from(fileList), room);
+    const result = await importAndUpload(Array.from(fileList), room, clientId);
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setNotePhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }
@@ -125,8 +127,7 @@ export function OrderDetail({
                 aria-label={t("od.refPhotos")}
                 className="group block w-full overflow-hidden border border-line bg-paper"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element -- data: URL uploads */}
-                <img
+                                <Photo
                   src={photos[activePhoto]}
                   alt={pieceLabel(lang, order.piece)}
                   className="w-full aspect-[4/5] object-cover transition-transform duration-500 group-hover:scale-[1.03]"
@@ -146,8 +147,7 @@ export function OrderDetail({
                           : "border-line hover:border-line-strong"
                       }`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element -- data: URL uploads */}
-                      <img src={src} alt="" className="h-full w-full object-cover" />
+                                            <Photo src={src} alt="" className="h-full w-full object-cover" />
                     </button>
                   ))}
                 </div>
@@ -403,6 +403,7 @@ export function OrderDetail({
 
       <OrderPhotos
         order={order}
+        ownerId={clientId}
         role={role}
         onAdd={onAddPhotos}
         onRemove={onRemovePhoto}
@@ -446,8 +447,7 @@ export function OrderDetail({
                           onClick={() => setLightbox(src)}
                           className="aspect-square overflow-hidden border border-cream/20"
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element -- data: URL uploads */}
-                          <img
+                                                    <Photo
                             src={src}
                             alt="Attachment"
                             className="h-full w-full object-cover"
@@ -501,8 +501,7 @@ export function OrderDetail({
             <div className="grid grid-cols-4 gap-2">
               {notePhotos.map((src, i) => (
                 <div key={i} className="relative aspect-square">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- data: URL preview */}
-                  <img
+                                    <Photo
                     src={src}
                     alt={`Attachment ${i + 1}`}
                     className="h-full w-full object-cover border border-line"
@@ -538,8 +537,7 @@ export function OrderDetail({
           className="fixed inset-0 z-[60] bg-ink/80 flex items-center justify-center p-6"
           aria-label="Close image"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- data: URL uploads */}
-          <img
+                    <Photo
             src={lightbox}
             alt="Reference"
             className="max-h-full max-w-full object-contain"

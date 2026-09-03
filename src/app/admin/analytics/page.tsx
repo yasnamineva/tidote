@@ -18,7 +18,7 @@ export default function AdminAnalyticsPage() {
   const [tab, setTab] = useState<Tab>("overview");
 
   useEffect(() => {
-    setClients(getAllClientsWithLiveData());
+    void getAllClientsWithLiveData().then(setClients);
   }, []);
 
   if (!clients) {

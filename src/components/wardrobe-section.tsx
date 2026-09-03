@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Photo } from "@/components/photo";
 import { useLang } from "@/lib/i18n";
 import { categoryLabel, pieceLabel } from "@/lib/translations";
-import { importPhotos, photoWarning } from "@/lib/images";
+import { photoWarning } from "@/lib/images";
+import { importAndUpload } from "@/lib/photos";
 import {
   ORDER_CATEGORIES,
   type Order,
@@ -34,12 +36,15 @@ type WardrobeCard = {
 
 export function WardrobeSection({
   items,
+  ownerId,
   orders = [],
   editable,
   onAdd,
   onRemove,
 }: {
   items: OwnedItem[];
+  /** Whose wardrobe this is; uploads are filed under their id. */
+  ownerId: string;
   /** Orders to fold in — the delivered ones are part of the wardrobe too. */
   orders?: Order[];
   editable: boolean;
@@ -88,7 +93,7 @@ export function WardrobeSection({
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - photos.length;
-    const result = await importPhotos(Array.from(fileList), room);
+    const result = await importAndUpload(Array.from(fileList), room, ownerId);
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }
@@ -124,8 +129,7 @@ export function WardrobeSection({
             >
               <div className="aspect-[3/4] overflow-hidden bg-line/20">
                 {card.photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- data: URL uploads
-                  <img
+                  <Photo
                     src={card.photo}
                     alt={card.name}
                     className="h-full w-full object-cover"
@@ -251,8 +255,7 @@ export function WardrobeSection({
               <div className="grid grid-cols-4 gap-2 mt-1">
                 {photos.map((src, i) => (
                   <div key={i} className="relative aspect-square">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- data: URL preview */}
-                    <img
+                                        <Photo
                       src={src}
                       alt={`${t("wardrobe.photos")} ${i + 1}`}
                       className="h-full w-full object-cover border border-line"

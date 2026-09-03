@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Reveal } from "@/components/reveal";
 import { OrderDetail } from "@/components/order-detail";
 import { useBooking } from "@/lib/booking";
@@ -16,13 +16,13 @@ export default function AdminOrderPage() {
   const params = useParams<{ clientId: string; orderId: string }>();
   const [client, setClient] = useState<Client | null | undefined>(undefined);
 
-  useEffect(() => {
-    setClient(getClientWithLiveData(params.clientId) ?? null);
+  const refresh = useCallback(async () => {
+    setClient((await getClientWithLiveData(params.clientId)) ?? null);
   }, [params.clientId]);
 
-  function refresh() {
-    setClient(getClientWithLiveData(params.clientId) ?? null);
-  }
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   if (client === undefined) {
     return (

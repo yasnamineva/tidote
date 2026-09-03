@@ -46,8 +46,8 @@ export function OrderReturnPanel({
           </span>
           <button
             type="button"
-            onClick={() => {
-              const { stockRemoved } = undoOrderReturn(clientId, order.id);
+            onClick={async () => {
+              const { stockRemoved } = await undoOrderReturn(clientId, order.id);
               setUndoNote(stockRemoved ? null : t("ret.undoKeptStock"));
               onChange();
             }}
@@ -138,8 +138,8 @@ export function OrderReturnPanel({
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
-              onClick={() => {
-                returnOrder(clientId, order.id, { toStock, size, price });
+              onClick={async () => {
+                await returnOrder(clientId, order.id, { toStock, size, price });
                 setOpen(false);
                 onChange();
               }}

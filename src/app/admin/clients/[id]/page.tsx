@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AdminTopBar } from "@/components/admin/admin-shell";
 import { DeleteClientModal } from "@/components/admin/delete-client-modal";
 import { Reveal } from "@/components/reveal";
@@ -35,18 +35,21 @@ export default function AdminClientPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [showMessages]);
 
-  useEffect(() => {
-    setClient(getClientWithLiveData(params.id) ?? null);
-    setMessages(getMessages(params.id));
+  const refresh = useCallback(async () => {
+    const [record, thread] = await Promise.all([
+      getClientWithLiveData(params.id),
+      getMessages(params.id),
+    ]);
+    setClient(record ?? null);
+    setMessages(thread);
   }, [params.id]);
 
-  function refresh() {
-    setClient(getClientWithLiveData(params.id) ?? null);
-    setMessages(getMessages(params.id));
-  }
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
-  function handleSend(text: string) {
-    setMessages(sendStudioMessage(params.id, text));
+  async function handleSend(text: string) {
+    setMessages(await sendStudioMessage(params.id, text));
   }
 
   if (client === undefined) {
@@ -231,6 +234,7 @@ export default function AdminClientPage() {
           <p className="text-sm text-ink-soft mb-6">{t("wardrobe.adminSub")}</p>
           <WardrobeSection
             items={client.items}
+            ownerId={client.id}
             orders={client.orders}
             editable={false}
           />

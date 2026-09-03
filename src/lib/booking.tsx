@@ -9,8 +9,6 @@ import {
   useState,
 } from "react";
 import {
-  SEED_AVAILABILITY,
-  SEED_BOOKINGS,
   type Booking,
   type DayAvailability,
   type TimeSlot,
@@ -23,11 +21,8 @@ import {
   todayKey,
   type WeeklyHours,
 } from "@/lib/hours";
-import { readJSON, writeJSON } from "@/lib/storage";
-
-const AVAILABILITY_KEY = "tidote_availability";
-const BOOKINGS_KEY = "tidote_bookings";
-const HOURS_KEY = "tidote_hours";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
+import { toBooking, type BookingRow } from "@/lib/supabase/rows";
 
 type BookSlotInput = {
   date: string;
@@ -53,7 +48,7 @@ type BookingContextValue = {
   /** Drops the override so the date follows the weekly pattern again. */
   resetDay: (date: string) => void;
   saveWeeklyHours: (next: WeeklyHours) => void;
-  bookSlot: (input: BookSlotInput) => void;
+  bookSlot: (input: BookSlotInput) => Promise<void>;
 };
 
 const BookingContext = createContext<BookingContextValue | null>(null);
@@ -63,22 +58,54 @@ function sortSlots(slots: TimeSlot[]) {
 }
 
 export function BookingProvider({ children }: { children: React.ReactNode }) {
-  const [overrides, setOverrides] =
-    useState<DayAvailability[]>(SEED_AVAILABILITY);
-  const [bookings, setBookings] = useState<Booking[]>(SEED_BOOKINGS);
+  const [overrides, setOverrides] = useState<DayAvailability[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [weeklyHours, setWeeklyHours] = useState<WeeklyHours>(
     DEFAULT_WEEKLY_HOURS
   );
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    setOverrides(readJSON(AVAILABILITY_KEY, SEED_AVAILABILITY));
-    setBookings(readJSON(BOOKINGS_KEY, SEED_BOOKINGS));
+  /**
+   * The calendar is shared: the studio's opening hours and everyone's bookings
+   * are the same rows for every viewer. A client can read which times are taken
+   * but not who took them — the name is only joined in on the studio's own
+   * query, so `clientName` arrives empty in the client-side portal.
+   */
+  const reload = useCallback(async () => {
+    if (!isSupabaseConfigured()) {
+      setReady(true);
+      return;
+    }
+    const supabase = getSupabase();
+    const [days, booked, settings] = await Promise.all([
+      supabase.from("availability").select("date,open,slots"),
+      supabase.from("bookings").select("id,date,time,profile_id,order_id,created_at,profiles(name)"),
+      supabase.from("studio_settings").select("weekly_hours").maybeSingle(),
+    ]);
+    if (days.data) {
+      setOverrides(
+        days.data.map((d) => ({
+          date: d.date as string,
+          open: d.open as boolean,
+          slots: (d.slots ?? []) as TimeSlot[],
+        }))
+      );
+    }
+    if (booked.data) {
+      setBookings((booked.data as unknown as BookingRow[]).map(toBooking));
+    }
+    const hours = settings.data?.weekly_hours as WeeklyHours | undefined;
     setWeeklyHours(
-      normalizeWeeklyHours(readJSON(HOURS_KEY, DEFAULT_WEEKLY_HOURS))
+      normalizeWeeklyHours(
+        hours && Object.keys(hours).length > 0 ? hours : DEFAULT_WEEKLY_HOURS
+      )
     );
     setReady(true);
   }, []);
+
+  useEffect(() => {
+    reload().catch(() => setReady(true));
+  }, [reload]);
 
   const bookedByDate = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -114,40 +141,42 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
    * booked slot back in here would double-book it.
    */
   const editDay = useCallback(
-    (date: string, edit: (day: DayAvailability) => DayAvailability) => {
-      setOverrides((prev) => {
-        const existing = prev.find((d) => d.date === date);
-        const booked = bookedByDate.get(date) ?? new Set<string>();
-        const base =
-          existing ??
-          (date < todayKey()
-            ? { date, open: false, slots: [] }
-            : derivedDay(date, weeklyHours));
-        const visible = {
-          ...base,
-          slots: base.slots.filter((s) => !booked.has(s.time)),
-        };
-        const updated = edit(visible);
-        const next = existing
+    async (date: string, edit: (day: DayAvailability) => DayAvailability) => {
+      const existing = overrides.find((d) => d.date === date);
+      const booked = bookedByDate.get(date) ?? new Set<string>();
+      const base =
+        existing ??
+        (date < todayKey()
+          ? { date, open: false, slots: [] }
+          : derivedDay(date, weeklyHours));
+      const visible = {
+        ...base,
+        slots: base.slots.filter((s) => !booked.has(s.time)),
+      };
+      const updated = edit(visible);
+      setOverrides((prev) =>
+        existing
           ? prev.map((d) => (d.date === date ? updated : d))
-          : [...prev, updated];
-        writeJSON(AVAILABILITY_KEY, next);
-        return next;
-      });
+          : [...prev, updated]
+      );
+      const { error } = await getSupabase()
+        .from("availability")
+        .upsert({ date, open: updated.open, slots: updated.slots });
+      if (error) await reload();
     },
-    [bookedByDate, weeklyHours]
+    [overrides, bookedByDate, weeklyHours, reload]
   );
 
   const toggleDayOpen = useCallback(
     (date: string) => {
-      editDay(date, (day) => ({ ...day, open: !day.open }));
+      void editDay(date, (day) => ({ ...day, open: !day.open }));
     },
     [editDay]
   );
 
   const addSlot = useCallback(
     (date: string, time: string) => {
-      editDay(date, (day) =>
+      void editDay(date, (day) =>
         day.slots.some((s) => s.time === time)
           ? { ...day, open: true }
           : {
@@ -165,7 +194,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
   const removeSlot = useCallback(
     (date: string, slotId: string) => {
-      editDay(date, (day) => ({
+      void editDay(date, (day) => ({
         ...day,
         slots: day.slots.filter((s) => s.id !== slotId),
       }));
@@ -174,16 +203,16 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   );
 
   const resetDay = useCallback((date: string) => {
-    setOverrides((prev) => {
-      const next = prev.filter((d) => d.date !== date);
-      writeJSON(AVAILABILITY_KEY, next);
-      return next;
-    });
+    setOverrides((prev) => prev.filter((d) => d.date !== date));
+    void getSupabase().from("availability").delete().eq("date", date);
   }, []);
 
   const saveWeeklyHours = useCallback((next: WeeklyHours) => {
     setWeeklyHours(next);
-    writeJSON(HOURS_KEY, next);
+    void getSupabase()
+      .from("studio_settings")
+      .update({ weekly_hours: next })
+      .eq("id", true);
   }, []);
 
   /**
@@ -191,28 +220,22 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
    * filters booked times out, which keeps working for days that follow the
    * weekly pattern instead of freezing them into overrides.
    */
-  const bookSlot = useCallback((input: BookSlotInput) => {
-    setBookings((prev) => {
-      const taken = prev.some(
-        (b) => b.date === input.date && b.time === input.time
-      );
-      if (taken) return prev;
-      const next: Booking[] = [
-        ...prev,
-        {
-          id: `bk-${Date.now()}`,
-          date: input.date,
-          time: input.time,
-          clientId: input.clientId,
-          clientName: input.clientName,
-          orderId: input.orderId,
-          createdAt: new Date().toISOString(),
-        },
-      ];
-      writeJSON(BOOKINGS_KEY, next);
-      return next;
-    });
-  }, []);
+  const bookSlot = useCallback(
+    async (input: BookSlotInput) => {
+      // A unique index on (date, time) is what actually stops a double booking:
+      // two people can hit the same free slot in the same second, and only the
+      // database sees both. A rejection here means someone else got there.
+      const { error } = await getSupabase().from("bookings").insert({
+        date: input.date,
+        time: input.time,
+        profile_id: input.clientId,
+        order_id: input.orderId || null,
+      });
+      await reload();
+      if (error) throw error;
+    },
+    [reload]
+  );
 
   return (
     <BookingContext.Provider

@@ -32,8 +32,10 @@ export function ExpensesPanel({ clients }: { clients: Client[] }) {
   const [confirming, setConfirming] = useState<string | null>(null);
 
   function refresh() {
-    setExpenses(getExpenses());
-    setReadySales(summarizeReadyStock(getReadyPieces()).soldValue);
+    void getExpenses().then(setExpenses);
+    void getReadyPieces().then((pieces) =>
+      setReadySales(summarizeReadyStock(pieces).soldValue)
+    );
   }
 
   useEffect(() => {

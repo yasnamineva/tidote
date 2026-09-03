@@ -8,13 +8,8 @@ import {
   useState,
 } from "react";
 import {
-  ADMIN,
   EMPTY_DELIVERY,
   EMPTY_MEASUREMENTS,
-  generateId,
-  generateOrderId,
-  mergeOrdersWithSeed,
-  type Client,
   type DeliveryInfo,
   type Measurements,
   type Message,
@@ -23,26 +18,19 @@ import {
   type OwnedItem,
   type Role,
 } from "@/lib/mock-data";
-import {
-  deliveryKey,
-  itemsKey,
-  measurementsKey,
-  ordersKey,
-  readJSON,
-  writeJSON,
-} from "@/lib/storage";
-import { getBaseClientById, getBaseClients } from "@/lib/clients";
-import { appendMessage, getMessages } from "@/lib/messages";
+import { getBaseClientById } from "@/lib/clients";
+import { getMessages, appendMessage } from "@/lib/messages";
 import { appendOrderNote } from "@/lib/admin-data";
 import { pushNotification } from "@/lib/notifications-data";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
+import { fromDelivery, fromMeasurements } from "@/lib/supabase/rows";
 import { getStoredLang, pieceLabel, translate } from "@/lib/translations";
-
-const SESSION_KEY = "tidote_session";
 
 type Session = {
   name: string;
   email: string;
   role: Role;
+  /** The profile id. Named clientId because that is what every caller calls it. */
   clientId?: string;
 };
 
@@ -68,181 +56,215 @@ type AuthContextValue = {
   delivery: DeliveryInfo;
   messages: Message[];
   items: OwnedItem[];
-  login: (email: string, password: string) => { ok: boolean; error?: string };
-  logout: () => void;
-  updateMeasurements: (next: Measurements) => void;
-  updateDeliveryInfo: (next: DeliveryInfo) => void;
-  addOrder: (input: NewOrderInput) => void;
-  sendMessage: (text: string) => void;
-  addOrderNote: (orderId: string, text: string, photos: string[]) => void;
-  addOrderPhotos: (orderId: string, photos: string[]) => void;
-  removeOrderPhoto: (orderId: string, index: number) => void;
-  setOrderPhotoConsent: (orderId: string, consent: boolean) => void;
-  addItem: (input: NewItemInput) => void;
-  removeItem: (id: string) => void;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ ok: boolean; error?: string; role?: Role }>;
+  logout: () => Promise<void>;
+  refresh: () => Promise<void>;
+  updateMeasurements: (next: Measurements) => Promise<void>;
+  updateDeliveryInfo: (next: DeliveryInfo) => Promise<void>;
+  addOrder: (input: NewOrderInput) => Promise<void>;
+  sendMessage: (text: string) => Promise<void>;
+  addOrderNote: (orderId: string, text: string, photos: string[]) => Promise<void>;
+  addOrderPhotos: (orderId: string, photos: string[]) => Promise<void>;
+  removeOrderPhoto: (orderId: string, index: number) => Promise<void>;
+  setOrderPhotoConsent: (orderId: string, consent: boolean) => Promise<void>;
+  addItem: (input: NewItemInput) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function liveClientData(client: Client) {
-  return {
-    orders: mergeOrdersWithSeed(
-      readJSON(ordersKey(client.id), client.orders),
-      client.orders
-    ),
-    measurements: readJSON(measurementsKey(client.id), client.measurements),
-    delivery: readJSON(deliveryKey(client.id), client.delivery),
-    messages: getMessages(client.id),
-    items: readJSON(itemsKey(client.id), client.items),
-  };
-}
-
+/**
+ * The signed-in person and their records.
+ *
+ * Sessions come from Supabase Auth now, not from a JSON blob in localStorage
+ * that anyone could have written by hand. `onAuthStateChange` is the single
+ * source of truth: it fires on load with whatever session the cookies carry, on
+ * sign-in, on sign-out, and on every silent token refresh, so there is one code
+ * path instead of one for hydration and another for login.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [measurements, setMeasurements] = useState<Measurements>(
-    EMPTY_MEASUREMENTS
-  );
+  const [measurements, setMeasurements] = useState<Measurements>(EMPTY_MEASUREMENTS);
   const [delivery, setDelivery] = useState<DeliveryInfo>(EMPTY_DELIVERY);
   const [messages, setMessages] = useState<Message[]>([]);
   const [items, setItems] = useState<OwnedItem[]>([]);
 
+  const loadClientData = useCallback(async (profileId: string) => {
+    const [client, thread] = await Promise.all([
+      getBaseClientById(profileId),
+      getMessages(profileId),
+    ]);
+    if (client) {
+      setOrders(client.orders);
+      setMeasurements(client.measurements);
+      setDelivery(client.delivery);
+      setItems(client.items);
+    }
+    setMessages(thread);
+  }, []);
+
   useEffect(() => {
-    const rawSession = window.localStorage.getItem(SESSION_KEY);
-    if (rawSession) {
-      const parsed = JSON.parse(rawSession) as Session;
-      const client =
-        parsed.role === "client" && parsed.clientId
-          ? getBaseClientById(parsed.clientId)
-          : undefined;
-      if (parsed.role === "client" && !client) {
-        // Stored session points at a client record that no longer exists
-        // (e.g. the seed data was reshuffled) — drop it rather than render empty.
-        window.localStorage.removeItem(SESSION_KEY);
-      } else {
-        setSession(parsed);
-        if (client) {
-          const live = liveClientData(client);
-          setOrders(live.orders);
-          setMeasurements(live.measurements);
-          setDelivery(live.delivery);
-          setMessages(live.messages);
-          setItems(live.items);
-        }
+    // Without keys there is no session to find. Settle as signed-out rather
+    // than throwing — this provider wraps the public pages too, and they owe
+    // the database nothing.
+    if (!isSupabaseConfigured()) {
+      setReady(true);
+      return;
+    }
+    const supabase = getSupabase();
+    let cancelled = false;
+
+    async function hydrate(userId: string | undefined) {
+      if (!userId) {
+        setSession(null);
+        setOrders([]);
+        setMessages([]);
+        setItems([]);
+        setMeasurements(EMPTY_MEASUREMENTS);
+        setDelivery(EMPTY_DELIVERY);
+        setReady(true);
+        return;
       }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id,name,email,role")
+        .eq("id", userId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!profile) {
+        setSession(null);
+        setReady(true);
+        return;
+      }
+      setSession({
+        name: profile.name,
+        email: profile.email,
+        role: profile.role as Role,
+        clientId: profile.id,
+      });
+      if (profile.role === "client") await loadClientData(profile.id);
+      if (!cancelled) setReady(true);
     }
-    setReady(true);
-  }, []);
 
-  const login = useCallback((email: string, password: string) => {
-    const normalized = email.trim().toLowerCase();
-
-    if (normalized === ADMIN.email && password === ADMIN.password) {
-      const next: Session = {
-        name: ADMIN.name,
-        email: ADMIN.email,
-        role: "admin",
-      };
-      window.localStorage.setItem(SESSION_KEY, JSON.stringify(next));
-      setSession(next);
-      return { ok: true };
-    }
-
-    const client = getBaseClients().find(
-      (c) => c.email === normalized && c.password === password
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, next) => {
+        // Not awaited on purpose: Supabase warns against running other calls
+        // to it from inside this callback.
+        void hydrate(next?.user?.id);
+      }
     );
-    if (!client) {
-      return {
-        ok: false,
-        error: translate(getStoredLang(), "auth.badLogin"),
-      };
-    }
 
-    const next: Session = {
-      name: client.name,
-      email: client.email,
-      role: "client",
-      clientId: client.id,
+    // onAuthStateChange fires immediately with the stored session, but getUser
+    // is what actually revalidates it against the server.
+    supabase.auth.getUser().then(({ data }) => void hydrate(data.user?.id));
+
+    return () => {
+      cancelled = true;
+      subscription.subscription.unsubscribe();
     };
-    window.localStorage.setItem(SESSION_KEY, JSON.stringify(next));
-    setSession(next);
-    const live = liveClientData(client);
-    setOrders(live.orders);
-    setMeasurements(live.measurements);
-    setDelivery(live.delivery);
-    setMessages(live.messages);
-    setItems(live.items);
-    return { ok: true };
+  }, [loadClientData]);
+
+  const refresh = useCallback(async () => {
+    if (session?.clientId && session.role === "client") {
+      await loadClientData(session.clientId);
+    }
+  }, [session, loadClientData]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+    if (error || !data.user) {
+      return { ok: false, error: translate(getStoredLang(), "auth.badLogin") };
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    return { ok: true, role: (profile?.role as Role) ?? "client" };
   }, []);
 
-  const logout = useCallback(() => {
-    window.localStorage.removeItem(SESSION_KEY);
-    setSession(null);
+  const logout = useCallback(async () => {
+    await getSupabase().auth.signOut();
   }, []);
 
   const updateMeasurements = useCallback(
-    (next: Measurements) => {
+    async (next: Measurements) => {
       if (!session?.clientId) return;
-      writeJSON(measurementsKey(session.clientId), next);
-      setMeasurements(next);
+      const { error } = await getSupabase()
+        .from("measurements")
+        .upsert(fromMeasurements(next, session.clientId));
+      if (error) throw error;
+      setMeasurements({
+        ...next,
+        updatedAt: new Date().toISOString().slice(0, 10),
+      });
     },
     [session]
   );
 
   const updateDeliveryInfo = useCallback(
-    (next: DeliveryInfo) => {
+    async (next: DeliveryInfo) => {
       if (!session?.clientId) return;
-      writeJSON(deliveryKey(session.clientId), next);
-      setDelivery(next);
+      const { error } = await getSupabase()
+        .from("delivery_info")
+        .upsert(fromDelivery(next, session.clientId));
+      if (error) throw error;
+      setDelivery({ ...next, updatedAt: new Date().toISOString().slice(0, 10) });
     },
     [session]
   );
 
   const addOrder = useCallback(
-    (input: NewOrderInput) => {
+    async (input: NewOrderInput) => {
       if (!session?.clientId) return;
       const clientId = session.clientId;
-      const order: Order = {
-        id: generateOrderId(),
-        piece: input.piece,
-        category: input.category,
-        photos: input.photos,
-        placedOn: new Date().toISOString().slice(0, 10),
-        status: "received",
-        reviewStatus: "pending",
-        eta: "To be confirmed",
-        total: "Quote pending",
-        notes: input.notes,
-        updates: [],
-        wearPhotos: [],
-        photoConsent: false,
-        photoConsentOn: "",
-        returnedOn: "",
-      };
-      setOrders((prev) => {
-        const next = [order, ...prev];
-        writeJSON(ordersKey(clientId), next);
-        return next;
-      });
+      // The order code is minted by Postgres, so two clients ordering at the
+      // same second cannot collide on it.
+      const { data, error } = await getSupabase()
+        .from("orders")
+        .insert({
+          profile_id: clientId,
+          piece: input.piece,
+          category: input.category,
+          photos: input.photos,
+          status: "received",
+          review_status: "pending",
+          eta: "To be confirmed",
+          total: "Quote pending",
+          notes: input.notes ?? "",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+
       const lang = getStoredLang();
-      pushNotification("admin", clientId, {
+      await pushNotification("admin", clientId, {
         kind: "order_placed",
         text: translate(lang, "gen.notif.orderPlaced", {
           name: session.name,
-          piece: pieceLabel(lang, order.piece),
+          piece: pieceLabel(lang, input.piece),
         }),
-        href: `/admin/orders/${clientId}/${order.id}`,
+        href: `/admin/orders/${clientId}/${data.id}`,
       });
+      await loadClientData(clientId);
     },
-    [session]
+    [session, loadClientData]
   );
 
   const sendMessage = useCallback(
-    (text: string) => {
+    async (text: string) => {
       if (!session?.clientId) return;
-      setMessages(appendMessage(session.clientId, "client", text));
-      pushNotification("admin", session.clientId, {
+      setMessages(await appendMessage(session.clientId, "client", text));
+      await pushNotification("admin", session.clientId, {
         kind: "message",
         text: translate(getStoredLang(), "gen.notif.msgFromClient", {
           name: session.name,
@@ -254,106 +276,92 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addOrderNote = useCallback(
-    (orderId: string, text: string, photos: string[]) => {
+    async (orderId: string, text: string, photos: string[]) => {
       if (!session?.clientId) return;
-      const updated = appendOrderNote(
-        session.clientId,
-        orderId,
-        "client",
-        text,
-        photos
-      );
-      if (updated) setOrders(updated.orders);
+      await appendOrderNote(session.clientId, orderId, "client", text, photos);
+      await loadClientData(session.clientId);
     },
-    [session]
+    [session, loadClientData]
   );
 
-  /** One place to change a single order of the signed-in client, and only
-   *  their own — every caller below goes through it. */
+  /** One place to change a single order of the signed-in client. */
   const patchOrder = useCallback(
-    (orderId: string, patch: (order: Order) => Order) => {
+    async (orderId: string, patch: Record<string, unknown>) => {
       if (!session?.clientId) return;
-      const clientId = session.clientId;
-      setOrders((prev) => {
-        const next = prev.map((o) => (o.id === orderId ? patch(o) : o));
-        writeJSON(ordersKey(clientId), next);
-        return next;
-      });
+      const { error } = await getSupabase()
+        .from("orders")
+        .update(patch)
+        .eq("id", orderId);
+      if (error) throw error;
+      await loadClientData(session.clientId);
     },
-    [session]
+    [session, loadClientData]
   );
 
   const addOrderPhotos = useCallback(
-    (orderId: string, photos: string[]) => {
-      patchOrder(orderId, (o) => ({
-        ...o,
-        wearPhotos: [...(o.wearPhotos ?? []), ...photos],
-      }));
+    async (orderId: string, photos: string[]) => {
+      const current = orders.find((o) => o.id === orderId);
+      await patchOrder(orderId, {
+        wear_photos: [...(current?.wearPhotos ?? []), ...photos],
+      });
     },
-    [patchOrder]
+    [orders, patchOrder]
   );
 
   const removeOrderPhoto = useCallback(
-    (orderId: string, index: number) => {
-      patchOrder(orderId, (o) => {
-        const wearPhotos = (o.wearPhotos ?? []).filter((_, i) => i !== index);
-        return {
-          ...o,
-          wearPhotos,
-          // Nothing left to permit, so the permission goes with the photos.
-          photoConsent: wearPhotos.length > 0 && o.photoConsent,
-          photoConsentOn: wearPhotos.length > 0 ? o.photoConsentOn : "",
-        };
+    async (orderId: string, index: number) => {
+      const current = orders.find((o) => o.id === orderId);
+      const wearPhotos = (current?.wearPhotos ?? []).filter((_, i) => i !== index);
+      await patchOrder(orderId, {
+        wear_photos: wearPhotos,
+        // Nothing left to permit, so the permission goes with the photos.
+        photo_consent: wearPhotos.length > 0 && Boolean(current?.photoConsent),
+        photo_consent_on:
+          wearPhotos.length > 0 ? current?.photoConsentOn || null : null,
       });
     },
-    [patchOrder]
+    [orders, patchOrder]
   );
 
   /** Consent is dated when given and wiped when withdrawn, so the record only
    *  ever says what is true right now. */
   const setOrderPhotoConsent = useCallback(
-    (orderId: string, consent: boolean) => {
-      patchOrder(orderId, (o) => ({
-        ...o,
-        photoConsent: consent,
-        photoConsentOn: consent ? new Date().toISOString().slice(0, 10) : "",
-      }));
+    async (orderId: string, consent: boolean) => {
+      await patchOrder(orderId, {
+        photo_consent: consent,
+        photo_consent_on: consent ? new Date().toISOString().slice(0, 10) : null,
+      });
     },
     [patchOrder]
   );
 
   const addItem = useCallback(
-    (input: NewItemInput) => {
+    async (input: NewItemInput) => {
       if (!session?.clientId) return;
-      const clientId = session.clientId;
-      const item: OwnedItem = {
-        id: generateId("item"),
+      const { error } = await getSupabase().from("wardrobe_items").insert({
+        profile_id: session.clientId,
         name: input.name,
         category: input.category,
         photos: input.photos,
         notes: input.notes ?? "",
-        addedOn: new Date().toISOString().slice(0, 10),
-      };
-      setItems((prev) => {
-        const next = [item, ...prev];
-        writeJSON(itemsKey(clientId), next);
-        return next;
       });
+      if (error) throw error;
+      await loadClientData(session.clientId);
     },
-    [session]
+    [session, loadClientData]
   );
 
   const removeItem = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!session?.clientId) return;
-      const clientId = session.clientId;
-      setItems((prev) => {
-        const next = prev.filter((it) => it.id !== id);
-        writeJSON(itemsKey(clientId), next);
-        return next;
-      });
+      const { error } = await getSupabase()
+        .from("wardrobe_items")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+      await loadClientData(session.clientId);
     },
-    [session]
+    [session, loadClientData]
   );
 
   return (
@@ -368,6 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         items,
         login,
         logout,
+        refresh,
         updateMeasurements,
         updateDeliveryInfo,
         addOrder,

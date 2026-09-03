@@ -26,7 +26,7 @@ export default function AdminCategoryOrdersPage() {
     : undefined;
 
   function refresh() {
-    setClients(getAllClientsWithLiveData());
+    void getAllClientsWithLiveData().then(setClients);
   }
 
   useEffect(() => {

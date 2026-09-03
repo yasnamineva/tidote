@@ -213,7 +213,7 @@ export function DocumentsPanel() {
   const [newGroup, setNewGroup] = useState<DocGroup>("setup");
 
   function refresh() {
-    setItems(getComplianceItems());
+    void getComplianceItems().then(setItems);
   }
 
   useEffect(() => {

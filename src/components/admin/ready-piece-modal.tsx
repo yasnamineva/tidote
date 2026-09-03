@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Photo } from "@/components/photo";
 import { useLang } from "@/lib/i18n";
 import { todayKey } from "@/lib/hours";
 import { categoryLabel } from "@/lib/translations";
-import { importPhotos, photoWarning } from "@/lib/images";
+import { photoWarning } from "@/lib/images";
+import { STOCK_BUCKET, importAndUpload } from "@/lib/photos";
 import { ORDER_CATEGORIES, generateId, type OrderCategory } from "@/lib/mock-data";
 import {
   READY_SIZES,
@@ -48,7 +50,12 @@ export function ReadyPieceModal({
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - photos.length;
-    const result = await importPhotos(Array.from(fileList), room);
+    const result = await importAndUpload(
+      Array.from(fileList),
+      room,
+      "rail",
+      STOCK_BUCKET
+    );
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }
@@ -228,8 +235,7 @@ export function ReadyPieceModal({
               <div className="flex flex-wrap gap-2">
                 {photos.map((src, i) => (
                   <div key={src.slice(0, 40) + i} className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- uploaded photos are data: URLs, which next/image can't optimize */}
-                    <img
+                                        <Photo
                       src={src}
                       alt=""
                       className="h-16 w-16 object-cover border border-line"

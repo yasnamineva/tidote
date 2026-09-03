@@ -559,6 +559,7 @@ export default function DashboardPage() {
               <p className="text-sm text-ink-soft mb-6">{t("wardrobe.sub")}</p>
               <WardrobeSection
                 items={items}
+                ownerId={session.clientId ?? ""}
                 orders={orders}
                 editable
                 onAdd={addItem}

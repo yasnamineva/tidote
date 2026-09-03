@@ -87,6 +87,13 @@ const ICONS: Record<string, React.ReactNode> = {
       <path d="M16 17l5-5-5-5M21 12H9" />
     </>
   ),
+  download: (
+    <>
+      <path d="M12 3v12" />
+      <path d="M7 12l5 5 5-5" />
+      <path d="M4 21h16" />
+    </>
+  ),
   home: (
     <>
       <path d="M3 11l9-7 9 7" />
@@ -175,10 +182,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (ready && session?.role === "admin") {
-      setClients(getAllClientsWithLiveData());
+      void getAllClientsWithLiveData().then(setClients);
       // Sold pieces have left the rail, so the badge counts what is still here.
-      setReadyInStock(
-        getReadyPieces().filter((p) => p.status !== "sold").length
+      void getReadyPieces().then((pieces) =>
+        setReadyInStock(pieces.filter((p) => p.status !== "sold").length)
       );
     }
   }, [ready, session, pathname]);
@@ -290,12 +297,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         />
       </div>
 
+      {/* The free plan includes no automatic backups, so this is the backup:
+          a real file on her own machine, whenever she asks for one. */}
+      <a
+        href="/api/export"
+        download
+        className="flex items-center gap-2.5 px-3 py-2 mt-2 rounded text-sm text-ink-soft hover:text-ink hover:bg-ink/[0.04] transition-colors"
+      >
+        <NavIcon name="download" />
+        {t("adminnav.backup")}
+      </a>
+
       {/* Leaving the panel is not the same as leaving the account: she often
           wants to look at the live site and come straight back. */}
       <Link
         href="/"
         onClick={close}
-        className="flex items-center gap-2.5 px-3 py-2 mt-2 rounded text-sm text-ink-soft hover:text-ink hover:bg-ink/[0.04] transition-colors"
+        className="flex items-center gap-2.5 px-3 py-2 rounded text-sm text-ink-soft hover:text-ink hover:bg-ink/[0.04] transition-colors"
       >
         <NavIcon name="home" />
         {t("adminnav.viewSite")}

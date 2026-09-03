@@ -26,7 +26,7 @@ export default function AdminReadyPage() {
   const [creating, setCreating] = useState(false);
 
   function refresh() {
-    setPieces(getReadyPieces());
+    void getReadyPieces().then(setPieces);
   }
 
   useEffect(() => {

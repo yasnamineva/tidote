@@ -21,7 +21,7 @@ export default function AdminOverviewPage() {
   const [showModal, setShowModal] = useState(false);
 
   function refresh() {
-    setClients(getAllClientsWithLiveData());
+    void getAllClientsWithLiveData().then(setClients);
   }
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { Photo } from "@/components/photo";
 import { useLang } from "@/lib/i18n";
 
 /**
@@ -21,8 +22,7 @@ export function OrderPhotoThumb({
   return (
     <div className={`relative shrink-0 ${box}`}>
       {photos.length > 0 ? (
-        // eslint-disable-next-line @next/next/no-img-element -- uploaded photos may be data: URLs, which next/image can't optimize
-        <img
+        <Photo
           src={photos[0]}
           alt={label}
           className="h-full w-full object-cover border border-line"

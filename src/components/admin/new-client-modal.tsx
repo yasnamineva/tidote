@@ -17,17 +17,28 @@ export function NewClientModal({
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password.trim()) return;
-    if (emailExists(email)) {
-      setError(t("newclient.dupEmail"));
-      return;
+    setError(null);
+    setSaving(true);
+    try {
+      if (await emailExists(email)) {
+        setError(t("newclient.dupEmail"));
+        return;
+      }
+      await addStoredClient({ name, email, phone, password });
+      onCreated();
+      onClose();
+    } catch (e) {
+      // Creating a login can fail for reasons the form cannot predict — a
+      // duplicate the check above raced, or a password the server rejects.
+      setError(e instanceof Error ? e.message : t("newclient.dupEmail"));
+    } finally {
+      setSaving(false);
     }
-    addStoredClient({ name, email, phone, password });
-    onCreated();
-    onClose();
   }
 
   const fieldCls =
@@ -111,7 +122,8 @@ export function NewClientModal({
             </button>
             <button
               type="submit"
-              className="bg-accent text-cream px-5 py-2.5 text-xs uppercase tracking-[0.15em] transition-colors hover:bg-accent/85"
+              disabled={saving}
+              className="bg-accent text-cream px-5 py-2.5 text-xs uppercase tracking-[0.15em] transition-colors hover:bg-accent/85 disabled:opacity-60"
             >
               {t("newclient.create")}
             </button>

@@ -6,7 +6,7 @@ import { MessageThread } from "@/components/messages/message-thread";
 import { useLang } from "@/lib/i18n";
 import { useNotifications } from "@/lib/notifications";
 import { getAllClientsWithLiveData, sendStudioMessage } from "@/lib/admin-data";
-import { getMessages } from "@/lib/messages";
+import { getLatestMessages, getMessages } from "@/lib/messages";
 import { markReadWhere } from "@/lib/notifications-data";
 import { seedTextById } from "@/lib/translations";
 import type { Client, Message } from "@/lib/mock-data";
@@ -17,16 +17,20 @@ export default function AdminInboxPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  // The last message of every thread, so the list can be ordered without one
+  // request per client.
+  const [latest, setLatest] = useState<Map<string, Message>>(new Map());
 
   useEffect(() => {
-    setClients(getAllClientsWithLiveData());
+    void getAllClientsWithLiveData().then(setClients);
+    void getLatestMessages().then(setLatest);
   }, []);
 
-  function openConversation(clientId: string) {
+  async function openConversation(clientId: string) {
     setSelected(clientId);
-    setMessages(getMessages(clientId));
+    setMessages(await getMessages(clientId));
     // mark this client's message notifications read
-    markReadWhere(
+    await markReadWhere(
       "admin",
       "",
       (n) => n.kind === "message" && n.clientId === clientId
@@ -34,10 +38,11 @@ export default function AdminInboxPage() {
     refreshBell();
   }
 
-  function handleSend(text: string) {
+  async function handleSend(text: string) {
     if (!selected) return;
-    sendStudioMessage(selected, text);
-    setMessages(getMessages(selected));
+    await sendStudioMessage(selected, text);
+    setMessages(await getMessages(selected));
+    setLatest(await getLatestMessages());
   }
 
   const unreadByClient = new Set(
@@ -47,11 +52,7 @@ export default function AdminInboxPage() {
   );
 
   const conversations = clients
-    .map((c) => {
-      const msgs = getMessages(c.id);
-      const last = msgs[msgs.length - 1];
-      return { client: c, last };
-    })
+    .map((c) => ({ client: c, last: latest.get(c.id) }))
     .sort((a, b) => {
       const at = a.last?.createdAt ?? "";
       const bt = b.last?.createdAt ?? "";

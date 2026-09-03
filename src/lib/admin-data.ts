@@ -1,25 +1,11 @@
-import {
-  generateId,
-  mergeOrdersWithSeed,
-  type Client,
-  type OrderNote,
-  type OrderNoteAuthor,
-  type OrderStatus,
-} from "@/lib/mock-data";
-import {
-  deliveryKey,
-  itemsKey,
-  measurementsKey,
-  ordersKey,
-  readJSON,
-  writeJSON,
-} from "@/lib/storage";
+import type { Client, OrderNoteAuthor, OrderStatus } from "@/lib/mock-data";
 import { getBaseClientById, getBaseClients } from "@/lib/clients";
 import { todayKey } from "@/lib/hours";
 import { parseTotal } from "@/lib/analytics";
 import { removeReturnedPiece, saveReadyPiece } from "@/lib/ready-pieces";
 import { appendMessage } from "@/lib/messages";
 import { pushNotification } from "@/lib/notifications-data";
+import { getSupabase } from "@/lib/supabase/client";
 import {
   getStoredLang,
   pieceLabel,
@@ -27,134 +13,146 @@ import {
   translate,
 } from "@/lib/translations";
 
-export function getClientWithLiveData(clientId: string): Client | undefined {
-  const seed = getBaseClientById(clientId);
-  if (!seed) return undefined;
-  return {
-    ...seed,
-    orders: mergeOrdersWithSeed(
-      readJSON(ordersKey(clientId), seed.orders),
-      seed.orders
-    ),
-    measurements: readJSON(measurementsKey(clientId), seed.measurements),
-    delivery: readJSON(deliveryKey(clientId), seed.delivery),
-    items: readJSON(itemsKey(clientId), seed.items),
-  };
+/**
+ * The studio's side of a client's record.
+ *
+ * Every function here used to read a localStorage key, change it, and write it
+ * back. They now go to Postgres, and the access rules live in the database
+ * rather than in the fact that the studio panel is the only page that calls
+ * them — which was never a rule at all.
+ */
+export async function getClientWithLiveData(
+  clientId: string
+): Promise<Client | undefined> {
+  return getBaseClientById(clientId);
 }
 
-export function getAllClientsWithLiveData(): Client[] {
-  return getBaseClients().map((c) => getClientWithLiveData(c.id)!);
+export async function getAllClientsWithLiveData(): Promise<Client[]> {
+  return getBaseClients();
 }
 
 function adminOrderHref(clientId: string, orderId: string) {
   return `/admin/orders/${clientId}/${orderId}`;
 }
 
-export function updateOrderStatus(
+/** Reads one order back with its client, for the notification text. */
+async function orderContext(orderId: string) {
+  const { data, error } = await getSupabase()
+    .from("orders")
+    .select("id,piece,total,category,photos,profile_id,profiles(name)")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return undefined;
+  const profiles = data.profiles as unknown as { name: string } | { name: string }[] | null;
+  return {
+    clientId: data.profile_id as string,
+    clientName: (Array.isArray(profiles) ? profiles[0]?.name : profiles?.name) ?? "",
+    piece: data.piece as string,
+    total: data.total as string,
+    category: data.category as string,
+    photos: (data.photos as string[] | null) ?? [],
+  };
+}
+
+export async function updateOrderStatus(
   clientId: string,
   orderId: string,
   status: OrderStatus
-): Client | undefined {
-  const client = getClientWithLiveData(clientId);
-  if (!client) return undefined;
-  const order = client.orders.find((o) => o.id === orderId);
-  if (!order) return undefined;
-  const nextOrders = client.orders.map((o) =>
-    o.id === orderId ? { ...o, status } : o
-  );
-  writeJSON(ordersKey(clientId), nextOrders);
+): Promise<Client | undefined> {
+  const context = await orderContext(orderId);
+  if (!context) return undefined;
+  const { error } = await getSupabase()
+    .from("orders")
+    .update({ status })
+    .eq("id", orderId);
+  if (error) throw error;
   const lang = getStoredLang();
-  pushNotification("client", clientId, {
+  await pushNotification("client", clientId, {
     kind: "status_changed",
     text: translate(lang, "gen.notif.statusChanged", {
-      piece: pieceLabel(lang, order.piece),
+      piece: pieceLabel(lang, context.piece),
       status: statusLabel(lang, status),
     }),
     href: `/dashboard/orders/${orderId}`,
   });
-  return { ...client, orders: nextOrders };
+  return getClientWithLiveData(clientId);
 }
 
-export function updateOrderDeadline(
+export async function updateOrderDeadline(
   clientId: string,
   orderId: string,
   eta: string
-): Client | undefined {
-  const client = getClientWithLiveData(clientId);
-  if (!client) return undefined;
-  const order = client.orders.find((o) => o.id === orderId);
-  if (!order) return undefined;
-  const nextOrders = client.orders.map((o) =>
-    o.id === orderId ? { ...o, eta } : o
-  );
-  writeJSON(ordersKey(clientId), nextOrders);
+): Promise<Client | undefined> {
+  const context = await orderContext(orderId);
+  if (!context) return undefined;
+  const { error } = await getSupabase()
+    .from("orders")
+    .update({ eta })
+    .eq("id", orderId);
+  if (error) throw error;
   const lang = getStoredLang();
-  pushNotification("client", clientId, {
+  await pushNotification("client", clientId, {
     kind: "status_changed",
     text: translate(lang, "gen.notif.deadline", {
-      piece: pieceLabel(lang, order.piece),
+      piece: pieceLabel(lang, context.piece),
       eta,
     }),
     href: `/dashboard/orders/${orderId}`,
   });
-  return { ...client, orders: nextOrders };
+  return getClientWithLiveData(clientId);
 }
 
-export function acceptOrder(
+export async function acceptOrder(
   clientId: string,
   orderId: string,
   price: string,
   eta?: string
-): Client | undefined {
-  const client = getClientWithLiveData(clientId);
-  if (!client) return undefined;
-  const order = client.orders.find((o) => o.id === orderId);
-  if (!order) return undefined;
+): Promise<Client | undefined> {
+  const context = await orderContext(orderId);
+  if (!context) return undefined;
   const total = `€${price.trim()}`;
   const trimmedEta = eta?.trim();
-  const nextOrders = client.orders.map((o) =>
-    o.id === orderId
-      ? {
-          ...o,
-          reviewStatus: "accepted" as const,
-          total,
-          eta: trimmedEta || o.eta,
-        }
-      : o
-  );
-  writeJSON(ordersKey(clientId), nextOrders);
+  const patch: Record<string, unknown> = { review_status: "accepted", total };
+  if (trimmedEta) patch.eta = trimmedEta;
+  const { error } = await getSupabase()
+    .from("orders")
+    .update(patch)
+    .eq("id", orderId);
+  if (error) throw error;
+
   const lang = getStoredLang();
-  const piece = pieceLabel(lang, order.piece);
-  appendMessage(
+  const piece = pieceLabel(lang, context.piece);
+  await appendMessage(
     clientId,
     "studio",
     translate(lang, "gen.msg.accepted", { piece, total })
   );
-  pushNotification("client", clientId, {
+  await pushNotification("client", clientId, {
     kind: "order_reviewed",
     text: translate(lang, "gen.notif.acceptedClient", { piece, total }),
     href: `/dashboard/orders/${orderId}`,
   });
-  return { ...client, orders: nextOrders };
+  return getClientWithLiveData(clientId);
 }
 
-export function denyOrder(
+export async function denyOrder(
   clientId: string,
   orderId: string,
   reason?: string
-): Client | undefined {
-  const client = getClientWithLiveData(clientId);
-  if (!client) return undefined;
-  const order = client.orders.find((o) => o.id === orderId);
-  if (!order) return undefined;
-  const nextOrders = client.orders.map((o) =>
-    o.id === orderId ? { ...o, reviewStatus: "denied" as const } : o
-  );
-  writeJSON(ordersKey(clientId), nextOrders);
+): Promise<Client | undefined> {
+  const context = await orderContext(orderId);
+  if (!context) return undefined;
+  const { error } = await getSupabase()
+    .from("orders")
+    .update({ review_status: "denied" })
+    .eq("id", orderId);
+  if (error) throw error;
+
   const lang = getStoredLang();
-  const piece = pieceLabel(lang, order.piece);
+  const piece = pieceLabel(lang, context.piece);
   const trimmedReason = reason?.trim();
-  appendMessage(
+  await appendMessage(
     clientId,
     "studio",
     translate(lang, "gen.msg.denied", {
@@ -162,57 +160,47 @@ export function denyOrder(
       reason: trimmedReason ? ` ${trimmedReason}` : "",
     })
   );
-  pushNotification("client", clientId, {
+  await pushNotification("client", clientId, {
     kind: "order_reviewed",
     text: translate(lang, "gen.notif.deniedClient", { piece }),
     href: `/dashboard/orders/${orderId}`,
   });
-  return { ...client, orders: nextOrders };
+  return getClientWithLiveData(clientId);
 }
 
-export function appendOrderNote(
+export async function appendOrderNote(
   clientId: string,
   orderId: string,
   author: OrderNoteAuthor,
   text: string,
   photos: string[]
-): Client | undefined {
-  const client = getClientWithLiveData(clientId);
-  if (!client) return undefined;
-  const order = client.orders.find((o) => o.id === orderId);
-  if (!order) return undefined;
-  const note: OrderNote = {
-    id: generateId("note"),
-    orderId,
-    author,
-    text,
-    photos,
-    createdAt: new Date().toISOString(),
-  };
-  const nextOrders = client.orders.map((o) =>
-    o.id === orderId ? { ...o, updates: [...o.updates, note] } : o
-  );
-  writeJSON(ordersKey(clientId), nextOrders);
+): Promise<Client | undefined> {
+  const context = await orderContext(orderId);
+  if (!context) return undefined;
+  const { error } = await getSupabase()
+    .from("order_notes")
+    .insert({ order_id: orderId, author, text, photos });
+  if (error) throw error;
 
   const lang = getStoredLang();
-  const piece = pieceLabel(lang, order.piece);
+  const piece = pieceLabel(lang, context.piece);
   if (author === "client") {
-    pushNotification("admin", clientId, {
+    await pushNotification("admin", clientId, {
       kind: "order_note",
       text: translate(lang, "gen.notif.noteFromClient", {
-        name: client.name,
+        name: context.clientName,
         piece,
       }),
       href: adminOrderHref(clientId, orderId),
     });
   } else {
-    pushNotification("client", clientId, {
+    await pushNotification("client", clientId, {
       kind: "order_note",
       text: translate(lang, "gen.notif.noteFromStudio", { piece }),
       href: `/dashboard/orders/${orderId}`,
     });
   }
-  return { ...client, orders: nextOrders };
+  return getClientWithLiveData(clientId);
 }
 
 export type ReturnOptions = {
@@ -232,35 +220,35 @@ export type ReturnOptions = {
  * the rail as stock, since a finished garment nobody owns is exactly what the
  * In Stock page is for.
  */
-export function returnOrder(
+export async function returnOrder(
   clientId: string,
   orderId: string,
   options: ReturnOptions
-): Client | undefined {
-  const client = getClientWithLiveData(clientId);
-  if (!client) return undefined;
-  const order = client.orders.find((o) => o.id === orderId);
-  if (!order || order.returnedOn) return undefined;
+): Promise<Client | undefined> {
+  const context = await orderContext(orderId);
+  if (!context) return undefined;
 
   const today = todayKey();
-  const nextOrders = client.orders.map((o) =>
-    o.id === orderId ? { ...o, returnedOn: today } : o
-  );
-  writeJSON(ordersKey(clientId), nextOrders);
+  const { error } = await getSupabase()
+    .from("orders")
+    .update({ returned_on: today })
+    .eq("id", orderId)
+    .is("returned_on", null);
+  if (error) throw error;
 
   if (options.toStock) {
     const asked = Number.parseFloat(options.price.replace(",", "."));
-    saveReadyPiece({
-      id: generateId("rp"),
-      name: order.piece,
-      category: order.category,
+    await saveReadyPiece({
+      id: "",
+      name: context.piece,
+      category: context.category as never,
       size: options.size,
       price:
-        Number.isFinite(asked) && asked > 0 ? asked : parseTotal(order.total),
+        Number.isFinite(asked) && asked > 0 ? asked : parseTotal(context.total),
       status: "available",
       // The studio's own reference shots, never the client's photos of
       // themselves — those are theirs and carry their own permission.
-      photos: order.photos ?? [],
+      photos: context.photos,
       notes: "",
       addedOn: today,
       heldFor: "",
@@ -270,36 +258,33 @@ export function returnOrder(
   }
 
   const lang = getStoredLang();
-  pushNotification("client", clientId, {
+  await pushNotification("client", clientId, {
     kind: "status_changed",
     text: translate(lang, "gen.notif.returned", {
-      piece: pieceLabel(lang, order.piece),
+      piece: pieceLabel(lang, context.piece),
     }),
     href: `/dashboard/orders/${orderId}`,
   });
-  return { ...client, orders: nextOrders };
+  return getClientWithLiveData(clientId);
 }
 
 /** Undo a return recorded by mistake, taking the rail piece back off with it. */
-export function undoOrderReturn(
+export async function undoOrderReturn(
   clientId: string,
   orderId: string
-): { client?: Client; stockRemoved: boolean } {
-  const client = getClientWithLiveData(clientId);
-  if (!client) return { stockRemoved: false };
-  const order = client.orders.find((o) => o.id === orderId);
-  if (!order) return { stockRemoved: false };
-  const nextOrders = client.orders.map((o) =>
-    o.id === orderId ? { ...o, returnedOn: "" } : o
-  );
-  writeJSON(ordersKey(clientId), nextOrders);
-  const stockRemoved = removeReturnedPiece(orderId);
-  return { client: { ...client, orders: nextOrders }, stockRemoved };
+): Promise<{ client?: Client; stockRemoved: boolean }> {
+  const { error } = await getSupabase()
+    .from("orders")
+    .update({ returned_on: null })
+    .eq("id", orderId);
+  if (error) throw error;
+  const stockRemoved = await removeReturnedPiece(orderId);
+  return { client: await getClientWithLiveData(clientId), stockRemoved };
 }
 
-export function sendStudioMessage(clientId: string, text: string) {
-  const messages = appendMessage(clientId, "studio", text);
-  pushNotification("client", clientId, {
+export async function sendStudioMessage(clientId: string, text: string) {
+  const messages = await appendMessage(clientId, "studio", text);
+  await pushNotification("client", clientId, {
     kind: "message",
     text: translate(getStoredLang(), "gen.notif.msgFromStudio"),
     href: "/dashboard#messages",

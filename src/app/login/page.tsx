@@ -1,51 +1,72 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
-import { ADMIN, CLIENTS } from "@/lib/mock-data";
 
-const DEMO_CLIENT = CLIENTS[0];
+/**
+ * The one account whose credentials may be shown on a public page. It is a real
+ * login like any other — the difference is that everything behind it is invented,
+ * so handing it out costs no client their measurements. Unset the two variables
+ * and the demo button disappears.
+ */
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? "";
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "";
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const { session, ready, login } = useAuth();
   const { t } = useLang();
   const router = useRouter();
+  const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  /** Where the proxy turned them away from, so they land where they meant to. */
+  const next = params.get("next");
 
   useEffect(() => {
     if (ready && session) {
-      router.replace(session.role === "admin" ? "/admin" : "/dashboard");
+      const home = session.role === "admin" ? "/admin" : "/dashboard";
+      router.replace(next && next.startsWith("/") ? next : home);
     }
-  }, [ready, session, router]);
+  }, [ready, session, router, next]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const result = login(email, password);
-    if (!result.ok) {
-      setError(result.error ?? t("auth.badLogin"));
-      return;
-    }
+    setBusy(true);
     setError(null);
-    const normalized = email.trim().toLowerCase();
-    router.push(normalized === ADMIN.email ? "/admin" : "/dashboard");
+    try {
+      const result = await login(email, password);
+      if (!result.ok) {
+        setError(result.error ?? t("auth.badLogin"));
+        return;
+      }
+      // The redirect happens in the effect above once the session lands, so
+      // both routes through this page end up in the same place.
+    } catch {
+      setError(t("auth.badLogin"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   function fillClientDemo() {
-    setEmail(DEMO_CLIENT.email);
-    setPassword(DEMO_CLIENT.password);
-    setError(null);
-  }
-
-  function fillAdminDemo() {
-    setEmail(ADMIN.email);
-    setPassword(ADMIN.password);
+    setEmail(DEMO_EMAIL);
+    setPassword(DEMO_PASSWORD);
     setError(null);
   }
 
@@ -103,36 +124,30 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="btn-sweep mt-2 bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5"
+              disabled={busy}
+              className="btn-sweep mt-2 bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5 disabled:opacity-60"
             >
-              {t("login.submit")}
+              {busy ? t("login.submitting") : t("login.submit")}
             </button>
 
-            <div className="flex items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={fillClientDemo}
-                className="text-xs uppercase tracking-[0.15em] py-2 -my-1 text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
-              >
-                {t("login.useClientDemo")}
-              </button>
-              <button
-                type="button"
-                onClick={fillAdminDemo}
-                className="text-xs uppercase tracking-[0.15em] py-2 -my-1 text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
-              >
-                {t("login.useAdminDemo")}
-              </button>
-            </div>
+            {DEMO_EMAIL && (
+              <div className="flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={fillClientDemo}
+                  className="text-xs uppercase tracking-[0.15em] py-2 -my-1 text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4"
+                >
+                  {t("login.useClientDemo")}
+                </button>
+              </div>
+            )}
           </form>
 
-          <p className="text-xs text-ink-soft text-center mt-6">
-            {t("login.demoNote")} {t("login.demoClient")}:{" "}
-            <span className="text-ink">{DEMO_CLIENT.email}</span> /{" "}
-            <span className="text-ink">{DEMO_CLIENT.password}</span>,{" "}
-            {t("login.demoAdmin")}: <span className="text-ink">{ADMIN.email}</span> /{" "}
-            <span className="text-ink">{ADMIN.password}</span>
-          </p>
+          {DEMO_EMAIL && (
+            <p className="text-xs text-ink-soft text-center mt-6">
+              {t("login.demoNote")}
+            </p>
+          )}
 
           <p className="text-sm text-center mt-8">
             <Link href="/" className="link-underline inline-block py-2 text-ink-soft hover:text-ink">

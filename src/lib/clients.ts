@@ -1,50 +1,108 @@
 import {
-  CLIENTS,
   EMPTY_DELIVERY,
-  EMPTY_ITEMS,
   EMPTY_MEASUREMENTS,
-  generateId,
   type Client,
 } from "@/lib/mock-data";
+import { getSupabase } from "@/lib/supabase/client";
 import {
-  adminClientsKey,
-  clientNotificationsKey,
-  deletedClientsKey,
-  deliveryKey,
-  itemsKey,
-  measurementsKey,
-  messagesKey,
-  ordersKey,
-  readJSON,
-  removeKey,
-  writeJSON,
-} from "@/lib/storage";
+  toDelivery,
+  toMeasurements,
+  toOrder,
+  toOwnedItem,
+  type DeliveryRow,
+  type MeasurementRow,
+  type OrderRow,
+  type WardrobeRow,
+} from "@/lib/supabase/rows";
 
-// Clients the admin created at runtime (persisted separately from the seeds).
-export function getStoredClients(): Client[] {
-  return readJSON<Client[]>(adminClientsKey(), []);
+/**
+ * A client and everything hanging off them, in one round trip.
+ *
+ * The prototype stitched this together from six localStorage keys. Postgres can
+ * return the whole shape in a single query, and row-level security decides what
+ * comes back — so the studio gets every client and a client gets only their own,
+ * from the same code.
+ */
+const CLIENT_SELECT = `
+  id, name, email, phone, is_demo,
+  measurements ( * ),
+  delivery_info ( * ),
+  wardrobe_items ( * ),
+  orders ( *, order_notes ( * ) )
+`;
+
+type ProfileRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  is_demo: boolean;
+  measurements: MeasurementRow | MeasurementRow[] | null;
+  delivery_info: DeliveryRow | DeliveryRow[] | null;
+  wardrobe_items: WardrobeRow[] | null;
+  orders: OrderRow[] | null;
+};
+
+/** PostgREST returns a one-to-one either way depending on how it reads the FK. */
+function one<T>(v: T | T[] | null | undefined): T | undefined {
+  if (!v) return undefined;
+  return Array.isArray(v) ? v[0] : v;
 }
 
-// Seed clients can't be spliced out of the imported array, so deletions of them
-// are recorded as tombstones and filtered on read.
-function getDeletedClientIds(): string[] {
-  return readJSON<string[]>(deletedClientsKey(), []);
+export function toClient(r: ProfileRow): Client {
+  const m = one(r.measurements);
+  const d = one(r.delivery_info);
+  return {
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    // Passwords live in Supabase Auth and are never readable. The field stays
+    // on the type only because the seed data shape predates real auth.
+    password: "",
+    role: "client",
+    orders: (r.orders ?? [])
+      .map(toOrder)
+      .sort((a, b) => b.placedOn.localeCompare(a.placedOn)),
+    measurements: m ? toMeasurements(m) : { ...EMPTY_MEASUREMENTS },
+    delivery: d
+      ? toDelivery(d)
+      : { ...EMPTY_DELIVERY, phone: r.phone ?? "" },
+    items: (r.wardrobe_items ?? [])
+      .map(toOwnedItem)
+      .sort((a, b) => b.addedOn.localeCompare(a.addedOn)),
+  };
 }
 
-// The full set of base client records (seeds + admin-created), used by both the
-// auth layer (login/hydration) and the admin data layer.
-export function getBaseClients(): Client[] {
-  const deleted = new Set(getDeletedClientIds());
-  return [...CLIENTS, ...getStoredClients()].filter((c) => !deleted.has(c.id));
+export async function getBaseClients(): Promise<Client[]> {
+  const { data, error } = await getSupabase()
+    .from("profiles")
+    .select(CLIENT_SELECT)
+    .eq("role", "client")
+    .order("name");
+  if (error) throw error;
+  return (data as unknown as ProfileRow[]).map(toClient);
 }
 
-export function getBaseClientById(id: string): Client | undefined {
-  return getBaseClients().find((c) => c.id === id);
+export async function getBaseClientById(
+  id: string
+): Promise<Client | undefined> {
+  const { data, error } = await getSupabase()
+    .from("profiles")
+    .select(CLIENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toClient(data as unknown as ProfileRow) : undefined;
 }
 
-export function emailExists(email: string): boolean {
-  const normalized = email.trim().toLowerCase();
-  return getBaseClients().some((c) => c.email === normalized);
+export async function emailExists(email: string): Promise<boolean> {
+  const { data, error } = await getSupabase()
+    .from("profiles")
+    .select("id")
+    .eq("email", email.trim().toLowerCase())
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
 }
 
 type NewClientInput = {
@@ -54,44 +112,30 @@ type NewClientInput = {
   phone?: string;
 };
 
-export function addStoredClient(input: NewClientInput): Client {
-  const client: Client = {
-    id: generateId("client"),
-    name: input.name.trim(),
-    email: input.email.trim().toLowerCase(),
-    password: input.password,
-    role: "client",
-    orders: [],
-    measurements: { ...EMPTY_MEASUREMENTS },
-    delivery: { ...EMPTY_DELIVERY, phone: input.phone?.trim() ?? "" },
-    items: [...EMPTY_ITEMS],
-  };
-  const next = [...getStoredClients(), client];
-  writeJSON(adminClientsKey(), next);
-  return client;
+/**
+ * Creating a client means creating a login, which the browser is not allowed to
+ * do — it needs the service-role key. So both of these go through a route
+ * handler that checks the caller is the studio before touching auth.
+ */
+export async function addStoredClient(input: NewClientInput): Promise<Client> {
+  const response = await fetch("/api/clients", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.error ?? "Could not create the client");
+  return body.client as Client;
 }
 
 /**
- * Permanently removes a client and every record attached to them. Irreversible —
- * callers are expected to confirm with the studio first.
+ * Permanently removes a client, their login, and every record attached to them.
+ * Irreversible — callers are expected to confirm with the studio first.
  */
-export function deleteClient(id: string) {
-  const stored = getStoredClients();
-  const remaining = stored.filter((c) => c.id !== id);
-  if (remaining.length !== stored.length) {
-    writeJSON(adminClientsKey(), remaining);
-  } else {
-    // A seed client — record a tombstone so it stays gone across reloads.
-    writeJSON(deletedClientsKey(), [...getDeletedClientIds(), id]);
-  }
-  for (const key of [
-    ordersKey,
-    measurementsKey,
-    deliveryKey,
-    itemsKey,
-    messagesKey,
-    clientNotificationsKey,
-  ]) {
-    removeKey(key(id));
+export async function deleteClient(id: string): Promise<void> {
+  const response = await fetch(`/api/clients/${id}`, { method: "DELETE" });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? "Could not delete the client");
   }
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Photo } from "@/components/photo";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Reveal } from "@/components/reveal";
@@ -10,7 +11,7 @@ import { FloatingShapes } from "@/components/floating-shapes";
 import { useLang } from "@/lib/i18n";
 import { formatMoney } from "@/lib/analytics";
 import { categoryLabel, pieceLabel } from "@/lib/translations";
-import { getReadyPieces, sizeLabel, type ReadyPiece } from "@/lib/ready-pieces";
+import { getPublicStock, sizeLabel, type ReadyPiece } from "@/lib/ready-pieces";
 
 const INSTAGRAM_URL = "https://www.instagram.com/tidote.atelier/";
 
@@ -24,9 +25,12 @@ export function InStockPage() {
   const { t } = useLang();
   const [pieces, setPieces] = useState<ReadyPiece[] | null>(null);
 
-  // The rail lives in browser storage, so it can only be read after mount.
+  // Read from the `public_stock` view, which a stranger is allowed to see:
+  // sold pieces are absent and there is no column for the buyer's name.
   useEffect(() => {
-    setPieces(getReadyPieces().filter((p) => p.status !== "sold"));
+    void getPublicStock()
+      .then(setPieces)
+      .catch(() => setPieces([]));
   }, []);
 
   const count = pieces?.length ?? 0;
@@ -133,8 +137,7 @@ function StockCard({ piece }: { piece: ReadyPiece }) {
     <div className="group border border-line bg-paper flex flex-col h-full">
       <div className="relative aspect-[4/5] overflow-hidden bg-line/20">
         {piece.photos.length > 0 ? (
-          // eslint-disable-next-line @next/next/no-img-element -- studio uploads are data: URLs, which next/image can't optimize
-          <img
+          <Photo
             src={piece.photos[0]}
             alt={pieceLabel(lang, piece.name)}
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"

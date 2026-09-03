@@ -48,7 +48,10 @@ export function NotificationProvider({
       setNotifications([]);
       return;
     }
-    setNotifications(getNotifications(audience, scopeId));
+    void getNotifications(audience, scopeId)
+      .then(setNotifications)
+      // An unreachable database should cost the bell its badge, not the page.
+      .catch(() => setNotifications([]));
   }, [audience, scopeId]);
 
   useEffect(() => {
@@ -67,13 +70,13 @@ export function NotificationProvider({
 
   const markAllRead = useCallback(() => {
     if (!audience) return;
-    setNotifications(markAllReadData(audience, scopeId));
+    void markAllReadData(audience, scopeId).then(setNotifications);
   }, [audience, scopeId]);
 
   const markRead = useCallback(
     (id: string) => {
       if (!audience) return;
-      setNotifications(markReadData(audience, scopeId, id));
+      void markReadData(audience, scopeId, id).then(setNotifications);
     },
     [audience, scopeId]
   );

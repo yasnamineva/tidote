@@ -141,12 +141,10 @@ const en: Dict = {
   "login.email": "Email",
   "login.password": "Password",
   "login.submit": "Login",
-  "login.useClientDemo": "Use client demo",
-  "login.useAdminDemo": "Use admin demo",
+  "login.submitting": "Signing in…",
+  "login.useClientDemo": "Fill in the demo account",
   "login.demoNote":
-    "This is a prototype login for design review. Demo credentials —",
-  "login.demoClient": "client",
-  "login.demoAdmin": "admin",
+    "The demo account holds invented records, so you can look around without seeing anyone's real measurements.",
   "login.back": "← Back to home",
 
   // common
@@ -287,10 +285,6 @@ const en: Dict = {
     "\"{name}\" could not be read — try saving it as a JPEG or PNG.",
 
   // storage
-  "storage.fullTitle": "Not saved.",
-  "storage.fullBody":
-    "This browser has run out of storage, so your last change was not kept. Remove a few photos and try again.",
-  "storage.dismiss": "Dismiss",
 
   // order detail
   "od.placed": "Placed",
@@ -347,6 +341,7 @@ const en: Dict = {
   "adminnav.inbox": "Inbox",
   "adminnav.calendar": "Calendar",
   "adminnav.analytics": "Analytics",
+  "adminnav.backup": "Download Backup",
   "adminnav.viewSite": "View Site",
   "adminnav.logout": "Log Out",
   "an.title": "Analytics",
@@ -739,7 +734,7 @@ const en: Dict = {
   "gen.notif.noteFromStudio": "The studio added a note to \"{piece}\".",
   "auth.badLogin": "That email/password doesn't match our records.",
 
-  // seed pieces
+  // Garment names the studio reuses. Anything else passes through.
   "piece.Burgundy Track Jacket": "Burgundy Track Jacket",
   "piece.Olive Cargo Set": "Olive Cargo Set",
   "piece.Black Puffer Jacket": "Black Puffer Jacket",
@@ -748,24 +743,6 @@ const en: Dict = {
   "piece.Panelled Track Jacket": "Panelled Track Jacket",
   "piece.Reworked Graphic Tee": "Reworked Graphic Tee",
 
-  // seed messages / notifications (by id)
-  "seed.msg-seed-dimitar-1":
-    "Welcome back, Dimitar! Message us here anytime about fabric, fit, or timing.",
-  "seed.msg-seed-boris-1":
-    "Hi Boris — glad to have you back in the atelier. Let us know if you need anything.",
-  "seed.msg-seed-kaloyan-1":
-    "Welcome to Tidote Atelier, Kaloyan! Feel free to ask us anything here.",
-  "seed.ntf-seed-admin-1": "Kaloyan sent you a message.",
-  "seed.ntf-seed-dimitar-1":
-    "Your Gold Graphic Hoodie is ready for a fitting — book a slot.",
-
-  // seed order notes (client-typed text; only the demo ones are translatable)
-  "seed.note-TD-1042": "Burgundy panelling, custom shoulder taping.",
-  "seed.note-TD-1058": "Waiting on fabric confirmation.",
-  "seed.note-TD-1065":
-    "Fabric arrived — book your fitting whenever works for you.",
-  "seed.ready-rp-seed-1": "Sample from the last run — never worn.",
-  "seed.ready-rp-seed-3": "Held until Friday.",
 };
 
 const bg: Dict = {
@@ -902,12 +879,10 @@ const bg: Dict = {
   "login.email": "Имейл",
   "login.password": "Парола",
   "login.submit": "Вход",
-  "login.useClientDemo": "Демо клиент",
-  "login.useAdminDemo": "Демо админ",
+  "login.submitting": "Влизане…",
+  "login.useClientDemo": "Попълни демо профила",
   "login.demoNote":
-    "Това е примерен вход за преглед на дизайна. Демо данни —",
-  "login.demoClient": "клиент",
-  "login.demoAdmin": "админ",
+    "Демо профилът съдържа измислени данни, така че можете да разгледате, без да виждате ничии реални мерки.",
   "login.back": "← Обратно към началото",
 
   // common
@@ -1049,10 +1024,6 @@ const bg: Dict = {
     "„{name}“ не може да бъде прочетена — запишете я като JPEG или PNG.",
 
   // съхранение
-  "storage.fullTitle": "Не е запазено.",
-  "storage.fullBody":
-    "Мястото в този браузър свърши и последната промяна не беше запазена. Премахнете няколко снимки и опитайте отново.",
-  "storage.dismiss": "Скрий",
 
   // order detail
   "od.placed": "Поръчана",
@@ -1109,6 +1080,7 @@ const bg: Dict = {
   "adminnav.inbox": "Съобщения",
   "adminnav.calendar": "Календар",
   "adminnav.analytics": "Анализи",
+  "adminnav.backup": "Изтегли резервно копие",
   "adminnav.viewSite": "Към сайта",
   "adminnav.logout": "Изход",
   "an.title": "Анализи",
@@ -1502,7 +1474,7 @@ const bg: Dict = {
   "gen.notif.noteFromStudio": "Ателието добави бележка към „{piece}“.",
   "auth.badLogin": "Имейлът или паролата не са верни.",
 
-  // seed pieces
+  // Имена на модели, които ателието използва често.
   "piece.Burgundy Track Jacket": "Бордо спортно яке",
   "piece.Olive Cargo Set": "Маслинен карго комплект",
   "piece.Black Puffer Jacket": "Черно яке пухенка",
@@ -1511,24 +1483,6 @@ const bg: Dict = {
   "piece.Panelled Track Jacket": "Спортно яке с панели",
   "piece.Reworked Graphic Tee": "Преработена тениска с щампа",
 
-  // seed messages / notifications (by id)
-  "seed.msg-seed-dimitar-1":
-    "Добре дошли отново! Пишете ни тук по всяко време — за плат, кройка или срокове.",
-  "seed.msg-seed-boris-1":
-    "Радваме се да ви видим отново в ателието. Пишете ни, ако имате нужда от нещо.",
-  "seed.msg-seed-kaloyan-1":
-    "Добре дошли в Tidote Atelier! Питайте ни за всичко тук.",
-  "seed.ntf-seed-admin-1": "Kaloyan ви изпрати съобщение.",
-  "seed.ntf-seed-dimitar-1":
-    "Вашият „Златист суитшърт с щампа“ е готов за проба — запазете час.",
-
-  // seed order notes (client-typed text; only the demo ones are translatable)
-  "seed.note-TD-1042": "Бордо панели, ръчно кантиране на раменете.",
-  "seed.note-TD-1058": "Чакаме потвърждение за плата.",
-  "seed.note-TD-1065":
-    "Платът пристигна — запазете си час за проба, когато ви е удобно.",
-  "seed.ready-rp-seed-1": "Мостра от последната серия — необличана.",
-  "seed.ready-rp-seed-3": "Запазен до петък.",
 };
 
 export const DICT: Record<Lang, Dict> = { en, bg };
@@ -1607,10 +1561,7 @@ export function pieceLabel(lang: Lang, piece: string): string {
   return piece; // freeform client-typed piece names pass through
 }
 
-/**
- * Order notes are free text the client typed, so they can't be translated —
- * except the seeded demo ones, which carry a `seed.note-<orderId>` entry.
- */
+/** Order notes are free text the client typed, so they pass through as written. */
 export function orderNoteText(
   lang: Lang,
   orderId: string,
@@ -1620,12 +1571,14 @@ export function orderNoteText(
   return seedTextById(lang, `note-${orderId}`, note);
 }
 
-export function seedTextById(
-  lang: Lang,
-  id: string,
-  fallback: string
-): string {
-  const key = `seed.${id}`;
-  if (DICT.en[key]) return translate(lang, key);
-  return fallback; // generated (non-seed) content passes through
+/**
+ * What a person wrote, in the language they wrote it.
+ *
+ * This used to look demo content up by its fixed seed id so both languages had
+ * a version of it. Everything is real content out of the database now — a
+ * message, a note, a line about a piece — and translating what someone actually
+ * typed would be wrong, so it is returned as written.
+ */
+export function seedTextById(_lang: Lang, _id: string, text: string): string {
+  return text;
 }

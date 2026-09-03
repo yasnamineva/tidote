@@ -1,5 +1,5 @@
 import { generateId } from "@/lib/mock-data";
-import { readJSON, writeJSON } from "@/lib/storage";
+import { getSupabase } from "@/lib/supabase/client";
 import { translate, type Lang } from "@/lib/translations";
 
 /**
@@ -49,10 +49,6 @@ export type ComplianceItem = {
   notes: string;
 };
 
-const COMPLIANCE_KEY = "tidote_compliance";
-/** Seed items she deleted; without this they would come back on every load. */
-const HIDDEN_KEY = "tidote_compliance_hidden";
-
 type Seed = Pick<
   ComplianceItem,
   "seedKey" | "group" | "recurrence" | "reference"
@@ -90,115 +86,135 @@ const SEEDS: Seed[] = [
   { seedKey: "processingRegister", group: "data", recurrence: "annual", reference: "GDPR, чл. 30" },
 ];
 
-function seedToItem(seed: Seed): ComplianceItem {
+type ComplianceRow = {
+  id: string; seed_key: string; title: string; description: string;
+  group: DocGroup; recurrence: DocRecurrence; status: DocStatus;
+  reference: string; due_on: string | null; notes: string;
+};
+
+function toItem(r: ComplianceRow): ComplianceItem {
   return {
-    id: `doc-${seed.seedKey}`,
-    seedKey: seed.seedKey,
-    title: "",
-    description: "",
-    group: seed.group,
-    recurrence: seed.recurrence,
-    status: "todo",
-    reference: seed.reference,
-    dueOn: "",
-    notes: "",
+    id: r.id,
+    seedKey: r.seed_key,
+    title: r.title,
+    description: r.description,
+    group: r.group,
+    recurrence: r.recurrence,
+    status: r.status,
+    reference: r.reference,
+    dueOn: r.due_on ?? "",
+    notes: r.notes,
   };
 }
 
-function normalize(raw: Partial<ComplianceItem>): ComplianceItem {
-  const status = DOC_STATUSES.includes(raw.status as DocStatus)
-    ? (raw.status as DocStatus)
-    : "todo";
-  const group = DOC_GROUPS.includes(raw.group as DocGroup)
-    ? (raw.group as DocGroup)
-    : "setup";
-  return {
-    id: raw.id ?? generateId("doc"),
-    seedKey: raw.seedKey ?? "",
-    title: raw.title ?? "",
-    description: raw.description ?? "",
-    group,
-    recurrence: (raw.recurrence as DocRecurrence) ?? "once",
-    status,
-    reference: raw.reference ?? "",
-    dueOn: raw.dueOn ?? "",
-    notes: raw.notes ?? "",
+const COLUMNS =
+  'id,seed_key,title,description,"group",recurrence,status,reference,due_on,notes';
+
+/**
+ * The built-in checklist lives in code so a corrected citation reaches everyone,
+ * while her statuses and notes live in the database. On first read, any seed the
+ * database has never seen is inserted; one she deleted stays deleted, because
+ * deleting it left a row behind marked "na" rather than removing it.
+ */
+export async function getComplianceItems(): Promise<ComplianceItem[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from("compliance_items").select(COLUMNS);
+  if (error) throw error;
+  const stored = (data as unknown as ComplianceRow[]).map(toItem);
+
+  const known = new Set(stored.map((i) => i.seedKey).filter(Boolean));
+  const missing = SEEDS.filter((s) => !known.has(s.seedKey));
+  if (missing.length > 0) {
+    const { error: insertError } = await supabase.from("compliance_items").insert(
+      missing.map((s) => ({
+        seed_key: s.seedKey,
+        group: s.group,
+        recurrence: s.recurrence,
+        reference: s.reference,
+      }))
+    );
+    // A duplicate here just means another tab inserted the same seed first.
+    if (insertError && insertError.code !== "23505") throw insertError;
+    return getComplianceItems();
+  }
+
+  // The seed's group, recurrence and citation are refreshed from code on read.
+  const index = new Map(SEEDS.map((s) => [s.seedKey, s]));
+  const merged = stored.map((item) => {
+    const seed = item.seedKey ? index.get(item.seedKey) : undefined;
+    return seed
+      ? { ...item, group: seed.group, recurrence: seed.recurrence, reference: seed.reference }
+      : item;
+  });
+  const order = new Map(DOC_GROUPS.map((g, i) => [g, i]));
+  return merged.sort((a, b) => (order.get(a.group) ?? 0) - (order.get(b.group) ?? 0));
+}
+
+export async function saveComplianceItem(
+  item: ComplianceItem
+): Promise<ComplianceItem[]> {
+  const row = {
+    seed_key: item.seedKey,
+    title: item.title,
+    description: item.description,
+    group: item.group,
+    recurrence: item.recurrence,
+    status: item.status,
+    reference: item.reference,
+    due_on: item.dueOn || null,
+    notes: item.notes,
   };
+  const supabase = getSupabase();
+  // Items she adds herself are minted in the browser with a "doc-" id that the
+  // database has never seen, so a missing row means insert.
+  const { data: existing } = await supabase
+    .from("compliance_items")
+    .select("id")
+    .eq("id", item.id)
+    .maybeSingle();
+  const { error } = existing
+    ? await supabase.from("compliance_items").update(row).eq("id", item.id)
+    : await supabase.from("compliance_items").insert(row);
+  if (error) throw error;
+  return getComplianceItems();
+}
+
+export async function setComplianceStatus(
+  id: string,
+  status: DocStatus
+): Promise<ComplianceItem[]> {
+  const { error } = await getSupabase()
+    .from("compliance_items")
+    .update({ status })
+    .eq("id", id);
+  if (error) throw error;
+  return getComplianceItems();
+}
+
+export async function setComplianceNotes(
+  id: string,
+  notes: string
+): Promise<ComplianceItem[]> {
+  const { error } = await getSupabase()
+    .from("compliance_items")
+    .update({ notes })
+    .eq("id", id);
+  if (error) throw error;
+  return getComplianceItems();
 }
 
 /**
- * Stored items win — they carry her statuses and notes. Seeds that were never
- * stored get appended, so a checklist entry added in a later release shows up
- * for someone who has already been using the panel, while one she deleted stays
- * deleted. The seed's group/recurrence/reference are refreshed from code so a
- * corrected citation reaches everyone.
+ * A seed row deleted outright would simply be re-inserted on the next read, so
+ * it is emptied of its key instead — which both removes it from the checklist
+ * and stops the seed coming back.
  */
-export function getComplianceItems(): ComplianceItem[] {
-  const stored = readJSON<Partial<ComplianceItem>[]>(COMPLIANCE_KEY, []).map(
-    normalize
-  );
-  const hidden = new Set(readJSON<string[]>(HIDDEN_KEY, []));
-  const seedIndex = new Map(SEEDS.map((s) => [s.seedKey, s]));
-
-  const merged = stored.map((item) => {
-    const seed = item.seedKey ? seedIndex.get(item.seedKey) : undefined;
-    return seed
-      ? {
-          ...item,
-          group: seed.group,
-          recurrence: seed.recurrence,
-          reference: seed.reference,
-        }
-      : item;
-  });
-
-  const present = new Set(merged.map((i) => i.seedKey).filter(Boolean));
-  const missing = SEEDS.filter(
-    (s) => !present.has(s.seedKey) && !hidden.has(`doc-${s.seedKey}`)
-  ).map(seedToItem);
-
-  const all = [...merged, ...missing];
-  const order = new Map(DOC_GROUPS.map((g, i) => [g, i]));
-  return all.sort(
-    (a, b) => (order.get(a.group) ?? 0) - (order.get(b.group) ?? 0)
-  );
-}
-
-function persist(items: ComplianceItem[]): ComplianceItem[] {
-  writeJSON(COMPLIANCE_KEY, items);
-  return items;
-}
-
-export function saveComplianceItem(item: ComplianceItem): ComplianceItem[] {
-  const current = getComplianceItems();
-  const exists = current.some((i) => i.id === item.id);
-  return persist(
-    exists ? current.map((i) => (i.id === item.id ? item : i)) : [...current, item]
-  );
-}
-
-export function setComplianceStatus(
-  id: string,
-  status: DocStatus
-): ComplianceItem[] {
-  return persist(
-    getComplianceItems().map((i) => (i.id === id ? { ...i, status } : i))
-  );
-}
-
-export function setComplianceNotes(id: string, notes: string): ComplianceItem[] {
-  return persist(
-    getComplianceItems().map((i) => (i.id === id ? { ...i, notes } : i))
-  );
-}
-
-export function deleteComplianceItem(id: string): ComplianceItem[] {
-  const next = getComplianceItems().filter((i) => i.id !== id);
-  if (id.startsWith("doc-")) {
-    const hidden = readJSON<string[]>(HIDDEN_KEY, []);
-    if (!hidden.includes(id)) writeJSON(HIDDEN_KEY, [...hidden, id]);
-  }
-  return persist(next);
+export async function deleteComplianceItem(id: string): Promise<ComplianceItem[]> {
+  const { error } = await getSupabase()
+    .from("compliance_items")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+  return getComplianceItems();
 }
 
 export function newComplianceItem(group: DocGroup): ComplianceItem {

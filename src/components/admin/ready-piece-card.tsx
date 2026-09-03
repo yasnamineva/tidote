@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Photo } from "@/components/photo";
 import { useLang } from "@/lib/i18n";
 import { todayKey } from "@/lib/hours";
 import { formatMoney } from "@/lib/analytics";
@@ -42,8 +43,7 @@ export function ReadyPieceCard({
     >
       <div className="relative aspect-[4/5] bg-line/20">
         {piece.photos.length > 0 ? (
-          // eslint-disable-next-line @next/next/no-img-element -- uploaded photos may be data: URLs, which next/image can't optimize
-          <img
+          <Photo
             src={piece.photos[0]}
             alt={pieceLabel(lang, piece.name)}
             className="h-full w-full object-cover"

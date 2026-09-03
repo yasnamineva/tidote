@@ -1,5 +1,6 @@
-import { generateId, type OrderCategory } from "@/lib/mock-data";
-import { readJSON, writeJSON } from "@/lib/storage";
+import type { OrderCategory } from "@/lib/mock-data";
+import { getSupabase } from "@/lib/supabase/client";
+import { toReadyPiece, type ReadyPieceRow } from "@/lib/supabase/rows";
 import { translate, type Lang } from "@/lib/translations";
 
 /**
@@ -43,117 +44,80 @@ export type ReadyPiece = {
   fromOrderId: string;
 };
 
-const READY_KEY = "tidote_ready_pieces";
+/** Columns the studio may see. The rail table is admin-only under RLS. */
+const STUDIO_COLUMNS =
+  "id,name,category,size,price,status,photos,notes,held_for,from_order_id,added_on,sold_on";
 
-export const SEED_READY_PIECES: ReadyPiece[] = [
-  {
-    id: "rp-seed-1",
-    name: "Olive Cargo Set",
-    category: "Cargo Set",
-    size: "M",
-    price: 310,
-    status: "available",
-    photos: ["/photos/gallery-4.jpg"],
-    notes: "Sample from the last run — never worn.",
-    addedOn: "2026-07-14",
-    heldFor: "",
-    soldOn: "",
-    fromOrderId: "",
-  },
-  {
-    id: "rp-seed-2",
-    name: "Panelled Track Jacket",
-    category: "Jacket",
-    size: "L",
-    price: 230,
-    status: "available",
-    photos: ["/photos/men-2.jpg"],
-    notes: "",
-    addedOn: "2026-07-28",
-    heldFor: "",
-    soldOn: "",
-    fromOrderId: "",
-  },
-  {
-    id: "rp-seed-3",
-    name: "Gold Graphic Hoodie",
-    category: "Hoodie",
-    size: "S",
-    price: 190,
-    status: "reserved",
-    photos: ["/photos/casual-5.jpg"],
-    notes: "Held until Friday.",
-    addedOn: "2026-08-02",
-    heldFor: "Mila",
-    soldOn: "",
-    fromOrderId: "",
-  },
-  {
-    id: "rp-seed-4",
-    name: "Reworked Graphic Tee",
-    category: "T-Shirt",
-    size: "One size",
-    price: 90,
-    status: "sold",
-    photos: ["/photos/gallery-7.jpg"],
-    notes: "",
-    addedOn: "2026-06-30",
-    heldFor: "Kaloyan Ivanov",
-    soldOn: "2026-08-11",
-    fromOrderId: "",
-  },
-];
+/** Newest on the rail first. */
+export async function getReadyPieces(): Promise<ReadyPiece[]> {
+  const { data, error } = await getSupabase()
+    .from("ready_pieces")
+    .select(STUDIO_COLUMNS)
+    .order("added_on", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as ReadyPieceRow[]).map(toReadyPiece);
+}
 
-/** Storage may hold rows from an older shape, so every field gets a floor. */
-function normalize(raw: Partial<ReadyPiece>): ReadyPiece {
-  const status = READY_STATUSES.includes(raw.status as ReadyPieceStatus)
-    ? (raw.status as ReadyPieceStatus)
-    : "available";
+/**
+ * What /in-stock shows a stranger. This reads the `public_stock` view, which
+ * has no column for the buyer's name or the studio's notes and drops sold
+ * pieces outright — so the privacy of the rail is a property of the database
+ * rather than of remembering to leave fields out of the markup.
+ */
+export async function getPublicStock(): Promise<ReadyPiece[]> {
+  const { data, error } = await getSupabase()
+    .from("public_stock")
+    .select("id,name,category,size,price,status,photos,added_on")
+    .order("added_on", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as ReadyPieceRow[]).map(toReadyPiece);
+}
+
+function toRow(piece: ReadyPiece) {
   return {
-    id: raw.id ?? generateId("rp"),
-    name: raw.name ?? "",
-    category: (raw.category as OrderCategory) ?? "Accessory",
-    size: raw.size ?? "",
-    price: Number.isFinite(raw.price) ? Number(raw.price) : 0,
-    status,
-    photos: Array.isArray(raw.photos) ? raw.photos : [],
-    notes: raw.notes ?? "",
-    addedOn: raw.addedOn ?? "",
-    heldFor: raw.heldFor ?? "",
-    soldOn: raw.soldOn ?? "",
-    fromOrderId: raw.fromOrderId ?? "",
+    name: piece.name,
+    category: piece.category,
+    size: piece.size,
+    price: piece.price,
+    status: piece.status,
+    photos: piece.photos,
+    notes: piece.notes,
+    held_for: piece.heldFor,
+    from_order_id: piece.fromOrderId || null,
+    added_on: piece.addedOn,
+    sold_on: piece.soldOn || null,
   };
 }
 
-/** Newest on the rail first. */
-export function getReadyPieces(): ReadyPiece[] {
-  return readJSON<Partial<ReadyPiece>[]>(READY_KEY, SEED_READY_PIECES)
-    .map(normalize)
-    .sort((a, b) => (a.addedOn < b.addedOn ? 1 : -1));
-}
-
-function persist(pieces: ReadyPiece[]): ReadyPiece[] {
-  writeJSON(READY_KEY, pieces);
-  return pieces.sort((a, b) => (a.addedOn < b.addedOn ? 1 : -1));
-}
-
 /** Insert or update in place, keyed on id. */
-export function saveReadyPiece(piece: ReadyPiece): ReadyPiece[] {
-  const current = getReadyPieces();
-  const exists = current.some((p) => p.id === piece.id);
-  return persist(
-    exists
-      ? current.map((p) => (p.id === piece.id ? piece : p))
-      : [piece, ...current]
-  );
+export async function saveReadyPiece(piece: ReadyPiece): Promise<ReadyPiece[]> {
+  const supabase = getSupabase();
+  const row = toRow(piece);
+  // A piece created in the browser has no database id yet; let Postgres mint it
+  // rather than inventing one the database then has to trust.
+  const { error } = piece.id
+    ? await supabase.from("ready_pieces").update(row).eq("id", piece.id)
+    : await supabase.from("ready_pieces").insert(row);
+  if (error) throw error;
+  return getReadyPieces();
 }
 
-export function deleteReadyPiece(id: string): ReadyPiece[] {
-  return persist(getReadyPieces().filter((p) => p.id !== id));
+export async function deleteReadyPiece(id: string): Promise<ReadyPiece[]> {
+  const { error } = await getSupabase().from("ready_pieces").delete().eq("id", id);
+  if (error) throw error;
+  return getReadyPieces();
 }
 
-export function getReadyPieceByOrder(orderId: string): ReadyPiece | undefined {
-  return getReadyPieces().find((p) => p.fromOrderId === orderId);
+export async function getReadyPieceByOrder(
+  orderId: string
+): Promise<ReadyPiece | undefined> {
+  const { data, error } = await getSupabase()
+    .from("ready_pieces")
+    .select(STUDIO_COLUMNS)
+    .eq("from_order_id", orderId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toReadyPiece(data as unknown as ReadyPieceRow) : undefined;
 }
 
 /**
@@ -161,10 +125,10 @@ export function getReadyPieceByOrder(orderId: string): ReadyPiece | undefined {
  * happened to the piece since — a sold piece stays sold, whatever the paperwork
  * says.
  */
-export function removeReturnedPiece(orderId: string): boolean {
-  const piece = getReadyPieces().find((p) => p.fromOrderId === orderId);
+export async function removeReturnedPiece(orderId: string): Promise<boolean> {
+  const piece = await getReadyPieceByOrder(orderId);
   if (!piece || piece.status === "sold") return false;
-  deleteReadyPiece(piece.id);
+  await deleteReadyPiece(piece.id);
   return true;
 }
 
@@ -173,22 +137,27 @@ export function removeReturnedPiece(orderId: string): boolean {
  * by the month they happened in. Moving it back onto the rail clears the stamp
  * so it stops counting as income.
  */
-export function setReadyPieceStatus(
+export async function setReadyPieceStatus(
   id: string,
   status: ReadyPieceStatus,
   today: string
-): ReadyPiece[] {
-  return persist(
-    getReadyPieces().map((p) =>
-      p.id === id
-        ? {
-            ...p,
-            status,
-            soldOn: status === "sold" ? p.soldOn || today : "",
-          }
-        : p
-    )
-  );
+): Promise<ReadyPiece[]> {
+  const supabase = getSupabase();
+  const { data: current, error: readError } = await supabase
+    .from("ready_pieces")
+    .select("sold_on")
+    .eq("id", id)
+    .single();
+  if (readError) throw readError;
+  const { error } = await supabase
+    .from("ready_pieces")
+    .update({
+      status,
+      sold_on: status === "sold" ? (current?.sold_on ?? today) : null,
+    })
+    .eq("id", id);
+  if (error) throw error;
+  return getReadyPieces();
 }
 
 export type ReadyStockSummary = {

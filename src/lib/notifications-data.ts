@@ -1,96 +1,94 @@
-import {
-  SEED_ADMIN_NOTIFICATIONS,
-  SEED_CLIENT_NOTIFICATIONS,
-  generateId,
-  type Notification,
-  type NotificationAudience,
-  type NotificationKind,
+import type {
+  Notification,
+  NotificationAudience,
+  NotificationKind,
 } from "@/lib/mock-data";
-import {
-  adminNotificationsKey,
-  clientNotificationsKey,
-  readJSON,
-  writeJSON,
-} from "@/lib/storage";
+import { getSupabase } from "@/lib/supabase/client";
+import { toNotification, type NotificationRow } from "@/lib/supabase/rows";
 
-function keyFor(audience: NotificationAudience, clientId: string) {
-  return audience === "admin"
-    ? adminNotificationsKey()
-    : clientNotificationsKey(clientId);
-}
+const COLUMNS = "id,audience,profile_id,kind,text,href,read,created_at";
 
-function seedFor(audience: NotificationAudience, clientId: string) {
-  return audience === "admin"
-    ? SEED_ADMIN_NOTIFICATIONS
-    : SEED_CLIENT_NOTIFICATIONS[clientId] ?? [];
-}
-
-export function getNotifications(
+/**
+ * Two inboxes in one table, told apart by `audience`. The studio's alerts carry
+ * the client they are about; a client's carry only their own id, and the policy
+ * on the table makes sure that is the only one they can read.
+ */
+export async function getNotifications(
   audience: NotificationAudience,
   clientId = ""
-): Notification[] {
-  const list = readJSON<Notification[]>(
-    keyFor(audience, clientId),
-    seedFor(audience, clientId)
-  );
-  return [...list].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+): Promise<Notification[]> {
+  let query = getSupabase()
+    .from("notifications")
+    .select(COLUMNS)
+    .eq("audience", audience)
+    .order("created_at", { ascending: false });
+  if (audience === "client") query = query.eq("profile_id", clientId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data as NotificationRow[]).map(toNotification);
 }
 
-export function pushNotification(
+export async function pushNotification(
   audience: NotificationAudience,
   clientId: string,
   input: { kind: NotificationKind; text: string; href: string }
-): Notification[] {
-  const current = getNotifications(audience, clientId);
-  const next: Notification[] = [
-    {
-      id: generateId("ntf"),
-      audience,
-      clientId,
-      kind: input.kind,
-      text: input.text,
-      href: input.href,
-      createdAt: new Date().toISOString(),
-      read: false,
-    },
-    ...current,
-  ];
-  writeJSON(keyFor(audience, clientId), next);
-  return next;
+): Promise<Notification[]> {
+  const { error } = await getSupabase().from("notifications").insert({
+    audience,
+    profile_id: clientId || null,
+    kind: input.kind,
+    text: input.text,
+    href: input.href,
+  });
+  if (error) throw error;
+  return getNotifications(audience, clientId);
 }
 
-export function markAllRead(
+export async function markAllRead(
   audience: NotificationAudience,
   clientId = ""
-): Notification[] {
-  const next = getNotifications(audience, clientId).map((n) => ({
-    ...n,
-    read: true,
-  }));
-  writeJSON(keyFor(audience, clientId), next);
-  return next;
+): Promise<Notification[]> {
+  let query = getSupabase()
+    .from("notifications")
+    .update({ read: true })
+    .eq("audience", audience)
+    .eq("read", false);
+  if (audience === "client") query = query.eq("profile_id", clientId);
+  const { error } = await query;
+  if (error) throw error;
+  return getNotifications(audience, clientId);
 }
 
-export function markRead(
+export async function markRead(
   audience: NotificationAudience,
   clientId: string,
   id: string
-): Notification[] {
-  const next = getNotifications(audience, clientId).map((n) =>
-    n.id === id ? { ...n, read: true } : n
-  );
-  writeJSON(keyFor(audience, clientId), next);
-  return next;
+): Promise<Notification[]> {
+  const { error } = await getSupabase()
+    .from("notifications")
+    .update({ read: true })
+    .eq("id", id);
+  if (error) throw error;
+  return getNotifications(audience, clientId);
 }
 
-export function markReadWhere(
+/**
+ * The predicate is a JavaScript function, so it cannot travel to Postgres.
+ * Read, decide here, then update the ids that matched — which is fine at the
+ * size of one person's notification list.
+ */
+export async function markReadWhere(
   audience: NotificationAudience,
   clientId: string,
   predicate: (n: Notification) => boolean
-): Notification[] {
-  const next = getNotifications(audience, clientId).map((n) =>
-    predicate(n) ? { ...n, read: true } : n
-  );
-  writeJSON(keyFor(audience, clientId), next);
-  return next;
+): Promise<Notification[]> {
+  const current = await getNotifications(audience, clientId);
+  const ids = current.filter((n) => !n.read && predicate(n)).map((n) => n.id);
+  if (ids.length === 0) return current;
+  const { error } = await getSupabase()
+    .from("notifications")
+    .update({ read: true })
+    .in("id", ids);
+  if (error) throw error;
+  return getNotifications(audience, clientId);
 }
