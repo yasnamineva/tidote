@@ -6,7 +6,7 @@ import { useLang } from "@/lib/i18n";
 import { todayKey } from "@/lib/hours";
 import { categoryLabel } from "@/lib/translations";
 import { photoWarning } from "@/lib/images";
-import { STOCK_BUCKET, importAndUpload } from "@/lib/photos";
+import { STOCK_BUCKET, deletePhotos, importAndUpload } from "@/lib/photos";
 import { ORDER_CATEGORIES, generateId, type OrderCategory } from "@/lib/mock-data";
 import {
   READY_SIZES,
@@ -58,6 +58,13 @@ export function ReadyPieceModal({
     );
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
+  }
+
+  /** A draft photo is already uploaded, so removing it has to remove the file. */
+  function dropDraftPhoto(index: number) {
+    const dropped = photos[index];
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+    if (dropped) void deletePhotos([dropped]);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -243,7 +250,7 @@ export function ReadyPieceModal({
                     <button
                       type="button"
                       onClick={() =>
-                        setPhotos((prev) => prev.filter((_, n) => n !== i))
+                        dropDraftPhoto(i)
                       }
                       aria-label={t("ready.removePhoto")}
                       className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-ink text-cream text-xs leading-none before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"

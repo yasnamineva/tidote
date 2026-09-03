@@ -34,8 +34,10 @@ the `supabase/migrations/` folder in this repo:
 | `0003_storage.sql` | The two photo buckets and their rules |
 | `0004_admin_email.sql` | Which email address is the studio |
 
-**Before running `0004`,** check that the address in it is the one you will sign
-in with. That row is what makes your account the studio rather than a client.
+**Before running `0004`,** change the address in it to the one you will sign in
+with. That row is what makes your account the studio rather than a client. You
+can also add the row later — the account just has to be created *after* it
+exists.
 
 ## 3. Fill in the keys
 

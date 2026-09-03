@@ -72,7 +72,13 @@ create policy "update own order" on orders
 create function guard_order_columns() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if is_admin() then
+  -- A null uid means the caller is a role that bypasses row-level security --
+  -- the service key, used by the seed script and the studio's own routes. Note
+  -- that a trigger runs even for those, so without this the seed data would be
+  -- quietly rewritten on its way in. It cannot be an anonymous visitor: the
+  -- policy on this table already refused them, since `profile_id = auth.uid()`
+  -- is never true for a null uid.
+  if auth.uid() is null or is_admin() then
     return new;
   end if;
   if new.total is distinct from old.total
@@ -96,7 +102,7 @@ create trigger orders_guard_studio_columns
 create function guard_new_order() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if is_admin() then
+  if auth.uid() is null or is_admin() then
     return new;
   end if;
   new.review_status := 'pending';

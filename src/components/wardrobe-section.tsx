@@ -5,7 +5,7 @@ import { Photo } from "@/components/photo";
 import { useLang } from "@/lib/i18n";
 import { categoryLabel, pieceLabel } from "@/lib/translations";
 import { photoWarning } from "@/lib/images";
-import { importAndUpload } from "@/lib/photos";
+import { deletePhotos, importAndUpload } from "@/lib/photos";
 import {
   ORDER_CATEGORIES,
   type Order,
@@ -96,6 +96,13 @@ export function WardrobeSection({
     const result = await importAndUpload(Array.from(fileList), room, ownerId);
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
+  }
+
+  /** A draft photo is already uploaded, so removing it has to remove the file. */
+  function dropDraftPhoto(index: number) {
+    const dropped = photos[index];
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+    if (dropped) void deletePhotos([dropped]);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -263,7 +270,7 @@ export function WardrobeSection({
                     <button
                       type="button"
                       onClick={() =>
-                        setPhotos((prev) => prev.filter((_, j) => j !== i))
+                        dropDraftPhoto(i)
                       }
                       aria-label={t("wardrobe.remove")}
                       className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-ink text-cream text-xs leading-none flex items-center justify-center before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"

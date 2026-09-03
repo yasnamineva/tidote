@@ -1,5 +1,6 @@
 import type { OrderCategory } from "@/lib/mock-data";
 import { getSupabase } from "@/lib/supabase/client";
+import { deletePhotos } from "@/lib/photos";
 import { toReadyPiece, type ReadyPieceRow } from "@/lib/supabase/rows";
 import { translate, type Lang } from "@/lib/translations";
 
@@ -103,8 +104,21 @@ export async function saveReadyPiece(piece: ReadyPiece): Promise<ReadyPiece[]> {
 }
 
 export async function deleteReadyPiece(id: string): Promise<ReadyPiece[]> {
-  const { error } = await getSupabase().from("ready_pieces").delete().eq("id", id);
+  const supabase = getSupabase();
+  // Read the photos before the row goes, or there is nothing left to say which
+  // files in the bucket belonged to it.
+  const { data: existing } = await supabase
+    .from("ready_pieces")
+    .select("photos,from_order_id")
+    .eq("id", id)
+    .maybeSingle();
+  const { error } = await supabase.from("ready_pieces").delete().eq("id", id);
   if (error) throw error;
+  // A returned piece carries copies of the order's reference shots, and the
+  // order still needs those, so only a piece of its own is cleared up.
+  if (!existing?.from_order_id && existing?.photos?.length) {
+    await deletePhotos(existing.photos as string[]);
+  }
   return getReadyPieces();
 }
 

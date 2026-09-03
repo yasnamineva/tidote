@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { categoryLabel } from "@/lib/translations";
 import { photoWarning } from "@/lib/images";
-import { importAndUpload } from "@/lib/photos";
+import { deletePhotos, importAndUpload } from "@/lib/photos";
 import { ORDER_CATEGORIES, type OrderCategory } from "@/lib/mock-data";
 
 const MAX_PHOTOS = 4;
@@ -36,7 +36,11 @@ export function NewOrderForm() {
   }
 
   function removePhoto(index: number) {
+    // Uploading happens on selection, so a photo dropped from the draft is
+    // already a file in the bucket that nothing will ever point at.
+    const dropped = photos[index];
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+    if (dropped) void deletePhotos([dropped]);
   }
 
   async function handleSubmit(e: React.FormEvent) {

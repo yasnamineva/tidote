@@ -24,6 +24,7 @@ import { appendOrderNote } from "@/lib/admin-data";
 import { pushNotification } from "@/lib/notifications-data";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fromDelivery, fromMeasurements } from "@/lib/supabase/rows";
+import { deletePhotos } from "@/lib/photos";
 import { getStoredLang, pieceLabel, translate } from "@/lib/translations";
 
 type Session = {
@@ -311,6 +312,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const removeOrderPhoto = useCallback(
     async (orderId: string, index: number) => {
       const current = orders.find((o) => o.id === orderId);
+      const dropped = current?.wearPhotos?.[index];
       const wearPhotos = (current?.wearPhotos ?? []).filter((_, i) => i !== index);
       await patchOrder(orderId, {
         wear_photos: wearPhotos,
@@ -319,6 +321,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         photo_consent_on:
           wearPhotos.length > 0 ? current?.photoConsentOn || null : null,
       });
+      // Dropping the reference is not deleting the photo. Someone who asked for
+      // it to be gone should not have it sitting in a bucket.
+      if (dropped) await deletePhotos([dropped]);
     },
     [orders, patchOrder]
   );
@@ -354,14 +359,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const removeItem = useCallback(
     async (id: string) => {
       if (!session?.clientId) return;
+      const gone = items.find((it) => it.id === id);
       const { error } = await getSupabase()
         .from("wardrobe_items")
         .delete()
         .eq("id", id);
       if (error) throw error;
+      if (gone?.photos.length) await deletePhotos(gone.photos);
       await loadClientData(session.clientId);
     },
-    [session, loadClientData]
+    [session, items, loadClientData]
   );
 
   return (

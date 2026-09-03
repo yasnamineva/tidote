@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local design scratch: saved pages, screen recordings, reference images.
+# 72MB of third-party assets that nothing builds from.
+/design-reference/*
+!/design-reference/reference.jpg
