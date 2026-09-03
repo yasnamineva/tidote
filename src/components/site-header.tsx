@@ -174,7 +174,7 @@ export function SiteHeader() {
           <Wordmark size="md" />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-sm uppercase tracking-[0.15em]">
+        <nav className="hidden lg:flex items-center gap-4 xl:gap-7 text-sm uppercase tracking-[0.15em]">
           {NAV_LINKS.map((link) =>
             link.children ? (
               <div key={link.href} className="relative group">
@@ -223,7 +223,7 @@ export function SiteHeader() {
           )}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-3 xl:gap-4">
           <LanguageToggle />
           {ready && session && <NotificationBell />}
           {ready && session ? (

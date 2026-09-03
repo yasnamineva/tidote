@@ -41,12 +41,12 @@ export function InStockPage() {
       <main className="flex-1">
         <section className="relative border-b border-line overflow-hidden">
           <FloatingShapes variant="warm" />
-          <div className="relative z-10 mx-auto max-w-7xl px-6 py-16 md:py-24">
+          <div className="relative z-10 mx-auto max-w-7xl px-6 py-10 md:py-14">
             <Reveal>
-              <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-3">
                 {t("instock.eyebrow")}
               </p>
-              <h1 className="font-display text-4xl md:text-6xl leading-[0.95] mb-6">
+              <h1 className="font-display text-4xl md:text-6xl leading-[0.95] mb-4">
                 <SplitReveal text={t("instock.pageTitle")} />
               </h1>
               <p className="text-ink-soft text-base md:text-lg max-w-xl">
@@ -56,9 +56,9 @@ export function InStockPage() {
           </div>
         </section>
 
-        <section className="relative mx-auto max-w-7xl px-6 py-16 md:py-20 overflow-hidden">
+        <section className="relative mx-auto max-w-7xl px-6 pt-8 md:pt-10 pb-16 md:pb-20 overflow-hidden">
           <FloatingShapes variant="light" />
-          <Reveal className="relative z-10 flex flex-wrap items-end justify-between gap-4 mb-8">
+          <Reveal className="relative z-10 flex flex-wrap items-end justify-between gap-4 mb-5">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
                 {t("instock.railTitle")}
