@@ -24,7 +24,7 @@ text, and 1 GB of photo storage against uploads that get downscaled to roughly
 
 ## 2. Run the migrations
 
-In the dashboard, open **SQL Editor** and run these four files in order, from
+In the dashboard, open **SQL Editor** and run these five files in order, from
 the `supabase/migrations/` folder in this repo:
 
 | File | What it does |
@@ -32,12 +32,13 @@ the `supabase/migrations/` folder in this repo:
 | `0001_init.sql` | Every table, and the `public_stock` view the In Stock page reads |
 | `0002_rls.sql` | Who can read and write what |
 | `0003_storage.sql` | The two photo buckets and their rules |
-| `0004_admin_email.sql` | Which email address is the studio |
+| `0004_admin_email.sql` | Which addresses may be promoted to studio |
+| `0005_signup.sql` | What happens when someone registers |
 
-**Before running `0004`,** change the address in it to the one you will sign in
-with. That row is what makes your account the studio rather than a client. You
-can also add the row later — the account just has to be created *after* it
-exists.
+**Before running `0004`,** check the addresses listed in it. That list is who
+`npm run create-admin` is *allowed* to promote — being on it grants nothing by
+itself, so an unwanted entry is not an open door, but it is worth pruning. You
+can add to it later at any time.
 
 ## 3. Fill in the keys
 
@@ -72,10 +73,10 @@ Next.js, if you prefer.)
 So `.env.local` ends up looking like:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_…
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_…
-CRON_SECRET=…
+CRON_SECRET=<a long random string>
 NEXT_PUBLIC_DEMO_EMAIL=demo@tidoteatelier.com
 NEXT_PUBLIC_DEMO_PASSWORD=…
 ```
@@ -87,9 +88,36 @@ key bypasses all of that, so it stays out of the browser: it has no
 
 ### Then into Vercel
 
-All six lines go in **Vercel → your project → Settings → Environment
-Variables**, for Production. Vercel does not read `.env.local` — that file is
-local only, and is excluded from deploys.
+**Vercel → your project → Settings → Environment Variables**, scoped to
+Production. It asks you to file each one as **Config** or **Secret**, and it is
+strict about it:
+
+| Variable | Type | Why |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | **Config** | |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Config** | |
+| `NEXT_PUBLIC_DEMO_EMAIL` | **Config** | |
+| `NEXT_PUBLIC_DEMO_PASSWORD` | **Config** | |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | Bypasses every access rule |
+| `CRON_SECRET` | **Secret** | Guards the keep-alive and export endpoints |
+
+> **If Vercel says "Remove the public framework prefix to keep this value
+> private… If that's safe, change the variable to Config" —** it is safe, and
+> the answer is to switch that variable to **Config**.
+>
+> Vercel is refusing to call something a secret when it cannot keep it one.
+> Anything named `NEXT_PUBLIC_` is written into the JavaScript the browser
+> downloads; that is what the prefix *means*. Storing it as a Secret would hide
+> it from you in the dashboard while it sat in plain sight in the page source.
+>
+> All four of ours are genuinely fine in the open. The publishable key grants
+> nothing on its own — every table checks who is asking, which is what the 21
+> access-rule tests are about. The demo password is printed on the login page
+> deliberately. The two that must never be public have no prefix, which is
+> exactly why Vercel lets you file them as Secret.
+
+Vercel does not read `.env.local`. That file is local only, and excluded from
+deploys.
 
 ## 4. Create your own login
 
@@ -110,7 +138,36 @@ Then `npm run dev`, go to `/login`, and sign in. You should land on `/admin`.
 > Users → Add user** — tick *auto confirm* so the account can sign in without a
 > verification email. The command is just less to get wrong.
 
-## 5. Seed the demo account
+## 5. Turn on email — clients cannot register without it
+
+**This one is not optional if clients are going to use the site.** Supabase's
+built-in email sender delivers **only to members of your Supabase organisation,
+at 2 messages an hour**. Everything else is rejected outright. So with it,
+a client registering gets no confirmation link and a forgotten password can
+never be reset — silently, from their side.
+
+Use your own mailbox instead. In the Supabase dashboard, **Authentication →
+Emails → SMTP Settings**, enable custom SMTP and fill in:
+
+| Field | Value |
+| --- | --- |
+| Host | `smtp.hostinger.com` |
+| Port | `465` |
+| Username | `support@tidoteatelier.com` |
+| Password | that mailbox's password |
+| Sender email | `support@tidoteatelier.com` |
+| Sender name | Tidote Atelier |
+
+There is no DNS to change for this, and that is worth knowing rather than
+assuming: your SPF record already says `include:_spf.mail.hostinger.com`, so
+mail sent through Hostinger from your own address is already authorised. **Do
+not add anything to the root SPF record** — the Hostinger MX entries and that
+one TXT line are what keep your mailboxes working.
+
+While you are on that screen, leave **Confirm email** switched on. It is what
+stops someone registering with an address that is not theirs.
+
+## 6. Seed the demo account
 
 ```
 npm run seed
@@ -121,7 +178,24 @@ rail. Everything it makes is fictional, which is why its password can be printed
 on the public login page. Delete `NEXT_PUBLIC_DEMO_EMAIL` and
 `NEXT_PUBLIC_DEMO_PASSWORD` and the demo button disappears.
 
-## 6. Backups — please read this one
+## How people get accounts
+
+Two ways in, and they produce the same kind of account:
+
+- **A client registers themselves** at `/signup`. They confirm their address by
+  email and can sign in straight away, with an empty measurement sheet.
+- **You add them** from the studio panel — *Clients → New Client*. You set the
+  password and pass it on; they can change it from the sign-in page whenever
+  they like.
+
+Neither can make anyone studio. Signing up always produces a client, whatever
+address is used — including one listed in `admin_emails`. Promotion happens only
+through `npm run create-admin`, which runs on the server with the secret key.
+
+**To change your own password**, either run `npm run create-admin` again with the
+new one, or use *Forgot your password?* on the sign-in page like anyone else.
+
+## 7. Backups — please read this one
 
 **The free plan takes no backups at all.** If the project is deleted or a row is
 overwritten, there is nothing to restore from.

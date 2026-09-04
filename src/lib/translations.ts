@@ -142,6 +142,45 @@ const en: Dict = {
   "login.password": "Password",
   "login.submit": "Login",
   "login.submitting": "Signing in…",
+  "login.noAccount": "First time here?",
+  "login.createOne": "Create an account",
+
+  "signup.eyebrow": "New here",
+  "signup.title": "Create your account",
+  "signup.name": "Your name",
+  "signup.namePlaceholder": "e.g. Dimitar Kolev",
+  "signup.submit": "Create account",
+  "signup.submitting": "Creating…",
+  "signup.passwordHint": "At least 8 characters.",
+  "signup.shortPassword": "Use at least 8 characters.",
+  "signup.taken": "That email already has an account. Try signing in instead.",
+  "signup.failed": "Could not create the account. Please try again.",
+  "signup.checkEmail": "Check {email} for a link to confirm your address.",
+  "signup.checkEmailSub":
+    "You can sign in as soon as you have clicked it. If nothing arrives, look in your spam folder.",
+  "signup.toLogin": "← Back to sign in",
+  "signup.haveAccount": "Already have an account?",
+  "signup.signIn": "Sign in",
+
+  "forgot.link": "Forgot your password?",
+  "forgot.needEmail": "Enter your email above first, then ask for a reset link.",
+  "forgot.sent":
+    "If that address has an account, a reset link is on its way. The link works once and lasts an hour.",
+
+  "reset.eyebrow": "Your account",
+  "reset.title": "Choose a new password",
+  "reset.newPassword": "New password",
+  "reset.confirm": "Repeat it",
+  "reset.submit": "Save password",
+  "reset.saving": "Saving…",
+  "reset.mismatch": "Those two do not match.",
+  "reset.failed": "Could not save the new password. Ask for a fresh link and try again.",
+  "reset.done": "Saved. Taking you to your account…",
+  "reset.expiredTitle": "That link has expired",
+  "reset.expiredBody":
+    "Reset links work once and last an hour. Ask for a new one from the sign-in page.",
+  "reset.askAgain": "← Back to sign in",
+
   "login.useClientDemo": "Fill in the demo account",
   "login.demoNote":
     "The demo account holds invented records, so you can look around without seeing anyone's real measurements.",
@@ -884,6 +923,45 @@ const bg: Dict = {
   "login.password": "Парола",
   "login.submit": "Вход",
   "login.submitting": "Влизане…",
+  "login.noAccount": "За първи път тук?",
+  "login.createOne": "Създайте профил",
+
+  "signup.eyebrow": "Нов профил",
+  "signup.title": "Създайте своя профил",
+  "signup.name": "Вашето име",
+  "signup.namePlaceholder": "напр. Димитър Колев",
+  "signup.submit": "Създай профил",
+  "signup.submitting": "Създаване…",
+  "signup.passwordHint": "Поне 8 символа.",
+  "signup.shortPassword": "Използвайте поне 8 символа.",
+  "signup.taken": "Вече има профил с този имейл. Опитайте да влезете.",
+  "signup.failed": "Профилът не можа да бъде създаден. Опитайте отново.",
+  "signup.checkEmail": "Проверете {email} за връзка, с която да потвърдите адреса си.",
+  "signup.checkEmailSub":
+    "Ще може да влезете веднага щом я отворите. Ако не пристигне нищо, проверете в спам.",
+  "signup.toLogin": "← Обратно към входа",
+  "signup.haveAccount": "Вече имате профил?",
+  "signup.signIn": "Вход",
+
+  "forgot.link": "Забравена парола?",
+  "forgot.needEmail": "Първо въведете имейла си по-горе, след това поискайте връзка.",
+  "forgot.sent":
+    "Ако този адрес има профил, връзката за смяна е на път. Тя важи веднъж и за един час.",
+
+  "reset.eyebrow": "Вашият профил",
+  "reset.title": "Изберете нова парола",
+  "reset.newPassword": "Нова парола",
+  "reset.confirm": "Повторете я",
+  "reset.submit": "Запази паролата",
+  "reset.saving": "Запазване…",
+  "reset.mismatch": "Двете не съвпадат.",
+  "reset.failed": "Паролата не можа да бъде запазена. Поискайте нова връзка и опитайте пак.",
+  "reset.done": "Запазено. Отвеждаме ви към профила ви…",
+  "reset.expiredTitle": "Връзката е изтекла",
+  "reset.expiredBody":
+    "Връзките важат веднъж и за един час. Поискайте нова от страницата за вход.",
+  "reset.askAgain": "← Обратно към входа",
+
   "login.useClientDemo": "Попълни демо профила",
   "login.demoNote":
     "Демо профилът съдържа измислени данни, така че можете да разгледате, без да виждате ничии реални мерки.",

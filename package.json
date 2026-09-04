@@ -11,9 +11,10 @@
     "lint": "eslint",
     "test:db": "./supabase/tests/run.sh",
     "test:wiring": "./supabase/tests/run-wiring.sh",
-    "test": "npm run test:db && npm run test:wiring",
     "create-admin": "node scripts/create-admin.mjs",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "test:auth": "node tests/auth-flows.mjs",
+    "test": "npm run test:db && npm run test:wiring"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

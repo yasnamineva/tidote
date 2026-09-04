@@ -42,12 +42,12 @@ export async function POST(request: Request) {
     );
   }
 
-  // The signup trigger has already made the profile row; fill in what only the
-  // studio knows, and give them the empty records the portal expects to find.
+  // The signup trigger has already made the profile and the empty measurement
+  // and delivery records — the same ones a client who registered themselves
+  // gets. All that is left is what only the studio knows.
   const id = created.user.id;
   await admin.from("profiles").update({ name, phone }).eq("id", id);
-  await admin.from("measurements").insert({ profile_id: id });
-  await admin.from("delivery_info").insert({ profile_id: id, phone });
+  if (phone) await admin.from("delivery_info").update({ phone }).eq("profile_id", id);
 
   const { data: profile } = await admin
     .from("profiles")

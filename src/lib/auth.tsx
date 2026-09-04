@@ -61,6 +61,14 @@ type AuthContextValue = {
     email: string,
     password: string
   ) => Promise<{ ok: boolean; error?: string; role?: Role }>;
+  /** Client self-registration. Always makes a client — see 0005_signup.sql. */
+  signUp: (
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<{ ok: boolean; error?: string; needsConfirmation?: boolean }>;
+  requestPasswordReset: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  updatePassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   updateMeasurements: (next: Measurements) => Promise<void>;
@@ -209,6 +217,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq("id", data.user.id)
       .maybeSingle();
     return { ok: true, role: (profile?.role as Role) ?? "client" };
+  }, []);
+
+  const signUp = useCallback(
+    async (name: string, email: string, password: string) => {
+      const lang = getStoredLang();
+      if (!isSupabaseConfigured()) {
+        return { ok: false, error: translate(lang, "auth.noBackend") };
+      }
+      try {
+        const { data, error } = await getSupabase().auth.signUp({
+          email: email.trim().toLowerCase(),
+          password,
+          options: {
+            data: { name: name.trim() },
+            emailRedirectTo: `${window.location.origin}/login`,
+          },
+        });
+        if (error) {
+          const taken = error.message?.toLowerCase().includes("already");
+          return {
+            ok: false,
+            error: translate(lang, taken ? "signup.taken" : "signup.failed"),
+          };
+        }
+        // Supabase returns a user with no session when the address still has to
+        // be confirmed, which is the normal case and not an error.
+        return { ok: true, needsConfirmation: !data.session };
+      } catch {
+        return { ok: false, error: translate(lang, "auth.unreachable") };
+      }
+    },
+    []
+  );
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const lang = getStoredLang();
+    if (!isSupabaseConfigured()) {
+      return { ok: false, error: translate(lang, "auth.noBackend") };
+    }
+    try {
+      const { error } = await getSupabase().auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        { redirectTo: `${window.location.origin}/reset-password` }
+      );
+      // Deliberately not reporting whether the address exists: that would turn
+      // this form into a way to find out who has an account here.
+      if (error && error.status !== 400) {
+        return { ok: false, error: translate(lang, "auth.unreachable") };
+      }
+      return { ok: true };
+    } catch {
+      return { ok: false, error: translate(lang, "auth.unreachable") };
+    }
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const lang = getStoredLang();
+    if (!isSupabaseConfigured()) {
+      return { ok: false, error: translate(lang, "auth.noBackend") };
+    }
+    const { error } = await getSupabase().auth.updateUser({ password });
+    if (error) {
+      return { ok: false, error: error.message || translate(lang, "reset.failed") };
+    }
+    return { ok: true };
   }, []);
 
   const logout = useCallback(async () => {
@@ -400,6 +473,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         messages,
         items,
         login,
+        signUp,
+        requestPasswordReset,
+        updatePassword,
         logout,
         refresh,
         updateMeasurements,

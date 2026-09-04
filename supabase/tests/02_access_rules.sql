@@ -12,6 +12,35 @@ grant all on results to authenticated, anon;
 grant usage, select on sequence results_n_seq to authenticated, anon;
 grant execute on function as_user(text) to authenticated, anon;
 
+------------------------------------------------------- how accounts come out
+insert into results (test, expected, got, pass)
+select 'Signing up creates a client, never studio', 'client', role::text, role = 'client'
+from profiles where email = 'ann@example.com';
+
+-- The hole 0005 closes: before it, this address would have arrived as studio.
+do $$
+declare r text;
+begin
+  insert into auth.users (id, email, raw_user_meta_data)
+  values ('44444444-4444-4444-4444-444444444444', 'studio@test.invalid2', '{"name":"Impostor"}');
+  insert into admin_emails (email) values ('studio@test.invalid2') on conflict do nothing;
+  delete from auth.users where id = '44444444-4444-4444-4444-444444444444';
+
+  insert into auth.users (id, email, raw_user_meta_data)
+  values ('44444444-4444-4444-4444-444444444444', 'studio@test.invalid2', '{"name":"Impostor"}');
+  select role::text into r from profiles where id = '44444444-4444-4444-4444-444444444444';
+  insert into results (test, expected, got, pass)
+  values ('An allow-listed address signing up is still only a client', 'client', r, r = 'client');
+end $$;
+
+insert into results (test, expected, got, pass)
+select 'Signing up creates the measurement sheet', '1', count(*)::text, count(*) = 1
+from measurements where profile_id = '44444444-4444-4444-4444-444444444444';
+
+insert into results (test, expected, got, pass)
+select 'Signing up creates the delivery record', '1', count(*)::text, count(*) = 1
+from delivery_info where profile_id = '44444444-4444-4444-4444-444444444444';
+
 ------------------------------------------------------------------ isolation
 set role authenticated;
 select as_user(:ANN);

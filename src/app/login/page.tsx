@@ -26,7 +26,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const { session, ready, login } = useAuth();
+  const { session, ready, login, requestPasswordReset } = useAuth();
   const { t } = useLang();
   const router = useRouter();
   const params = useSearchParams();
@@ -34,6 +34,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   /** Where the proxy turned them away from, so they land where they meant to. */
   const next = params.get("next");
@@ -62,6 +63,24 @@ function LoginForm() {
     } finally {
       setBusy(false);
     }
+  }
+
+  /** Never says whether the address exists — that would make this a way to
+   *  find out who has an account here. */
+  async function handleForgot() {
+    if (!email.trim()) {
+      setError(t("forgot.needEmail"));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const result = await requestPasswordReset(email);
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error ?? t("auth.unreachable"));
+      return;
+    }
+    setResetSent(true);
   }
 
   function fillClientDemo() {
@@ -117,8 +136,20 @@ function LoginForm() {
             </div>
 
             {error && (
-              <p className="text-sm text-accent border border-accent/40 bg-accent/5 px-3 py-2 animate-[fade-up_0.3s_ease-out_both]">
+              <p
+                role="alert"
+                className="text-sm text-accent border border-accent/40 bg-accent/5 px-3 py-2 animate-[fade-up_0.3s_ease-out_both]"
+              >
                 {error}
+              </p>
+            )}
+
+            {resetSent && (
+              <p
+                role="status"
+                className="text-sm text-moss-deep border border-moss-deep/40 bg-moss-soft px-3 py-2 animate-[fade-up_0.3s_ease-out_both]"
+              >
+                {t("forgot.sent")}
               </p>
             )}
 
@@ -129,6 +160,17 @@ function LoginForm() {
             >
               {busy ? t("login.submitting") : t("login.submit")}
             </button>
+
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onClick={handleForgot}
+                disabled={busy}
+                className="text-xs uppercase tracking-[0.15em] py-2 -my-1 text-ink-soft hover:text-moss-deep transition-colors underline underline-offset-4 disabled:opacity-60"
+              >
+                {t("forgot.link")}
+              </button>
+            </div>
 
             {DEMO_EMAIL && (
               <div className="flex items-center justify-center">
@@ -149,7 +191,17 @@ function LoginForm() {
             </p>
           )}
 
-          <p className="text-sm text-center mt-8">
+          <p className="text-sm text-center text-ink-soft mt-6">
+            {t("login.noAccount")}{" "}
+            <Link
+              href="/signup"
+              className="link-underline text-ink hover:text-moss-deep"
+            >
+              {t("login.createOne")}
+            </Link>
+          </p>
+
+          <p className="text-sm text-center mt-6">
             <Link href="/" className="link-underline inline-block py-2 text-ink-soft hover:text-ink">
               {t("login.back")}
             </Link>

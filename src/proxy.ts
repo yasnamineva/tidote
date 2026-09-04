@@ -71,5 +71,13 @@ export const config = {
    * Signed-in browsers refresh their own token client-side, so the pages left
    * out here lose nothing.
    */
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/login", "/api/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/login",
+    "/signup",
+    // The reset link carries a session Supabase needs to set down in cookies.
+    "/reset-password",
+    "/api/:path*",
+  ],
 };

@@ -123,14 +123,26 @@ console.log("QUERY SHAPES — the exact select strings from src/\n");
   check("a client is refused a price change via the API", !!priceErr, priceErr?.message?.slice(0, 60) ?? "");
 }
 
-// 6. a client with no delivery row must still map, not throw
+// 6. the two shapes a delivery record can arrive in
 {
   const BORIS = "33333333-3333-3333-3333-333333333333";
   const boris = as(jwt({ sub: BORIS, role: "authenticated" }));
-  const { data, error } = await boris.from("profiles").select(CLIENT_SELECT).eq("id", BORIS).maybeSingle();
   const one = (v) => (Array.isArray(v) ? v[0] : v);
-  check("a client with no address returns null, not an error", !error && !!data, error?.message ?? "");
-  check("  rows.ts falls back rather than crashing", !one(data?.delivery_info));
+
+  // Since 0005 the signup trigger creates one, so a new client has an empty row
+  // rather than none.
+  const { data, error } = await boris.from("profiles").select(CLIENT_SELECT).eq("id", BORIS).maybeSingle();
+  check("a client who filled nothing in still has a delivery row", !error && !!one(data?.delivery_info),
+        error?.message ?? "");
+  check("  and it is empty, not null", one(data?.delivery_info)?.address === "");
+
+  // Accounts made before 0005 have no row at all, and rows.ts still has to cope.
+  await studio.from("delivery_info").delete().eq("profile_id", BORIS);
+  const { data: legacy, error: legacyErr } = await boris.from("profiles")
+    .select(CLIENT_SELECT).eq("id", BORIS).maybeSingle();
+  check("an account from before 0005 returns null, not an error", !legacyErr && !!legacy,
+        legacyErr?.message ?? "");
+  check("  rows.ts falls back rather than crashing", !one(legacy?.delivery_info));
 }
 
 // 7. notifications + messages column lists

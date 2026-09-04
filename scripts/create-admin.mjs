@@ -3,11 +3,13 @@
  *
  *   npm run create-admin -- support@tidoteatelier.com 'a-good-password'
  *
- * There is deliberately no sign-up form on the site — clients are added by the
- * studio, not by themselves — so the first account has to be made with the
- * service key. This does that, and then checks the account actually came out as
- * studio rather than as a client, which is the thing that silently goes wrong
- * if the address is not in `admin_emails`.
+ * Signing up on the site always produces a client — deliberately, since anyone
+ * can do it, and a trigger that read an address off a form and handed back the
+ * studio role would be a way in for whoever typed the right address. Promotion
+ * happens here instead: on the server, with the service key, after checking the
+ * allow-list. Nothing typed into a browser can reach it.
+ *
+ * Use it once to make the studio account, and again to change its password.
  */
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
@@ -56,31 +58,48 @@ if (!listed) {
   process.exit(1);
 }
 
-const { data: created, error } = await db.auth.admin.createUser({
-  email,
-  password,
-  // These are people who have been met in person; making them chase a
-  // verification email to reach their own account buys nothing.
-  email_confirm: true,
-  user_metadata: { name: "Tidote Atelier" },
-});
+// Already there? Then this is a password change rather than a first account.
+const { data: existing } = await db
+  .from("profiles").select("id, role").eq("email", email.toLowerCase()).maybeSingle();
 
-if (error) {
-  if (error.message?.toLowerCase().includes("already")) {
-    console.error(`${email} already has an account. Reset its password from the Supabase dashboard instead.`);
-  } else {
-    console.error("Could not create the account:", error.message);
+let userId;
+if (existing) {
+  const { error } = await db.auth.admin.updateUserById(existing.id, { password });
+  if (error) {
+    console.error("Could not set the password:", error.message);
+    process.exit(1);
   }
+  userId = existing.id;
+  console.log(`Set a new password for ${email}.`);
+} else {
+  const { data: created, error } = await db.auth.admin.createUser({
+    email,
+    password,
+    // Created by the studio, for the studio: there is nobody to verify to.
+    email_confirm: true,
+    user_metadata: { name: "Tidote Atelier" },
+  });
+  if (error) {
+    console.error("Could not create the account:", error.message);
+    process.exit(1);
+  }
+  userId = created.user.id;
+  console.log(`Created ${email}.`);
+}
+
+// The trigger made a client, as it does for everyone. This is the promotion.
+const { error: promoteError } = await db
+  .from("profiles").update({ role: "admin" }).eq("id", userId);
+if (promoteError) {
+  console.error("Created, but could not set the studio role:", promoteError.message);
   process.exit(1);
 }
 
 const { data: profile } = await db
-  .from("profiles").select("role, name").eq("id", created.user.id).maybeSingle();
-
+  .from("profiles").select("role").eq("id", userId).maybeSingle();
 if (profile?.role !== "admin") {
-  console.error(`Created, but the role came out as "${profile?.role}" instead of "admin".`);
-  console.error("Check that 0004_admin_email.sql ran and lists this address.");
+  console.error(`The role came out as "${profile?.role}" instead of "admin".`);
   process.exit(1);
 }
 
-console.log(`Created ${email} as studio. Sign in at /login and you will land on /admin.`);
+console.log(`${email} is studio. Sign in at /login and you will land on /admin.`);

@@ -14,19 +14,25 @@ revoke all on admin_emails from anon, authenticated;
 insert into admin_emails (email) values ('studio@test.invalid')
 on conflict (email) do nothing;
 
--- Three accounts. The signup trigger decides the roles.
+-- Three accounts. Everyone arrives a client — that is the point of 0005.
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'studio@test.invalid', '{"name":"Studio"}'),
   ('22222222-2222-2222-2222-222222222222', 'ann@example.com',     '{"name":"Ann"}'),
   ('33333333-3333-3333-3333-333333333333', 'boris@example.com',   '{"name":"Boris"}');
 
-insert into measurements (profile_id) values
-  ('22222222-2222-2222-2222-222222222222'), ('33333333-3333-3333-3333-333333333333');
+-- Promotion is what create-admin does with the service key, after checking the
+-- allow-list. Nothing a browser can reach performs this step.
+update profiles set role = 'admin'
+where email = 'studio@test.invalid'
+  and exists (select 1 from admin_emails a where a.email = profiles.email);
 
--- Ann has an address; Boris deliberately does not, so the mapper's fallback to
--- an empty delivery record gets exercised rather than assumed.
-insert into delivery_info (profile_id, address, city, postal_code, phone)
-values ('22222222-2222-2222-2222-222222222222', 'ul. Shishman 14', 'Sofia', '1000', '+359 88 000 0000');
+-- The trigger creates these now, so the fixtures only fill one in.
+
+-- Ann has an address; Boris's row exists but stays empty.
+update delivery_info
+set address = 'ul. Shishman 14', city = 'Sofia', postal_code = '1000',
+    phone = '+359 88 000 0000'
+where profile_id = '22222222-2222-2222-2222-222222222222';
 
 insert into orders (profile_id, piece, category, status, review_status, total, eta)
 values
