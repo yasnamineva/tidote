@@ -41,33 +41,74 @@ exists.
 
 ## 3. Fill in the keys
 
-Copy `.env.example` to `.env.local` and fill it in from **Settings → API**:
+Three of these come from **Supabase**; you invent the rest. Then the whole set
+goes into **Vercel** as well. Two dashboards, so it is worth being exact about
+which one each thing lives in.
+
+### From the Supabase dashboard
+
+Open your project, then **Settings → API Keys** in the left sidebar. (There is
+also a **Connect** button in the top bar that shows the URL and key together for
+Next.js, if you prefer.)
+
+| What you need | Where it is | Goes into |
+| --- | --- | --- |
+| Project URL | Settings → API Keys, at the top | `NEXT_PUBLIC_SUPABASE_URL` |
+| Publishable key — starts `sb_publishable_` (older projects call this **anon public**) | Settings → API Keys | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| Secret key — starts `sb_secret_` (older projects call this **service_role**) | Settings → API Keys, behind a *Reveal* button | `SUPABASE_SERVICE_ROLE_KEY` |
+
+> Supabase is renaming these. A project created now shows **publishable** and
+> **secret**; older ones show **anon** and **service_role**. They go in the same
+> two slots either way — our variable names still say anon/service_role, and
+> that is fine.
+
+### You make these two up
+
+| Variable | What to put |
+| --- | --- |
+| `CRON_SECRET` | Any long random string. Guards the keep-alive and export endpoints. |
+| `NEXT_PUBLIC_DEMO_PASSWORD` | 12+ characters. It gets printed on the public login page, so treat it as a label rather than a secret — but not something guessable. |
+
+So `.env.local` ends up looking like:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=…       # "anon public" — safe in the browser
-SUPABASE_SERVICE_ROLE_KEY=…           # "service_role" — never in the browser
-CRON_SECRET=…                         # any long random string
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_…
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_…
+CRON_SECRET=…
 NEXT_PUBLIC_DEMO_EMAIL=demo@tidoteatelier.com
-NEXT_PUBLIC_DEMO_PASSWORD=…           # 12+ characters
+NEXT_PUBLIC_DEMO_PASSWORD=…
 ```
 
-The **anon key** is meant to be public — on its own it can read nothing, because
-every table checks who is asking. The **service role key** bypasses all of that,
-so it stays out of the browser: it has no `NEXT_PUBLIC_` prefix, which is what
-stops Next from bundling it.
+The **publishable/anon** key is meant to be public — on its own it can read
+nothing, because every table checks who is asking. The **secret/service_role**
+key bypasses all of that, so it stays out of the browser: it has no
+`NEXT_PUBLIC_` prefix, which is what stops Next bundling it.
 
-The same five variables go into **Vercel → Settings → Environment Variables**
-before the next deploy.
+### Then into Vercel
+
+All six lines go in **Vercel → your project → Settings → Environment
+Variables**, for Production. Vercel does not read `.env.local` — that file is
+local only, and is excluded from deploys.
 
 ## 4. Create your own login
 
-Run the site (`npm run dev`), go to `/login`, and sign up with the address you
-put in `0004_admin_email.sql`. Because that row exists, the account is created
-as the studio.
+There is no sign-up form on the site — clients are added by you, not by
+themselves — so the first account is made from the command line:
 
-> If you sign in and land on `/dashboard` instead of `/admin`, the address did
-> not match. Fix the row and create the account again.
+```
+npm run create-admin -- support@tidoteatelier.com 'a-good-password'
+```
+
+It refuses if the address is not listed in `admin_emails`, because the account
+would otherwise be created as a client and you would have no way into the studio
+panel. It also checks afterwards that the role really came out as `admin`.
+
+Then `npm run dev`, go to `/login`, and sign in. You should land on `/admin`.
+
+> You can also do this from the Supabase dashboard under **Authentication →
+> Users → Add user** — tick *auto confirm* so the account can sign in without a
+> verification email. The command is just less to get wrong.
 
 ## 5. Seed the demo account
 

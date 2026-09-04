@@ -8,9 +8,15 @@ grant all on all sequences in schema public to authenticated, service_role;
 grant select on public_stock to anon, authenticated;
 revoke all on admin_emails from anon, authenticated;
 
+-- The suite brings its own studio address rather than reusing whichever one
+-- 0004 carries. Otherwise changing the real sign-in address silently breaks
+-- these tests, which is exactly what it did.
+insert into admin_emails (email) values ('studio@test.invalid')
+on conflict (email) do nothing;
+
 -- Three accounts. The signup trigger decides the roles.
 insert into auth.users (id, email, raw_user_meta_data) values
-  ('11111111-1111-1111-1111-111111111111', 'yasna.mnv@gmail.com', '{"name":"Studio"}'),
+  ('11111111-1111-1111-1111-111111111111', 'studio@test.invalid', '{"name":"Studio"}'),
   ('22222222-2222-2222-2222-222222222222', 'ann@example.com',     '{"name":"Ann"}'),
   ('33333333-3333-3333-3333-333333333333', 'boris@example.com',   '{"name":"Boris"}');
 
