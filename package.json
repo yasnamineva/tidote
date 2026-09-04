@@ -10,7 +10,9 @@
     "deploy": "npx vercel --prod",
     "lint": "eslint",
     "seed": "node scripts/seed.mjs",
-    "test:db": "./supabase/tests/run.sh"
+    "test:db": "./supabase/tests/run.sh",
+    "test:wiring": "./supabase/tests/run-wiring.sh",
+    "test": "npm run test:db && npm run test:wiring"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

@@ -20,15 +20,32 @@ create table auth.users (
 
 -- Supabase reads the subject out of the request's JWT claims. Impersonating a
 -- user in these tests therefore means setting that GUC.
+-- PostgREST exposes the whole claim set as one JSON GUC; the psql suite sets
+-- the single claim directly. Accept either, so the same stub serves both.
 create or replace function auth.uid() returns uuid
 language sql stable as $$
-  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
+  select coalesce(
+    nullif(current_setting('request.jwt.claims', true), '')::json ->> 'sub',
+    nullif(current_setting('request.jwt.claim.sub', true), '')
+  )::uuid;
 $$;
 
 create or replace function auth.role() returns text
 language sql stable as $$
-  select coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), 'anon');
+  select coalesce(
+    nullif(current_setting('request.jwt.claims', true), '')::json ->> 'role',
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    'anon'
+  );
 $$;
+
+-- PostgREST connects as this role and switches to the one the JWT names.
+do $$ begin
+  if not exists (select 1 from pg_roles where rolname = 'authenticator') then
+    create role authenticator login noinherit;
+  end if;
+end $$;
+grant anon, authenticated, service_role to authenticator;
 
 create table storage.buckets (
   id text primary key, name text, public boolean default false,

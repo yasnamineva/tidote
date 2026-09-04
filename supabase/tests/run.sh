@@ -15,7 +15,12 @@ DB=tidote_test
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
 pg_isready -q || { echo "Postgres is not running."; exit 1; }
-dropdb --if-exists "$DB"; createdb "$DB"
+
+# --force disconnects anything still holding the database — a leftover psql, or
+# a PostgREST pointed at it. Without this the drop fails and the run silently
+# tests whatever was there before, which is worse than not running at all.
+dropdb --if-exists --force "$DB"
+createdb "$DB"
 
 psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$HERE/00_supabase_stub.sql"
 for f in "$HERE"/../migrations/0*.sql; do

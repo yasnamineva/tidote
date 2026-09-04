@@ -97,6 +97,26 @@ Two things follow:
 Upgrading to **Pro ($25/mo)** adds daily backups kept for seven days and removes
 the pausing. Until then, the button is the backup.
 
+## Running the tests
+
+Two suites check the database side without needing a Supabase project at all.
+They stub the few Supabase objects the schema leans on and run against a local
+Postgres, so they test our SQL rather than Supabase.
+
+```
+brew install postgresql@17 postgrest
+npm test
+```
+
+`npm run test:db` applies all four migrations to a throwaway database and checks
+that the access rules *behave* — that a client cannot read another client's
+records, cannot price their own order, and that a stranger reaching for the rail
+gets the view rather than the table.
+
+`npm run test:wiring` puts PostgREST in front of it and runs the app's own
+queries through it. The select strings are read out of `src/` rather than
+retyped, so it proves the ones actually shipped.
+
 ## What to watch as it grows
 
 The limit you would hit first is **5 GB of egress a month** — every photo a

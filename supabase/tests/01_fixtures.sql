@@ -17,6 +17,11 @@ insert into auth.users (id, email, raw_user_meta_data) values
 insert into measurements (profile_id) values
   ('22222222-2222-2222-2222-222222222222'), ('33333333-3333-3333-3333-333333333333');
 
+-- Ann has an address; Boris deliberately does not, so the mapper's fallback to
+-- an empty delivery record gets exercised rather than assumed.
+insert into delivery_info (profile_id, address, city, postal_code, phone)
+values ('22222222-2222-2222-2222-222222222222', 'ul. Shishman 14', 'Sofia', '1000', '+359 88 000 0000');
+
 insert into orders (profile_id, piece, category, status, review_status, total, eta)
 values
   ('22222222-2222-2222-2222-222222222222','Ann Jacket','Jacket','delivered','accepted','€400','2026-05-01'),
