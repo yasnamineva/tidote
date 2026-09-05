@@ -39,45 +39,46 @@ export function InStockPage() {
     <>
       <SiteHeader />
       <main className="flex-1">
+        {/* Title, blurb and count in one band. They were three stacked blocks
+            over two bordered sections, which pushed the first photograph more
+            than half a window down the page on a laptop — a rail you cannot
+            see any of is a poor shop window. */}
         <section className="relative border-b border-line overflow-hidden">
           <FloatingShapes variant="warm" />
-          <div className="relative z-10 mx-auto max-w-7xl px-6 py-10 md:py-14">
-            <Reveal>
-              <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-3">
-                {t("instock.eyebrow")}
-              </p>
-              <h1 className="font-display text-4xl md:text-6xl leading-[0.95] mb-4">
-                <SplitReveal text={t("instock.pageTitle")} />
-              </h1>
-              <p className="text-ink-soft text-base md:text-lg max-w-xl">
-                {t("instock.blurb")}
-              </p>
+          <div className="relative z-10 mx-auto max-w-7xl px-6 py-7 md:py-9">
+            <Reveal className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-xl">
+                <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
+                  {t("instock.eyebrow")}
+                </p>
+                <h1 className="font-display text-4xl md:text-5xl leading-[0.95] mb-3">
+                  <SplitReveal text={t("instock.pageTitle")} />
+                </h1>
+                <p className="text-ink-soft text-sm md:text-base">
+                  {t("instock.blurb")}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-6 md:flex-col md:items-end md:gap-1.5">
+                <p className="font-display text-2xl md:text-3xl whitespace-nowrap">
+                  {pieces === null
+                    ? t("common.loading")
+                    : count === 1
+                      ? t("instock.countOne")
+                      : t("instock.count", { n: count })}
+                </p>
+                <Link
+                  href="/#shop"
+                  className="link-underline inline-block py-1 text-xs uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
+                >
+                  {t("instock.lookbook")} &rarr;
+                </Link>
+              </div>
             </Reveal>
           </div>
         </section>
 
-        <section className="relative mx-auto max-w-7xl px-6 pt-8 md:pt-10 pb-16 md:pb-20 overflow-hidden">
+        <section className="relative mx-auto max-w-7xl px-6 pt-6 md:pt-8 pb-16 md:pb-20 overflow-hidden">
           <FloatingShapes variant="light" />
-          <Reveal className="relative z-10 flex flex-wrap items-end justify-between gap-4 mb-5">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
-                {t("instock.railTitle")}
-              </p>
-              <h2 className="font-display text-3xl md:text-4xl">
-                {pieces === null
-                  ? t("common.loading")
-                  : count === 1
-                    ? t("instock.countOne")
-                    : t("instock.count", { n: count })}
-              </h2>
-            </div>
-            <Link
-              href="/#shop"
-              className="link-underline inline-block py-2 text-sm uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
-            >
-              {t("instock.lookbook")} &rarr;
-            </Link>
-          </Reveal>
 
           {pieces !== null && count === 0 ? (
             <div className="relative z-10 border border-line bg-paper px-6 py-16 text-center flex flex-col items-center gap-3">
@@ -93,7 +94,7 @@ export function InStockPage() {
               </Link>
             </div>
           ) : (
-            <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+            <div className={`relative z-10 grid gap-4 md:gap-5 ${gridColumns(count)}`}>
               {(pieces ?? []).map((piece, i) => (
                 <Reveal key={piece.id} delay={(i % 4) * 80}>
                   <StockCard piece={piece} />
@@ -127,6 +128,18 @@ export function InStockPage() {
       <SiteFooter />
     </>
   );
+}
+
+/**
+ * The rail is one-of-each, so it is often very short. Four columns holding one
+ * garment reads as three things missing; one column holding it reads as the
+ * garment. The photograph grows to take the room the columns gave up.
+ */
+function gridColumns(count: number): string {
+  if (count <= 1) return "max-w-xl mx-auto";
+  if (count === 2) return "grid-cols-2 max-w-3xl mx-auto";
+  if (count === 3) return "grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto";
+  return "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
 }
 
 function StockCard({ piece }: { piece: ReadyPiece }) {

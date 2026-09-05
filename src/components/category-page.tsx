@@ -29,8 +29,13 @@ export function CategoryPage({
       <main className="flex-1">
         <section className="relative border-b border-line overflow-hidden">
           <FloatingShapes variant="warm" />
-          <div className="relative z-10 mx-auto max-w-7xl px-6 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
-            <Reveal>
+          <div className="relative z-10 mx-auto max-w-7xl px-6 py-8 md:py-12 grid gap-8 md:min-h-[68vh] md:grid-cols-[1fr_1.3fr] md:items-stretch">
+            {/* On a phone the photograph goes first. The eyebrow, headline,
+                blurb and button came to 454px of reading before any picture —
+                more than half the screen, on a page that is a lookbook. The
+                order is visual only; the h1 is still the first thing in the
+                document. */}
+            <Reveal className="order-2 flex flex-col justify-center md:order-1">
               <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-4">
                 {t(`cat.${categoryKey}.eyebrow`)}
               </p>
@@ -49,7 +54,10 @@ export function CategoryPage({
                 </Link>
               </div>
             </Reveal>
-            <div className="aspect-[4/5]">
+            {/* Tied to the row rather than to its own width: at this column
+                width a 4:5 box is 820px tall, which is what left the text
+                floating in an ocean of cream beside it. */}
+            <div className="order-1 aspect-[4/5] md:order-2 md:aspect-auto md:h-full">
               <FramedMedia className="h-full w-full">
                 <ImageReveal className="h-full w-full">
                   <PlaceholderImage
