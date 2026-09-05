@@ -121,8 +121,9 @@ deploys.
 
 ## 4. Create your own login
 
-There is no sign-up form on the site — clients are added by you, not by
-themselves — so the first account is made from the command line:
+Clients can register at `/signup`, but that only ever produces a client
+account — nothing typed into a form can grant studio access. So the first
+studio login is made from the command line:
 
 ```
 npm run create-admin -- support@tidoteatelier.com 'a-good-password'
@@ -223,7 +224,7 @@ brew install postgresql@17 postgrest
 npm test
 ```
 
-`npm run test:db` applies all four migrations to a throwaway database and checks
+`npm run test:db` applies every migration to a throwaway database and checks
 that the access rules *behave* — that a client cannot read another client's
 records, cannot price their own order, and that a stranger reaching for the rail
 gets the view rather than the table.
@@ -231,6 +232,13 @@ gets the view rather than the table.
 `npm run test:wiring` puts PostgREST in front of it and runs the app's own
 queries through it. The select strings are read out of `src/` rather than
 retyped, so it proves the ones actually shipped.
+
+`npm run test:layout` is the third suite and needs no database. It builds the
+site, opens it in a real browser at ten widths from 320px to 1920px, on every
+public page, in both languages, and fails if any two pieces of text paint on
+top of each other or anything lands outside the viewport. It exists because the
+desktop menu once overlapped the wordmark in production for weeks: the page has
+`overflow-x: clip`, so there was no scrollbar and no warning to notice.
 
 ## What to watch as it grows
 
