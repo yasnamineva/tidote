@@ -55,7 +55,7 @@ Next.js, if you prefer.)
 | What you need | Where it is | Goes into |
 | --- | --- | --- |
 | Project URL | Settings → API Keys, at the top | `NEXT_PUBLIC_SUPABASE_URL` |
-| Publishable key — starts `sb_publishable_` (older projects call this **anon public**) | Settings → API Keys | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| Publishable key — starts `sb_publishable_` (older projects call this **anon public**) | Settings → API Keys | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
 | Secret key — starts `sb_secret_` (older projects call this **service_role**) | Settings → API Keys, behind a *Reveal* button | `SUPABASE_SERVICE_ROLE_KEY` |
 
 > Supabase is renaming these. A project created now shows **publishable** and
@@ -95,7 +95,7 @@ strict about it:
 | Variable | Type | Why |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | **Config** | |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Config** | |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | **Config** | |
 | `NEXT_PUBLIC_DEMO_EMAIL` | **Config** | |
 | `NEXT_PUBLIC_DEMO_PASSWORD` | **Config** | |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | Bypasses every access rule |
@@ -121,23 +121,35 @@ deploys.
 
 ## 4. Create your own login
 
-Clients can register at `/signup`, but that only ever produces a client
-account — nothing typed into a form can grant studio access. So the first
-studio login is made from the command line:
+Register on the site like anyone else, at **`/signup`**, using an address
+listed in `admin_emails` — `support@tidoteatelier.com` is already there.
+
+Then open the confirmation email and click the link. **That click is what makes
+you the studio.** Sign in and you land on `/admin`.
+
+The order matters and it is deliberate. Registering an allow-listed address
+gets you a client account and nothing more; confirming it is what promotes you,
+because that is the step only the person who can read that mailbox can take. If
+someone else registered `support@tidoteatelier.com` first, they would be stuck
+with an ordinary client account and the promotion would arrive in *your* inbox,
+not theirs.
+
+You set your own password, and there is no command line involved. It is a
+one-time job — after this, sign in normally.
+
+> **If the confirmation email cannot reach you yet** (step 5 below is what makes
+> that work), confirm the account by hand instead: **Supabase dashboard →
+> Authentication → Users →** your user **→ Confirm email**. Same effect — the
+> promotion fires on the confirmation, however it happens.
+
+There is still a command, for when you would rather not use the website:
 
 ```
 npm run create-admin -- support@tidoteatelier.com 'a-good-password'
 ```
 
-It refuses if the address is not listed in `admin_emails`, because the account
-would otherwise be created as a client and you would have no way into the studio
-panel. It also checks afterwards that the role really came out as `admin`.
-
-Then `npm run dev`, go to `/login`, and sign in. You should land on `/admin`.
-
-> You can also do this from the Supabase dashboard under **Authentication →
-> Users → Add user** — tick *auto confirm* so the account can sign in without a
-> verification email. The command is just less to get wrong.
+It creates the account, or resets the password of an existing one, and refuses
+if the address is not in `admin_emails`. Use it if you are ever locked out.
 
 ## 5. Turn on email — clients cannot register without it
 
@@ -189,9 +201,14 @@ Two ways in, and they produce the same kind of account:
   password and pass it on; they can change it from the sign-in page whenever
   they like.
 
-Neither can make anyone studio. Signing up always produces a client, whatever
-address is used — including one listed in `admin_emails`. Promotion happens only
-through `npm run create-admin`, which runs on the server with the secret key.
+Neither route can hand out studio access by itself. Signing up always produces
+a client, whatever address is used. An address listed in `admin_emails` is
+promoted only when it is **confirmed** — clicking the link in mail sent to that
+mailbox — so an impostor who registers the studio's address gets an ordinary
+client account and the promotion arrives in the real owner's inbox.
+
+Nothing typed into a form decides this, and a client cannot rewrite their own
+role: the database refuses that outright (`0006_profile_columns.sql`).
 
 **To change your own password**, either run `npm run create-admin` again with the
 new one, or use *Forgot your password?* on the sign-in page like anyone else.

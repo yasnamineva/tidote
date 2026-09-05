@@ -15,6 +15,9 @@ create schema if not exists storage;
 create table auth.users (
   id uuid primary key default gen_random_uuid(),
   email text unique,
+  -- Null until the address is proved. 0007 makes that stamp the thing that
+  -- promotes an allow-listed address, so the tests need to set it.
+  email_confirmed_at timestamptz,
   raw_user_meta_data jsonb default '{}'::jsonb
 );
 

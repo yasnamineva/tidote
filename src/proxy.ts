@@ -16,7 +16,10 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Both names — see ./lib/supabase/client.ts.
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   // This runs ahead of *every* request, the public brand pages included. With no
   // keys there is no session to refresh and nothing to guard, so it stands
   // aside — a site missing its database config should still serve its homepage.

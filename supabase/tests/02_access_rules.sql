@@ -17,20 +17,75 @@ insert into results (test, expected, got, pass)
 select 'Signing up creates a client, never studio', 'client', role::text, role = 'client'
 from profiles where email = 'ann@example.com';
 
--- The hole 0005 closes: before it, this address would have arrived as studio.
+-- Registering an allow-listed address does not, on its own, make you the
+-- studio: 0007 waits for the address to be confirmed. Someone who squats
+-- support@... gets a client account and a promotion that never arrives.
 do $$
 declare r text;
 begin
-  insert into auth.users (id, email, raw_user_meta_data)
-  values ('44444444-4444-4444-4444-444444444444', 'studio@test.invalid2', '{"name":"Impostor"}');
   insert into admin_emails (email) values ('studio@test.invalid2') on conflict do nothing;
-  delete from auth.users where id = '44444444-4444-4444-4444-444444444444';
 
   insert into auth.users (id, email, raw_user_meta_data)
   values ('44444444-4444-4444-4444-444444444444', 'studio@test.invalid2', '{"name":"Impostor"}');
   select role::text into r from profiles where id = '44444444-4444-4444-4444-444444444444';
   insert into results (test, expected, got, pass)
-  values ('An allow-listed address signing up is still only a client', 'client', r, r = 'client');
+  values ('An unconfirmed allow-listed address is only a client', 'client', r, r = 'client');
+
+  -- Reading the mail is the promotion.
+  update auth.users set email_confirmed_at = now()
+  where id = '44444444-4444-4444-4444-444444444444';
+  select role::text into r from profiles where id = '44444444-4444-4444-4444-444444444444';
+  insert into results (test, expected, got, pass)
+  values ('Confirming an allow-listed address makes it studio', 'admin', r, r = 'admin');
+end $$;
+
+-- Confirming an address nobody listed proves nothing and grants nothing.
+do $$
+declare r text;
+begin
+  insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data)
+  values ('55555555-5555-5555-5555-555555555555', 'stranger@example.com', now(), '{"name":"Stranger"}');
+  select role::text into r from profiles where id = '55555555-5555-5555-5555-555555555555';
+  insert into results (test, expected, got, pass)
+  values ('A confirmed address that is not allow-listed stays a client', 'client', r, r = 'client');
+end $$;
+
+-- 0006. Row-level security says which *rows* you may write, so `update own
+-- profile` let a client rewrite their own `role` and become the studio.
+do $$
+declare r text; msg text;
+begin
+  set role authenticated;
+  perform as_user('22222222-2222-2222-2222-222222222222');
+  begin
+    update profiles set role = 'admin' where id = '22222222-2222-2222-2222-222222222222';
+    msg := 'allowed';
+  exception when others then msg := 'refused';
+  end;
+  reset role;
+  select role::text into r from profiles where id = '22222222-2222-2222-2222-222222222222';
+  insert into results (test, expected, got, pass)
+  values ('A client cannot promote themselves to studio', 'refused|client',
+          msg || '|' || r, msg = 'refused' and r = 'client');
+end $$;
+
+-- The guard must not make the profile read-only: your own name is yours.
+do $$
+declare got text; msg text;
+begin
+  set role authenticated;
+  perform as_user('22222222-2222-2222-2222-222222222222');
+  begin
+    update profiles set name = 'Ann Renamed', phone = '+359 88 111 1111'
+    where id = '22222222-2222-2222-2222-222222222222';
+    msg := 'allowed';
+  exception when others then msg := 'refused';
+  end;
+  reset role;
+  select name into got from profiles where id = '22222222-2222-2222-2222-222222222222';
+  insert into results (test, expected, got, pass)
+  values ('A client can still edit their own name', 'Ann Renamed', got || '/' || msg,
+          got = 'Ann Renamed' and msg = 'allowed');
 end $$;
 
 insert into results (test, expected, got, pass)

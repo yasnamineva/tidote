@@ -9,7 +9,11 @@ export async function getServerSupabase() {
   const store = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    // Both names, for the reason given in ./client.ts: Supabase renamed anon
+    // to publishable, and picking one silently breaks every project that used
+    // the other.
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
     {
       cookies: {
         getAll: () => store.getAll(),
