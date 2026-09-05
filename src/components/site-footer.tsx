@@ -119,8 +119,14 @@ export function SiteFooter() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-cream/10 px-6 py-6 text-center text-xs uppercase tracking-[0.2em] text-cream/40">
-        {t("footer.rights", { year: new Date().getFullYear() })}
+      <div className="border-t border-cream/10 px-6 py-6 flex flex-col items-center gap-3 text-xs uppercase tracking-[0.2em] text-cream/40 sm:flex-row sm:justify-between">
+        <span>{t("footer.rights", { year: new Date().getFullYear() })}</span>
+        <Link
+          href="/privacy"
+          className="link-underline py-1 hover:text-moss transition-colors"
+        >
+          {t("footer.privacy")}
+        </Link>
       </div>
     </footer>
   );

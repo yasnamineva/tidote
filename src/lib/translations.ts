@@ -28,6 +28,7 @@ const en: Dict = {
   "footer.shop": "Shop",
   "footer.connect": "Connect",
   "footer.rights": "© {year} Tidote Atelier. All rights reserved.",
+  "footer.privacy": "Privacy Policy",
 
   // 404
   "nf.eyebrow": "Error 404",
@@ -809,6 +810,7 @@ const bg: Dict = {
   "footer.shop": "Магазин",
   "footer.connect": "Контакти",
   "footer.rights": "© {year} Tidote Atelier. Всички права запазени.",
+  "footer.privacy": "Политика за поверителност",
 
   // 404
   "nf.eyebrow": "Грешка 404",
