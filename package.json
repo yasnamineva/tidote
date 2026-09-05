@@ -14,6 +14,7 @@
     "create-admin": "node scripts/create-admin.mjs",
     "seed": "node scripts/seed.mjs",
     "test:auth": "node tests/auth-flows.mjs",
+    "test:layout": "node tests/layout.mjs",
     "test": "npm run test:db && npm run test:wiring"
   },
   "dependencies": {

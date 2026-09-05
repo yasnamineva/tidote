@@ -161,7 +161,7 @@ export function SiteHeader() {
         <Link
           href="/"
           onClick={(e) => handleSamePageClick(e, "/")}
-          className="flex items-center gap-3 group"
+          className="flex shrink-0 items-center gap-3 group"
         >
           <Image
             src="/brand/logo.png"
@@ -174,7 +174,7 @@ export function SiteHeader() {
           <Wordmark size="md" />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-4 xl:gap-7 text-sm uppercase tracking-[0.15em]">
+        <nav className="hidden xl:flex items-center gap-5 2xl:gap-7 text-sm uppercase tracking-[0.15em]">
           {NAV_LINKS.map((link) =>
             link.children ? (
               <div key={link.href} className="relative group">
@@ -223,29 +223,44 @@ export function SiteHeader() {
           )}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-3 xl:gap-4">
+        <div className="hidden shrink-0 xl:flex items-center gap-3 2xl:gap-4">
           <LanguageToggle />
           {ready && session && <NotificationBell />}
           {ready && session ? (
             <Link
               href={accountHref}
               onClick={(e) => handleSamePageClick(e, accountHref)}
-              className="btn-sweep btn-sweep-moss text-sm uppercase tracking-[0.15em] border border-ink px-4 py-2 transition-colors duration-300 hover:text-cream"
+              className="btn-sweep btn-sweep-moss whitespace-nowrap text-sm uppercase tracking-[0.15em] border border-ink px-4 py-2 transition-colors duration-300 hover:text-cream"
             >
               {session.role === "admin" ? t("header.studioAdmin") : t("header.account")}
             </Link>
           ) : (
             <Link
               href="/login"
-              className="btn-sweep text-sm uppercase tracking-[0.15em] border border-ink px-4 py-2 transition-colors duration-300 hover:text-cream"
+              className="btn-sweep whitespace-nowrap text-sm uppercase tracking-[0.15em] border border-ink px-4 py-2 transition-colors duration-300 hover:text-cream"
             >
               {t("header.login")}
             </Link>
           )}
         </div>
 
-        <div className="lg:hidden flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4 xl:hidden">
+          <LanguageToggle className="hidden md:flex" />
           {ready && session && <NotificationBell />}
+          {/* From `md` up there is room for the one thing people come back for,
+              and a tablet-width bar of logo-then-nothing-then-burger is a lot of
+              empty. Below `md` it stays in the panel, where the label fits. */}
+          <Link
+            href={accountHref}
+            onClick={(e) => handleSamePageClick(e, accountHref)}
+            className="btn-sweep hidden whitespace-nowrap border border-ink px-4 py-2 text-sm uppercase tracking-[0.15em] transition-colors duration-300 hover:text-cream md:inline-block"
+          >
+            {ready && session
+              ? session.role === "admin"
+                ? t("header.studioAdmin")
+                : t("header.account")
+              : t("header.login")}
+          </Link>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -272,11 +287,14 @@ export function SiteHeader() {
       </div>
 
       <div
-        className={`lg:hidden overflow-hidden border-t border-line transition-[max-height] duration-300 ease-in-out ${
+        className={`xl:hidden overflow-hidden border-t border-line transition-[max-height] duration-300 ease-in-out ${
           open ? "max-h-[40rem]" : "max-h-0 border-t-0"
         }`}
       >
-        <div className="px-6 py-4 flex flex-col gap-4 text-sm uppercase tracking-[0.15em]">
+        <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col gap-4 text-sm uppercase tracking-[0.15em]">
+          {/* One column on a phone. Above that the panel is as wide as the
+              screen, and a single left-hugging list leaves most of it empty. */}
+          <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
           {NAV_LINKS.map((link) => (
             <div key={link.href} className="flex flex-col">
               <Link
@@ -305,13 +323,14 @@ export function SiteHeader() {
               ))}
             </div>
           ))}
+          </div>
           <Link
             href={accountHref}
             onClick={(e) => {
               setOpen(false);
               handleSamePageClick(e, accountHref);
             }}
-            className="border border-ink px-4 py-2 text-center"
+            className="border border-ink px-4 py-2 text-center md:hidden"
           >
             {ready && session
               ? session.role === "admin"
@@ -319,7 +338,7 @@ export function SiteHeader() {
                 : t("header.account")
               : t("header.login")}
           </Link>
-          <LanguageToggle className="pt-2" />
+          <LanguageToggle className="pt-2 md:hidden" />
         </div>
       </div>
     </header>
