@@ -21,6 +21,16 @@ const SHOP_CATEGORIES = [
 
 const PROCESS = ["1", "2", "3", "4"];
 
+// One photograph per step. The four steps used to be four paragraphs in a row,
+// directly above four more in the journey below them — two walls of text
+// touching. These carry the same meaning with a quarter of the reading.
+const PROCESS_PHOTOS = [
+  "/photos/casual-3.jpg",
+  "/photos/men-1.jpg",
+  "/photos/sports-3.jpg",
+  "/photos/casual-6.jpg",
+];
+
 const GALLERY_PHOTOS = [
   "/photos/gallery-1.jpg",
   "/photos/gallery-2.jpg",
@@ -99,29 +109,39 @@ export default function Home() {
               </Reveal>
             ))}
           </div>
-          {/* The third way in. Commissions get the two big tiles; the rail gets
-              a band under them so it is on the homepage, not just in the nav. */}
-          <Reveal>
-            <Link
-              href="/in-stock"
-              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-cream/15 px-8 md:px-12 py-8 text-cream transition-colors hover:bg-ink/25"
-            >
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-cream/60 mb-2">
-                  {t("instock.eyebrow")}
-                </p>
-                <h3 className="font-display text-3xl md:text-4xl tracking-wide">
-                  {t("nav.inStock")}
-                </h3>
-                <p className="text-sm text-cream/80 mt-2 max-w-md">
-                  {t("shop.inStockCopy")}
-                </p>
-              </div>
-              <span className="link-underline text-xs uppercase tracking-[0.2em] whitespace-nowrap transition-transform duration-300 group-hover:translate-x-1">
+        </section>
+
+        {/* The third way in. It was a thin strip at the foot of the shop
+            section, which made it both easy to scroll past and impossible for
+            the menu to track — a 140px band lights "In Stock" for a fifth of a
+            second and then it is gone. Its own section, its own photograph. */}
+        <section id="ready" className="scroll-mt-20 relative h-[60vh] min-h-[420px] overflow-hidden">
+          <PlaceholderImage
+            label={t("nav.inStock")}
+            src="/photos/gallery-2.jpg"
+            className="h-full w-full"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink/90 via-ink/60 to-ink/20" />
+          <Link href="/in-stock" aria-label={t("nav.inStock")} className="absolute inset-0 z-10" />
+          <div className="absolute inset-0 z-20 flex items-center pointer-events-none">
+            <Reveal className="mx-auto w-full max-w-7xl px-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-cream/70 mb-3">
+                {t("instock.eyebrow")}
+              </p>
+              <h2 className="font-display text-4xl md:text-6xl tracking-wide text-cream">
+                {t("nav.inStock")}
+              </h2>
+              <p className="text-sm md:text-base text-cream/85 mt-4 max-w-md">
+                {t("shop.inStockCopy")}
+              </p>
+              <Link
+                href="/in-stock"
+                className="btn-sweep bg-cream text-ink px-6 py-3 text-xs uppercase tracking-[0.2em] mt-8 inline-block transition-transform duration-300 hover:-translate-y-0.5 pointer-events-auto"
+              >
                 {t("shop.inStockCta")} &rarr;
-              </span>
-            </Link>
-          </Reveal>
+              </Link>
+            </Reveal>
+          </div>
         </section>
 
         {/* How a Piece Comes Together */}
@@ -133,25 +153,33 @@ export default function Home() {
                 <SplitReveal text={t("home.process.title")} />
               </h2>
             </Reveal>
-            <div className="grid md:grid-cols-4">
+            <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-4">
               {PROCESS.map((p, i) => (
                 <Reveal key={p} delay={i * 100}>
-                  <div
-                    className={`group px-6 py-8 border-line h-full transition-colors duration-300 hover:bg-moss-soft ${
-                      i > 0 ? "border-t md:border-t-0 md:border-l" : ""
-                    }`}
-                  >
-                    <span
-                      className={`font-display text-4xl transition-colors duration-300 ${
-                        i % 2 === 0 ? "text-accent" : "text-moss-deep"
-                      }`}
-                    >
-                      {`0${p}`}
-                    </span>
-                    <h3 className="font-display text-xl mt-4 mb-2">
-                      {t(`process.${p}.title`)}
-                    </h3>
-                    <p className="text-sm text-ink-soft">{t(`process.${p}.copy`)}</p>
+                  <div className="group relative h-72 md:h-80 overflow-hidden bg-cream">
+                    <PlaceholderImage
+                      label={t(`process.${p}.title`)}
+                      src={PROCESS_PHOTOS[i]}
+                      className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/5" />
+                    <div className="absolute inset-x-0 bottom-0 p-6 text-cream">
+                      <span
+                        className={`font-display text-3xl ${
+                          i % 2 === 0 ? "text-accent" : "text-moss"
+                        }`}
+                      >
+                        {`0${p}`}
+                      </span>
+                      <h3 className="font-display text-xl mt-1">
+                        {t(`process.${p}.title`)}
+                      </h3>
+                      {/* Stays put on a phone, where there is no hover to ask
+                          for it. On a pointer device it waits to be asked. */}
+                      <p className="text-sm text-cream/85 mt-2 transition-all duration-300 md:max-h-0 md:opacity-0 md:overflow-hidden md:group-hover:max-h-24 md:group-hover:opacity-100">
+                        {t(`process.${p}.copy`)}
+                      </p>
+                    </div>
                   </div>
                 </Reveal>
               ))}

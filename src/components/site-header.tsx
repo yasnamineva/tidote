@@ -39,7 +39,9 @@ const NAV_LINKS: NavLink[] = [
       { href: "/sports", key: "nav.sports" },
     ],
   },
-  { href: "/in-stock", id: "instock", key: "nav.inStock" },
+  // Its own page, and also a band at the foot of the homepage's shop
+  // section — so it lights up when you scroll past that band too.
+  { href: "/in-stock", id: "instock", key: "nav.inStock", sectionId: "ready" },
   { href: "/#how", id: "how", key: "nav.how", sectionId: "how" },
   { href: "/#about", id: "about", key: "nav.about", sectionId: "about" },
   { href: "/#gallery", id: "gallery", key: "nav.gallery", sectionId: "gallery" },
