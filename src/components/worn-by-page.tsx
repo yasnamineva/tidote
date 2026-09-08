@@ -10,18 +10,6 @@ import { FloatingShapes } from "@/components/floating-shapes";
 import { useLang } from "@/lib/i18n";
 import { WORN_BY, type Person } from "@/lib/worn-by";
 
-/**
- * A wall of names is only as good as it is full. Two portraits in a
- * four-column grid is two people and two holes, so the columns narrow until
- * the photographs fill what the grid gives up — the same rule the rail uses.
- */
-function gridColumns(count: number): string {
-  if (count <= 1) return "max-w-md mx-auto";
-  if (count === 2) return "grid-cols-2 max-w-3xl mx-auto";
-  if (count === 3) return "grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto";
-  return "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
-}
-
 export function WornByPage() {
   const { t } = useLang();
   const people = WORN_BY;
@@ -50,8 +38,7 @@ export function WornByPage() {
         <section className="relative mx-auto max-w-7xl px-6 pt-8 md:pt-10 pb-16 md:pb-20 overflow-hidden">
           <FloatingShapes variant="light" />
           {people.length === 0 ? (
-            /* The page will stand here for a while before the first name
-               arrives, so this is the state that matters most. */
+            /* The state the page returns to whenever the list is emptied. */
             <div className="relative z-10 border border-line bg-paper px-6 py-16 text-center flex flex-col items-center gap-3">
               <p className="font-display text-2xl">{t("worn.empty")}</p>
               <p className="text-sm text-ink-soft max-w-md">
@@ -65,14 +52,10 @@ export function WornByPage() {
               </Link>
             </div>
           ) : (
-            <div
-              className={`relative z-10 grid gap-4 md:gap-5 ${gridColumns(
-                people.length
-              )}`}
-            >
+            <div className="relative z-10 flex flex-col gap-12 md:gap-16">
               {people.map((person, i) => (
-                <Reveal key={person.slug} delay={(i % 4) * 80}>
-                  <PersonCard person={person} />
+                <Reveal key={person.slug}>
+                  <PersonBand person={person} flip={i % 2 === 1} />
                 </Reveal>
               ))}
             </div>
@@ -84,30 +67,45 @@ export function WornByPage() {
   );
 }
 
-function PersonCard({ person }: { person: Person }) {
+/** Three photographs read as a set; one reads as a stock image. */
+function photoColumns(count: number): string {
+  if (count <= 1) return "grid-cols-1";
+  if (count === 2) return "grid-cols-2";
+  return "grid-cols-2 sm:grid-cols-3";
+}
+
+/**
+ * A band each, rather than cards in a grid.
+ *
+ * Each person gets a name, a line, their own words and several photographs,
+ * which is more than a card can hold without shrinking the pictures to
+ * thumbnails — and the pictures are the point. It also means the page looks
+ * deliberate with one person on it, which is how it will start.
+ */
+function PersonBand({ person, flip }: { person: Person; flip: boolean }) {
   const { t, lang } = useLang();
 
   return (
-    <figure className="group h-full border border-line bg-paper flex flex-col">
-      <div className="relative aspect-[3/4] overflow-hidden bg-line/20">
-        <PlaceholderImage
-          label={person.name}
-          src={person.photo}
-          className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105"
-        />
-      </div>
-      <figcaption className="flex flex-1 flex-col gap-1.5 px-4 py-4">
-        <p className="font-display text-lg leading-tight">{person.name}</p>
-        <p className="text-xs uppercase tracking-[0.15em] text-moss-deep">
+    <article className="grid gap-6 md:grid-cols-[1fr_1.7fr] md:items-center md:gap-10">
+      <div className={`order-2 ${flip ? "md:order-2" : "md:order-1"}`}>
+        {person.demo && (
+          <p className="mb-3 inline-block border border-accent/40 px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-accent">
+            {t("worn.example")}
+          </p>
+        )}
+        <h2 className="font-display text-3xl md:text-4xl leading-tight">
+          {person.name}
+        </h2>
+        <p className="mt-1.5 text-xs uppercase tracking-[0.2em] text-moss-deep">
           {person.knownFor[lang]}
         </p>
         {person.quote && (
-          <blockquote className="mt-1 text-sm text-ink-soft italic">
+          <blockquote className="mt-4 text-base md:text-lg text-ink-soft italic leading-relaxed">
             &ldquo;{person.quote[lang]}&rdquo;
           </blockquote>
         )}
         {person.piece && (
-          <p className="mt-auto pt-2 text-xs text-ink-soft">
+          <p className="mt-4 text-sm text-ink-soft">
             {t("worn.wearing")} · {person.piece[lang]}
           </p>
         )}
@@ -116,12 +114,39 @@ function PersonCard({ person }: { person: Person }) {
             href={`https://www.instagram.com/${person.instagram}/`}
             target="_blank"
             rel="noreferrer"
-            className="link-underline inline-block self-start py-1 text-xs tracking-[0.1em] text-ink-soft hover:text-moss-deep transition-colors"
+            className="link-underline mt-2 inline-block py-1 text-sm tracking-[0.1em] text-ink-soft hover:text-moss-deep transition-colors"
           >
             @{person.instagram}
           </a>
         )}
-      </figcaption>
-    </figure>
+        {person.demo && (
+          <p className="mt-4 max-w-sm text-xs text-ink-soft/70">
+            {t("worn.exampleNote")}
+          </p>
+        )}
+      </div>
+
+      {/* Photographs first on a phone: the name means nothing until you have
+          seen what they are wearing. */}
+      <div
+        className={`order-1 grid gap-3 ${photoColumns(person.photos.length)} ${
+          flip ? "md:order-1" : "md:order-2"
+        }`}
+      >
+        {person.photos.map((src, i) => (
+          <div
+            key={src}
+            className="group relative aspect-[3/4] overflow-hidden border border-line bg-line/20"
+          >
+            <PlaceholderImage
+              label={person.name}
+              src={src}
+              index={i}
+              className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+          </div>
+        ))}
+      </div>
+    </article>
   );
 }

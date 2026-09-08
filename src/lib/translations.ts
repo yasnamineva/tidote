@@ -89,7 +89,7 @@ const en: Dict = {
 
   // worn by
   "nav.wornBy": "Worn By",
-  "worn.eyebrow": "Trusted us",
+  "worn.eyebrow": "People who chose us",
   "worn.pageTitle": "WORN BY",
   "worn.blurb":
     "The people who chose to have it made for them, and let us say so.",
@@ -98,6 +98,9 @@ const en: Dict = {
     "The pieces are out there. The names go up here as their owners agree to it.",
   "worn.emptyCta": "Start a commission",
   "worn.wearing": "Wearing",
+  "worn.example": "Example entry",
+  "worn.exampleNote":
+    "An invented entry, here to show how a real one will look. It goes when the first real name arrives.",
   "shop.inStockCta": "See what's in stock",
   "shop.inStockCopy":
     "Not everything has to be waited for \u2014 some pieces are finished and on the rail today.",
@@ -883,7 +886,7 @@ const bg: Dict = {
 
   // worn by
   "nav.wornBy": "Носят Tidote",
-  "worn.eyebrow": "Довериха ни се",
+  "worn.eyebrow": "Хора, които избраха нас",
   "worn.pageTitle": "НОСЯТ TIDOTE",
   "worn.blurb":
     "Хората, които избраха да им ушием, и ни позволиха да го кажем.",
@@ -892,6 +895,9 @@ const bg: Dict = {
     "Дрехите са навън. Имената идват тук, когато собствениците им се съгласят.",
   "worn.emptyCta": "Започни поръчка",
   "worn.wearing": "Носи",
+  "worn.example": "Примерен запис",
+  "worn.exampleNote":
+    "Измислен запис, показващ как ще изглежда истинският. Махаме го щом дойде първото истинско име.",
   "shop.inStockCta": "Виж наличните модели",
   "shop.inStockCopy":
     "Не за всичко се чака \u2014 някои модели са готови и висят на закачалката днес.",

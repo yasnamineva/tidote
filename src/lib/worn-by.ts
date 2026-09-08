@@ -24,8 +24,8 @@ export type Person = {
   piece?: Record<Lang, string>;
   /** Their words, if they gave any. */
   quote?: Record<Lang, string>;
-  /** Path under /public, or a stock-photos storage ref. Portrait crops best. */
-  photo: string;
+  /** Two or three. Portrait crops best. Paths under /public, or storage refs. */
+  photos: string[];
   /** Instagram handle, without the @. */
   instagram?: string;
 
@@ -41,11 +41,43 @@ export type Person = {
    * when they said yes.
    */
   consentOn: string;
+
+  /**
+   * Marks a made-up entry, shown with an "example" badge on the card.
+   *
+   * A page like this is a set of claims about real people, so a placeholder
+   * that looks exactly like a real endorsement is the one thing it must never
+   * quietly contain. The flag is what keeps the difference visible on the page
+   * and not only in this file.
+   */
+  demo?: boolean;
 };
 
 /**
- * Empty until there is someone to put here, and deliberately so — a wall of
- * famous names with two names on it says something worse than an empty wall.
- * The page knows how to be empty.
+ * One invented entry, so the studio can see the shape of a filled page before
+ * anyone real is on it. Delete it when the first actual name arrives — or
+ * sooner, if the page goes live before then.
+ *
+ * The page also knows how to be empty, which is the state it returns to when
+ * this is removed.
  */
-export const WORN_BY: Person[] = [];
+export const WORN_BY: Person[] = [
+  {
+    slug: "example",
+    name: "Мартин Стоев",
+    knownFor: { bg: "Музикант", en: "Musician" },
+    piece: { bg: "Карго комплект по мярка", en: "Made-to-measure cargo set" },
+    quote: {
+      bg: "Носех го три месеца преди някой да ме попита откъде е. Тогава разбрах, че е добро.",
+      en: "I wore it three months before anyone asked me where it was from. That is when I knew it was good.",
+    },
+    photos: [
+      "/photos/gallery-2.jpg",
+      "/photos/men-2.jpg",
+      "/photos/casual-3.jpg",
+    ],
+    instagram: "tidote.atelier",
+    consentOn: "2026-09-08",
+    demo: true,
+  },
+];
