@@ -86,6 +86,18 @@ const en: Dict = {
     "Every piece the studio makes is cut to measure. Start a commission and we will build it to yours.",
   "instock.commissionCta": "Start a commission",
   "instock.lookbook": "See the lookbook",
+
+  // worn by
+  "nav.wornBy": "Worn By",
+  "worn.eyebrow": "Trusted us",
+  "worn.pageTitle": "WORN BY",
+  "worn.blurb":
+    "The people who chose to have it made for them, and let us say so.",
+  "worn.empty": "This wall is still being hung.",
+  "worn.emptySub":
+    "The pieces are out there. The names go up here as their owners agree to it.",
+  "worn.emptyCta": "Start a commission",
+  "worn.wearing": "Wearing",
   "shop.inStockCta": "See what's in stock",
   "shop.inStockCopy":
     "Not everything has to be waited for \u2014 some pieces are finished and on the rail today.",
@@ -868,6 +880,18 @@ const bg: Dict = {
     "Всеки модел на ателието се шие по мярка. Започни поръчка и ще го направим по твоите мерки.",
   "instock.commissionCta": "Започни поръчка",
   "instock.lookbook": "Виж колекцията",
+
+  // worn by
+  "nav.wornBy": "Носят Tidote",
+  "worn.eyebrow": "Довериха ни се",
+  "worn.pageTitle": "НОСЯТ TIDOTE",
+  "worn.blurb":
+    "Хората, които избраха да им ушием, и ни позволиха да го кажем.",
+  "worn.empty": "Тази стена още се подрежда.",
+  "worn.emptySub":
+    "Дрехите са навън. Имената идват тук, когато собствениците им се съгласят.",
+  "worn.emptyCta": "Започни поръчка",
+  "worn.wearing": "Носи",
   "shop.inStockCta": "Виж наличните модели",
   "shop.inStockCopy":
     "Не за всичко се чака \u2014 някои модели са готови и висят на закачалката днес.",

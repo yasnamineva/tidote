@@ -26,6 +26,7 @@ const PAGES = [
   "/casual",
   "/sports",
   "/in-stock",
+  "/worn-by",
   "/login",
   "/signup",
   "/reset-password",

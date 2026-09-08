@@ -43,7 +43,15 @@ const NAV_LINKS: NavLink[] = [
   // section — so it lights up when you scroll past that band too.
   { href: "/in-stock", id: "instock", key: "nav.inStock", sectionId: "ready" },
   { href: "/#how", id: "how", key: "nav.how", sectionId: "how" },
-  { href: "/#about", id: "about", key: "nav.about", sectionId: "about" },
+  // About opens onto the wall of people who wear the clothes, the same way
+  // Custom Pieces opens onto the lookbooks.
+  {
+    href: "/#about",
+    id: "about",
+    key: "nav.about",
+    sectionId: "about",
+    children: [{ href: "/worn-by", key: "nav.wornBy" }],
+  },
   { href: "/#gallery", id: "gallery", key: "nav.gallery", sectionId: "gallery" },
 ];
 
