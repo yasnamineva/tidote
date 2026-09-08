@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { Wordmark } from "@/components/wordmark";
 import { useLang } from "@/lib/i18n";
+import { CONTROLLER } from "@/lib/privacy-content";
 
 export function SiteFooter() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <footer className="bg-ink text-cream">
       <div className="mx-auto max-w-7xl px-6 py-16 grid gap-12 md:grid-cols-5">
@@ -119,11 +120,22 @@ export function SiteFooter() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-cream/10 px-6 py-6 flex flex-col items-center gap-3 text-xs uppercase tracking-[0.2em] text-cream/40 sm:flex-row sm:justify-between">
-        <span>{t("footer.rights", { year: new Date().getFullYear() })}</span>
+      <div className="border-t border-cream/10 px-6 py-6 flex flex-col items-center gap-4 text-xs text-cream/40 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col items-center gap-1.5 sm:items-start">
+          <span className="uppercase tracking-[0.2em]">
+            {t("footer.rights", { year: new Date().getFullYear() })}
+          </span>
+          {/* The Electronic Commerce Act wants the trader named on the site
+              itself, not only inside the privacy notice — registered name,
+              company number, address. Same source as the notice uses. */}
+          <span className="text-cream/35 text-center sm:text-left">
+            {CONTROLLER.legalName[lang]} · {lang === "bg" ? "ЕИК" : "UIC"}{" "}
+            {CONTROLLER.companyNumber} · {CONTROLLER.address[lang]}
+          </span>
+        </div>
         <Link
           href="/privacy"
-          className="link-underline py-1 hover:text-moss transition-colors"
+          className="link-underline py-1 uppercase tracking-[0.2em] hover:text-moss transition-colors"
         >
           {t("footer.privacy")}
         </Link>

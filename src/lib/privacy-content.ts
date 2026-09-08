@@ -14,26 +14,29 @@ import type { Lang } from "@/lib/translations";
  * `src/app/api/clients/[id]/route.ts`. If the system changes, this changes.
  */
 
-/* -------------------------------------------------------------------------
- * FILL THESE IN BEFORE PUBLISHING.
+/**
+ * Who the notice is *from*.
  *
  * Bulgarian law requires a trader to identify itself by its registered name
  * and company number, and a privacy notice has to say who the controller is
- * with enough precision that a person could send a legal letter to it. I do
- * not know these, so they are placeholders and they render visibly as such.
- * ---------------------------------------------------------------------- */
-const CONTROLLER = {
-  /** Registered trade name, e.g. "Тидот Ателие" ЕООД. */
-  legalName: { en: "[REGISTERED NAME]", bg: "[РЕГИСТРИРАНО ИМЕ]" },
-  /** ЕИК / UIC from the Commercial Register. */
-  companyNumber: { en: "[UIC / ЕИК]", bg: "[ЕИК]" },
-  /** Registered correspondence address. */
-  address: { en: "[REGISTERED ADDRESS], Sofia, Bulgaria", bg: "[АДРЕС], София, България" },
+ * precisely enough that a person could send a legal letter to it. The English
+ * side carries the transliterated name; the ЕИК is the identifier that is the
+ * same in any alphabet.
+ *
+ * These are also what the footer prints, under the Electronic Commerce Act.
+ */
+export const CONTROLLER = {
+  legalName: { en: "Teodora Linkova EOOD", bg: "„Теодора Линкова“ ЕООД" },
+  companyNumber: "206444925",
+  address: {
+    en: "Elink Vrah 16, Sofia, Bulgaria",
+    bg: "Елинк връх 16, София, България",
+  },
   email: "support@tidoteatelier.com",
 };
 
 /** Shown as the effective date. Update it whenever the text below changes. */
-export const PRIVACY_UPDATED = { en: "5 September 2026", bg: "5 септември 2026 г." };
+export const PRIVACY_UPDATED = { en: "8 September 2026", bg: "8 септември 2026 г." };
 
 type Block = string | { list: string[] };
 
@@ -62,7 +65,7 @@ const en: Policy = {
       id: "controller",
       heading: "1. Who is responsible for your data",
       blocks: [
-        `The controller of your personal data is ${CONTROLLER.legalName.en} (UIC ${CONTROLLER.companyNumber.en}), trading as Tidote Atelier, ${CONTROLLER.address.en}.`,
+        `The controller of your personal data is ${CONTROLLER.legalName.en} (UIC ${CONTROLLER.companyNumber}), trading as Tidote Atelier, ${CONTROLLER.address.en}.`,
         `For anything in this policy — a question, a correction, a request to delete your data — write to ${CONTROLLER.email}. A person reads that address, not a ticketing system.`,
         "We are a small atelier and are not required to appoint a Data Protection Officer. Your request goes to the studio directly.",
       ],
@@ -247,7 +250,7 @@ const bg: Policy = {
       id: "controller",
       heading: "1. Кой отговаря за вашите данни",
       blocks: [
-        `Администратор на вашите лични данни е ${CONTROLLER.legalName.bg} (ЕИК ${CONTROLLER.companyNumber.bg}), с търговско име Tidote Atelier, ${CONTROLLER.address.bg}.`,
+        `Администратор на вашите лични данни е ${CONTROLLER.legalName.bg} (ЕИК ${CONTROLLER.companyNumber}), с търговско име Tidote Atelier, ${CONTROLLER.address.bg}.`,
         `За всичко в тази политика — въпрос, поправка, искане за изтриване — пишете на ${CONTROLLER.email}. Там чете човек, не система за заявки.`,
         "Ние сме малко ателие и не сме длъжни да назначаваме длъжностно лице по защита на данните. Искането ви стига директно до студиото.",
       ],
