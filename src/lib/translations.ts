@@ -18,8 +18,8 @@ const en: Dict = {
   "nav.custom": "Custom Pieces",
   "nav.inStock": "In Stock",
   "header.login": "Login / Track Order",
-  "header.account": "My Account",
-  "header.studioAdmin": "Studio Admin",
+  "header.account": "Account",
+  "header.studioAdmin": "Studio",
 
   // footer
   "footer.tagline":
@@ -210,6 +210,8 @@ const en: Dict = {
   "dash.myAccount": "My Account",
   "dash.welcome": "Welcome back, {name}",
   "dash.logout": "Log Out",
+  "dash.menu": "Menu",
+  "dash.messagesShort": "Messages",
   "dash.measurements.title": "1. Your Measurements",
   "dash.measurements.sub":
     "Last updated {date}. Follow the guide below and keep these current so every made-to-measure piece fits right.",
@@ -815,8 +817,8 @@ const bg: Dict = {
   "nav.custom": "По поръчка",
   "nav.inStock": "Готови модели",
   "header.login": "Вход",
-  "header.account": "Моят профил",
-  "header.studioAdmin": "Админски панел",
+  "header.account": "Профил",
+  "header.studioAdmin": "Студио",
 
   // footer
   "footer.tagline":
@@ -1007,6 +1009,8 @@ const bg: Dict = {
   "dash.myAccount": "Моят профил",
   "dash.welcome": "Добре дошли, {name}",
   "dash.logout": "Изход",
+  "dash.menu": "Меню",
+  "dash.messagesShort": "Съобщения",
   "dash.measurements.title": "1. Вашите мерки",
   "dash.measurements.sub":
     "Последна промяна: {date}. Следвайте ръководството по-долу и поддържайте мерките си актуални, за да приляга всяка дреха по мярка.",

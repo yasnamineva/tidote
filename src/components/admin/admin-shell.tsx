@@ -336,42 +336,44 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <OrderFilterContext.Provider value={{ filterCategory, setFilterCategory }}>
     <div className="min-h-screen flex bg-cream">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-60 shrink-0 border-r border-line bg-paper sticky top-0 h-screen">
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Mobile top bar. The toggle sits on the right, on the same edge the
+            drawer comes from and the sidebar lives on. */}
+        <div className="md:hidden flex items-center justify-between border-b border-line bg-paper px-4 py-3 sticky top-0 z-40">
+          <Wordmark size="sm" />
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            className="flex flex-col justify-center gap-1.5 -my-2 p-2 min-h-11 min-w-11"
+          >
+            <span className="block h-0.5 w-6 bg-ink" />
+            <span className="block h-0.5 w-6 bg-ink" />
+            <span className="block h-0.5 w-6 bg-ink" />
+          </button>
+        </div>
+
+        <main className="flex-1 px-5 md:px-8 py-8">{children}</main>
+      </div>
+
+      {/* Desktop sidebar, on the right — the same side the client's own
+          profile menu is on, so the two accounts do not mirror each other. */}
+      <aside className="hidden md:flex w-60 shrink-0 border-l border-line bg-paper sticky top-0 h-screen">
         {nav}
       </aside>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer, in from the right. */}
       {open && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="w-60 bg-paper border-r border-line h-full">{nav}</div>
           <button
             type="button"
             aria-label="Close menu"
             className="flex-1 bg-ink/40"
             onClick={close}
           />
+          <div className="w-60 bg-paper border-l border-line h-full">{nav}</div>
         </div>
       )}
-
-      <div className="flex-1 min-w-0 flex flex-col">
-        {/* Mobile top bar with menu toggle */}
-        <div className="md:hidden flex items-center justify-between border-b border-line bg-paper px-4 py-3 sticky top-0 z-40">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Open menu"
-            className="flex flex-col justify-center gap-1.5 -m-2 p-2 min-h-11 min-w-11"
-          >
-            <span className="block h-0.5 w-6 bg-ink" />
-            <span className="block h-0.5 w-6 bg-ink" />
-            <span className="block h-0.5 w-6 bg-ink" />
-          </button>
-          <Wordmark size="sm" />
-        </div>
-
-        <main className="flex-1 px-5 md:px-8 py-8">{children}</main>
-      </div>
     </div>
     </OrderFilterContext.Provider>
   );

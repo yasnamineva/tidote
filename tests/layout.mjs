@@ -18,6 +18,7 @@
  * Otherwise it builds and starts one itself.
  */
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 
 const WIDTHS = [320, 375, 390, 430, 768, 1024, 1100, 1280, 1440, 1920];
@@ -33,6 +34,34 @@ const PAGES = [
   "/privacy",
 ];
 const LANGS = ["bg", "en"];
+
+/**
+ * Pages you can only see once you have signed in.
+ *
+ * These are why this list exists: the header carries a different set of
+ * controls when signed in — a bell and an account button in place of one
+ * login button — and that set is wider. It fitted the bar by four pixels, so
+ * the wordmark sat against the first menu item with nothing between them.
+ * Every check here passed throughout, because none of them had ever seen a
+ * signed-in page.
+ */
+const PRIVATE_PAGES = ["/dashboard", "/dashboard/new-order"];
+
+/** Read from .env.local so the suite needs no arguments. */
+function demoCredentials() {
+  try {
+    const env = {};
+    for (const line of readFileSync(new URL("../.env.local", import.meta.url), "utf8").split("\n")) {
+      const m = /^([A-Z_]+)=(.*)$/.exec(line.trim());
+      if (m) env[m[1]] = m[2];
+    }
+    const email = process.env.NEXT_PUBLIC_DEMO_EMAIL || env.NEXT_PUBLIC_DEMO_EMAIL;
+    const password = process.env.NEXT_PUBLIC_DEMO_PASSWORD || env.NEXT_PUBLIC_DEMO_PASSWORD;
+    return email && password ? { email, password } : null;
+  } catch {
+    return null;
+  }
+}
 
 const PORT = process.env.PORT || 3123;
 const BASE = process.env.BASE_URL || `http://localhost:${PORT}`;
@@ -174,6 +203,59 @@ for (const lang of LANGS) {
     }
   }
   await ctx.close();
+}
+
+// The signed-in pass. Skipped rather than failed when there is no demo
+// account to sign in with — a checkout without a database still gets the
+// public pages checked.
+const creds = demoCredentials();
+if (!creds) {
+  console.log("\nNo demo credentials in .env.local — skipped the signed-in pages.");
+} else {
+  for (const lang of LANGS) {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await ctx.addInitScript((l) => {
+      try {
+        localStorage.setItem("tidote_lang", l);
+      } catch {}
+    }, lang);
+    const page = await ctx.newPage();
+    await page.goto(BASE + "/login", { waitUntil: "domcontentloaded" });
+    await page.waitForSelector('input[type="password"]', { timeout: 30000 });
+    await page.fill('input[type="email"]', creds.email);
+    await page.fill('input[type="password"]', creds.password);
+    await page.locator('button[type="submit"]').first().click();
+    await page.waitForTimeout(5000);
+
+    if (!page.url().includes("/dashboard")) {
+      console.log(`\nCould not sign in as ${creds.email} — skipped the signed-in pages.`);
+      console.log("  (Run `npm run seed` if the demo account has not been created.)");
+      await ctx.close();
+      break;
+    }
+
+    for (const path of PRIVATE_PAGES) {
+      await page.setViewportSize({ width: WIDTHS[0], height: 900 });
+      await page.goto(BASE + path, { waitUntil: "domcontentloaded" });
+      await page.waitForSelector("header", { timeout: 30000 });
+      await page.waitForTimeout(1200);
+
+      for (const width of WIDTHS) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.waitForTimeout(300);
+        checks++;
+        const r = await page.evaluate(findCollisions);
+        if (!r.hits.length && !r.outside.length && r.scrollX <= 2) continue;
+        failures++;
+        console.log(`\n\u2717 [${lang}] ${path} @${width}px (signed in)`);
+        if (r.scrollX > 2) console.log(`    page scrolls ${r.scrollX}px sideways`);
+        r.hits.forEach((h) => console.log("    overlap:", h));
+        r.outside.forEach((h) => console.log("    outside:", h));
+      }
+    }
+    await ctx.close();
+  }
 }
 
 await browser.close();

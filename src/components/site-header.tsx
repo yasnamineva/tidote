@@ -178,13 +178,19 @@ export function SiteHeader() {
             alt="Tidote Atelier monogram"
             width={80}
             height={80}
-            className="brand-anim h-14 w-14 md:h-20 md:w-20 object-contain transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-105"
+            className="brand-anim h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 object-contain transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-105"
             priority
           />
-          <Wordmark size="md" />
+          {/* A 320px bar holding a bell and a burger has 272px to spend, and
+              the brand alone wanted 219 of it. The sub-word goes first, then
+              comes back at `sm` — the monogram still says whose site it is. */}
+          <Wordmark
+            size="md"
+            className="[&_span:last-child]:hidden sm:[&_span:last-child]:inline"
+          />
         </Link>
 
-        <nav className="hidden xl:flex items-center gap-5 2xl:gap-7 text-sm uppercase tracking-[0.15em]">
+        <nav className="hidden xl:flex items-center gap-4 2xl:gap-7 text-sm uppercase tracking-[0.15em]">
           {NAV_LINKS.map((link) =>
             link.children ? (
               <div key={link.href} className="relative group">
@@ -274,7 +280,9 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="flex flex-col items-center justify-center gap-1.5 -m-2 p-2 min-h-11 min-w-11"
+            className="flex flex-col items-center justify-center gap-1.5 -my-2 p-2 min-h-11 min-w-11"
+            /* Vertical only: -mx-2 pushed the button 7px past the right
+               edge of a 320px screen and scrolled the whole page. */
             aria-label="Toggle menu"
           >
           <span

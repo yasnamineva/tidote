@@ -148,12 +148,15 @@ export function WardrobeSection({
                 )}
               </div>
               <div className="px-3 py-3 flex flex-col gap-1.5">
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="inline-block w-fit text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-line/50 text-ink-soft">
+                {/* max-w-full: `flex-wrap` cannot break a single pill, so on a
+                    two-column grid at 320px a long category name printed
+                    across the card next to it. */}
+                <div className="flex min-w-0 flex-wrap gap-1.5">
+                  <span className="inline-block w-fit max-w-full break-words text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-line/50 text-ink-soft">
                     {categoryLabel(lang, card.category)}
                   </span>
                   {card.fromAtelier && (
-                    <span className="inline-block w-fit text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-moss-soft text-moss-deep">
+                    <span className="inline-block w-fit max-w-full break-words text-[10px] uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-moss-soft text-moss-deep">
                       {t("wardrobe.fromAtelier")}
                     </span>
                   )}

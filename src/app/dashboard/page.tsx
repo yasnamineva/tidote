@@ -14,6 +14,7 @@ import { JourneyStepper } from "@/components/journey-stepper";
 import { ClientFittingPicker } from "@/components/calendar/client-fitting-picker";
 import { MessageThread } from "@/components/messages/message-thread";
 import { WardrobeSection } from "@/components/wardrobe-section";
+import { ProfileMenu, type MenuItem } from "@/components/profile-menu";
 import { useAuth } from "@/lib/auth";
 import { useBooking } from "@/lib/booking";
 import { useLang } from "@/lib/i18n";
@@ -244,12 +245,39 @@ export default function DashboardPage() {
       ? t("measure.notTaken")
       : measurements.updatedAt;
 
+  // The account, as a list. Anchors rather than routes, because it is one
+  // page — so these scroll instead of navigating, and light up from the same
+  // spy that drives the stepper.
+  const menuItems: MenuItem[] = [
+    { key: "measurements", icon: "ruler", label: t("journey.1.short"), active: activeId === "measurements", onSelect: () => scrollToAnchor("measurements") },
+    { key: "orders", icon: "tag", label: t("journey.2.short"), badge: orders.length, active: activeId === "orders", onSelect: () => scrollToAnchor("orders") },
+    { key: "fitting", icon: "calendar", label: t("journey.3.short"), active: activeId === "fitting", onSelect: () => scrollToAnchor("fitting") },
+    { key: "delivery", icon: "truck", label: t("journey.4.short"), active: activeId === "delivery", onSelect: () => scrollToAnchor("delivery") },
+    { key: "wardrobe", icon: "hanger", label: t("wardrobe.title"), badge: items.length, active: activeId === "wardrobe", onSelect: () => scrollToAnchor("wardrobe") },
+    { key: "messages", icon: "inbox", label: t("dash.messagesShort"), badge: messages.length, onSelect: () => setShowMessages(true) },
+    { key: "new", icon: "plus", label: t("dash.newOrder"), href: "/dashboard/new-order" },
+  ];
+
+  const menuBottom: MenuItem[] = [
+    { key: "site", icon: "home", label: t("adminnav.viewSite"), href: "/" },
+    {
+      key: "logout",
+      icon: "logout",
+      label: t("dash.logout"),
+      danger: true,
+      onSelect: () => {
+        logout();
+        router.push("/");
+      },
+    },
+  ];
+
   return (
     <>
       <SiteHeader />
       <main className="flex-1">
         <section className="border-b border-line bg-paper">
-          <div className="mx-auto max-w-5xl px-6 py-10 flex items-center justify-between animate-[fade-up_0.6s_cubic-bezier(0.16,1,0.3,1)_both]">
+          <div className="mx-auto max-w-7xl px-6 py-10 flex items-center justify-between animate-[fade-up_0.6s_cubic-bezier(0.16,1,0.3,1)_both]">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
                 {t("dash.myAccount")}
@@ -283,16 +311,6 @@ export default function DashboardPage() {
                   </span>
                 )}
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  logout();
-                  router.push("/");
-                }}
-                className="btn-sweep text-sm uppercase tracking-[0.15em] border border-ink px-4 py-2 transition-colors duration-300 hover:text-cream"
-              >
-                {t("dash.logout")}
-              </button>
             </div>
           </div>
         </section>
@@ -303,7 +321,7 @@ export default function DashboardPage() {
           className="sticky z-30 bg-cream/95 backdrop-blur border-b border-line"
           style={{ top: headerH }}
         >
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
             <JourneyStepper
               compact
               activeStep={activeStep}
@@ -312,7 +330,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <section className="mx-auto max-w-5xl px-6 py-14 flex flex-col gap-16">
+        <div className="mx-auto flex max-w-7xl gap-10 px-6">
+        <section className="flex min-w-0 flex-1 flex-col gap-16 py-14">
           {/* 1. Measurements */}
           <div id="measurements" style={{ scrollMarginTop: stickyOffset }}>
             <Reveal>
@@ -339,10 +358,15 @@ export default function DashboardPage() {
                         const field = measurementField(key);
                         return (
                         <div key={key} className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-1.5">
+                          {/* min-w-0 so the label may wrap: two columns on a
+                              320px screen leave about 120px, and "6. Вътрешен
+                              шев" is wider than that. Without it the flex row
+                              held its content width and the text ran across
+                              the next field. */}
+                          <div className="flex items-start gap-1.5 min-w-0">
                             <label
                               htmlFor={key}
-                              className="text-xs uppercase tracking-[0.1em] text-ink-soft"
+                              className="min-w-0 break-words text-xs uppercase tracking-[0.1em] text-ink-soft"
                             >
                               {field.num}. {t(field.labelKey)}
                             </label>
@@ -569,6 +593,16 @@ export default function DashboardPage() {
           </div>
 
         </section>
+
+        <ProfileMenu
+          title={t("dash.myAccount")}
+          stickyTop={stickyOffset}
+          openLabel={t("dash.menu")}
+          closeLabel={t("common.close")}
+          items={menuItems}
+          bottom={menuBottom}
+        />
+        </div>
       </main>
 
       {showMessages && (
