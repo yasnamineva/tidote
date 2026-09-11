@@ -8,11 +8,23 @@ import { useLang } from "@/lib/i18n";
 
 const HERO_IMAGES = ["/photos/hero-1.jpg", "/photos/hero-2.jpg", "/photos/hero-3.jpg"];
 
+/**
+ * The name is not boxed and not reversed out — it sits on the page, and the
+ * photography is washed back far enough to give it somewhere to sit.
+ *
+ * Two earlier attempts got this wrong in opposite directions. Set straight onto
+ * the pictures, a moss-green wordmark over bright mid-tone photographs was
+ * near invisible. Put on a cream plaque, it was legible and looked like a
+ * notice taped over the artwork.
+ *
+ * So: a cream veil, heaviest at the top where the type lives and clearing as
+ * it falls, and the outer frames softened so the eye is carried to the middle.
+ * The brand colours then read as themselves, at full strength, on quiet ground.
+ */
 export function Hero() {
   const { t } = useLang();
   return (
-    <section className="relative h-[88vh] min-h-[560px] w-full overflow-hidden bg-ink">
-      {/* Image strip: single on mobile, three-up on desktop */}
+    <section className="relative h-[92vh] min-h-[600px] w-full overflow-hidden bg-cream">
       <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-3">
         {HERO_IMAGES.map((src, i) => (
           <PlaceholderImage
@@ -21,41 +33,46 @@ export function Hero() {
             src={src}
             priority={i === 0}
             index={i}
-            className={`h-full w-full ${i === 0 ? "" : "hidden md:block"}`}
+            /* The middle frame stays sharp; the outer two are softened, which
+               is what keeps the centre of the page calm enough to read. */
+            className={`h-full w-full ${i === 0 ? "" : "hidden md:block"} ${
+              i === 1 ? "" : "md:blur-[3px] md:scale-[1.04]"
+            }`}
           />
         ))}
       </div>
 
-      {/* Enough scrim to sit the panel on, and no more: the photographs are
-          the reason anyone stays on this page. */}
-      <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/25 to-ink/35" />
+      {/* The veil. Opaque where the name is, almost gone at the hem. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cream via-cream/85 to-cream/30" />
+      {/* A second, sideways pass: the edges fade further so the strip reads as
+          one photograph rather than three tiles butted together. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-cream/70 via-transparent to-cream/70" />
 
-      {/* The name gets its own ground rather than competing with three
-          photographs for one.
-          It used to be set straight onto them — and the wordmark paints
-          "TIDOTE" in moss green, which against a bright, busy, mid-tone
-          picture is close to invisible. Cream behind it is the whole fix: the
-          brand colours then read as themselves, at full strength, instead of
-          being lightened until they survive whatever is underneath. */}
-      <div className="relative z-10 flex h-full items-center justify-center px-5">
+      <div className="relative z-10 flex h-full flex-col items-center px-6 pt-[13vh] text-center md:pt-[15vh]">
         <Reveal>
-          <div className="max-w-[22rem] border border-ink/10 bg-cream/95 px-7 py-8 text-center shadow-[0_30px_80px_-40px_rgba(34,30,25,0.85)] backdrop-blur-[2px] sm:max-w-md sm:px-10 sm:py-10 md:max-w-xl lg:max-w-2xl lg:px-14 lg:py-12">
-            <Wordmark size="hero" stacked className="items-center" />
-            <p className="mx-auto mt-5 max-w-sm text-sm text-ink-soft md:mt-6 md:text-base lg:max-w-md lg:text-lg">
-              {t("hero.tagline")}
-            </p>
-            <Link
-              href="/login"
-              className="btn-sweep btn-sweep-moss mt-7 inline-block border border-ink bg-ink px-7 py-3.5 text-xs uppercase tracking-[0.2em] text-cream transition-transform duration-300 hover:-translate-y-0.5 sm:px-8 sm:text-sm md:mt-8"
-            >
-              {t("hero.cta")}
-            </Link>
-          </div>
+          <p className="mb-4 text-[10px] uppercase tracking-[0.45em] text-ink-soft/70 md:text-xs">
+            {t("header.tagline")}
+          </p>
+        </Reveal>
+        <Reveal delay={100}>
+          <Wordmark size="hero" stacked className="items-center" />
+        </Reveal>
+        <Reveal delay={200}>
+          <p className="mx-auto mt-6 max-w-xs text-sm leading-relaxed text-ink-soft sm:max-w-sm md:mt-8 md:max-w-md md:text-base">
+            {t("hero.tagline")}
+          </p>
+        </Reveal>
+        <Reveal delay={300}>
+          <Link
+            href="/login"
+            className="btn-sweep btn-sweep-moss mt-8 inline-block border border-ink px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-ink transition-colors duration-300 hover:text-cream md:mt-10 md:text-sm"
+          >
+            {t("hero.cta")}
+          </Link>
         </Reveal>
       </div>
 
-      {/* Scroll cue */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 text-cream/60 text-[10px] uppercase tracking-[0.3em] animate-pulse">
+      <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em] text-ink-soft/60 animate-pulse">
         {t("hero.scroll")}
       </div>
     </section>
