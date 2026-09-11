@@ -213,6 +213,30 @@ role: the database refuses that outright (`0006_profile_columns.sql`).
 **To change your own password**, either run `npm run create-admin` again with the
 new one, or use *Forgot your password?* on the sign-in page like anyone else.
 
+## 6b. Enquiries, and the mail that goes with them
+
+Anyone can ask about a piece without an account — the button on a rail card
+opens a form, and `/api/enquiries` files it, raises a notification in the studio
+panel, and emails the studio. **The first two work with nothing configured.**
+The mail is skipped, and the route reports that it was, rather than failing.
+
+To turn the mail on, add these in Vercel (both **Secret** except the last):
+
+| Variable | Value |
+| --- | --- |
+| `RESEND_API_KEY` | from resend.com |
+| `RESEND_FROM` | `Tidote Atelier <notifications@send.tidoteatelier.com>` |
+| `STUDIO_EMAIL` | `support@tidoteatelier.com` (Config) |
+
+**The sender has to be a subdomain.** Verify `send.tidoteatelier.com` in Resend
+and add the SPF and DKIM records it gives you *for that subdomain only*. Do not
+add Resend to the root SPF record — the root one authorises the Hostinger
+mailboxes, and rewriting it is how you stop receiving mail.
+
+Enquiries are readable by the studio and by nobody else: the table has a single
+policy, `is_admin()`. They are also not writable by a signed-in client — the
+route holds the only key that can write one.
+
 ## 7. Backups — please read this one
 
 **The free plan takes no backups at all.** If the project is deleted or a row is

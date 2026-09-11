@@ -237,6 +237,53 @@ begin
   values ('A stranger cannot reach the rail table', 'refused', n::text, n <= 0);
 end $$;
 
+-------------------------------------------------------------- enquiries (0008)
+-- They hold an email address and a phone number belonging to somebody who has
+-- not signed up for anything, so the table has exactly one policy.
+reset role;
+insert into enquiries (name, email, message, piece_name)
+values ('Stranger', 'stranger@example.com', 'Is the cargo set still here?', 'Olive Cargo Set');
+
+do $$
+declare n int; msg text;
+begin
+  set role anon;
+  begin
+    select count(*) into n from enquiries;
+    msg := 'allowed';
+  exception when others then n := -1; msg := 'refused';
+  end;
+  reset role;
+  insert into results (test, expected, got, pass)
+  values ('A stranger cannot read the enquiries', '0 rows', msg || ' ' || n::text, n <= 0);
+end $$;
+
+do $$
+declare msg text;
+begin
+  set role authenticated;
+  perform as_user('22222222-2222-2222-2222-222222222222');
+  begin
+    insert into enquiries (name, message) values ('Ann', 'sneaking one in');
+    msg := 'allowed';
+  exception when others then msg := 'refused';
+  end;
+  reset role;
+  insert into results (test, expected, got, pass)
+  values ('A client cannot write an enquiry directly', 'refused', msg, msg = 'refused');
+end $$;
+
+do $$
+declare n int;
+begin
+  set role authenticated;
+  perform as_user('11111111-1111-1111-1111-111111111111');
+  select count(*) into n from enquiries;
+  reset role;
+  insert into results (test, expected, got, pass)
+  values ('The studio reads the enquiries', '1', n::text, n = 1);
+end $$;
+
 ------------------------------------------------------------------- the studio
 reset role;
 set role authenticated;

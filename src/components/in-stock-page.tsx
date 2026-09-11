@@ -8,12 +8,11 @@ import { SiteFooter } from "@/components/site-footer";
 import { Reveal } from "@/components/reveal";
 import { SplitReveal } from "@/components/split-reveal";
 import { FloatingShapes } from "@/components/floating-shapes";
+import { EnquiryModal } from "@/components/enquiry-modal";
 import { useLang } from "@/lib/i18n";
 import { formatMoney } from "@/lib/analytics";
 import { categoryLabel, pieceLabel } from "@/lib/translations";
 import { getPublicStock, sizeLabel, type ReadyPiece } from "@/lib/ready-pieces";
-
-const INSTAGRAM_URL = "https://www.instagram.com/tidote.atelier/";
 
 /**
  * The shop-window half of the ready rail. It shows the same pieces the studio
@@ -24,6 +23,7 @@ const INSTAGRAM_URL = "https://www.instagram.com/tidote.atelier/";
 export function InStockPage() {
   const { t } = useLang();
   const [pieces, setPieces] = useState<ReadyPiece[] | null>(null);
+  const [asking, setAsking] = useState<ReadyPiece | null>(null);
 
   // Read from the `public_stock` view, which a stranger is allowed to see:
   // sold pieces are absent and there is no column for the buyer's name.
@@ -97,7 +97,7 @@ export function InStockPage() {
             <div className={`relative z-10 grid gap-4 md:gap-5 ${gridColumns(count)}`}>
               {(pieces ?? []).map((piece, i) => (
                 <Reveal key={piece.id} delay={(i % 4) * 80}>
-                  <StockCard piece={piece} />
+                  <StockCard piece={piece} onAsk={setAsking} />
                 </Reveal>
               ))}
             </div>
@@ -115,16 +115,32 @@ export function InStockPage() {
               </p>
               {/* inline-block, not inline: `overflow: hidden` does not clip an
                   inline box, so the parked btn-sweep bleeds out to its left. */}
-              <Link
-                href="/login"
-                className="btn-sweep inline-block bg-ink text-cream px-8 py-3.5 text-sm uppercase tracking-[0.2em] transition-transform duration-300 hover:-translate-y-0.5"
-              >
-                {t("instock.commissionCta")}
-              </Link>
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <Link
+                  href="/login"
+                  className="btn-sweep inline-block bg-ink text-cream px-8 py-3.5 text-sm uppercase tracking-[0.2em] transition-transform duration-300 hover:-translate-y-0.5"
+                >
+                  {t("instock.commissionCta")}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setAsking({ id: "", name: "" } as ReadyPiece)}
+                  className="btn-sweep inline-block border border-ink px-8 py-3.5 text-sm uppercase tracking-[0.2em] transition-colors duration-300 hover:text-cream"
+                >
+                  {t("enq.title")}
+                </button>
+              </div>
             </Reveal>
           </div>
         </section>
       </main>
+      {asking && (
+        <EnquiryModal
+          pieceName={asking.name || undefined}
+          pieceId={asking.id || undefined}
+          onClose={() => setAsking(null)}
+        />
+      )}
       <SiteFooter />
     </>
   );
@@ -142,7 +158,13 @@ function gridColumns(count: number): string {
   return "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
 }
 
-function StockCard({ piece }: { piece: ReadyPiece }) {
+function StockCard({
+  piece,
+  onAsk,
+}: {
+  piece: ReadyPiece;
+  onAsk: (piece: ReadyPiece) => void;
+}) {
   const { t, lang } = useLang();
   const reserved = piece.status === "reserved";
 
@@ -184,14 +206,15 @@ function StockCard({ piece }: { piece: ReadyPiece }) {
         </p>
       </div>
 
-      <a
-        href={INSTAGRAM_URL}
-        target="_blank"
-        rel="noreferrer"
-        className="mx-4 mb-4 border border-ink text-center py-2.5 text-[10px] uppercase tracking-[0.15em] transition-colors hover:bg-ink hover:text-cream"
+      {/* Was a link to Instagram, which meant the studio read DMs and the
+          site never knew the question had been asked. */}
+      <button
+        type="button"
+        onClick={() => onAsk(piece)}
+        className="mx-4 mb-4 border border-ink py-2.5 text-center text-[10px] uppercase tracking-[0.15em] transition-colors hover:bg-ink hover:text-cream"
       >
         {t("instock.ask")}
-      </a>
+      </button>
     </div>
   );
 }

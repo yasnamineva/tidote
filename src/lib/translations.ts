@@ -87,6 +87,25 @@ const en: Dict = {
   "instock.commissionCta": "Start a commission",
   "instock.lookbook": "See the lookbook",
 
+  // enquiries
+  "enq.title": "Ask the atelier",
+  "enq.sub": "No account needed — we answer by email or telephone.",
+  "enq.about": "About {piece}. No account needed.",
+  "enq.name": "Your name",
+  "enq.email": "Email",
+  "enq.phone": "Telephone",
+  "enq.message": "What would you like to know?",
+  "enq.send": "Send enquiry",
+  "enq.sending": "Sending…",
+  "enq.sent": "Sent.",
+  "enq.sentSub": "The atelier has it and will come back to you.",
+  "enq.failed": "That did not send. Try again, or write to support@tidoteatelier.com.",
+  "enq.needContact": "Leave an email address or a telephone number, so we can answer.",
+  "enq.privacy":
+    "We use what you write here only to answer you. See the Privacy Policy.",
+  "enqadmin.open": "Enquiries waiting ({n})",
+  "enqadmin.done": "Mark answered",
+
   // worn by
   "nav.wornBy": "Worn By",
   "worn.eyebrow": "People who chose us",
@@ -886,6 +905,25 @@ const bg: Dict = {
     "Всеки модел на ателието се шие по мярка. Започни поръчка и ще го направим по твоите мерки.",
   "instock.commissionCta": "Започни поръчка",
   "instock.lookbook": "Виж колекцията",
+
+  // enquiries
+  "enq.title": "Попитайте ателието",
+  "enq.sub": "Без профил — отговаряме по имейл или телефон.",
+  "enq.about": "Относно {piece}. Без нужда от профил.",
+  "enq.name": "Вашето име",
+  "enq.email": "Имейл",
+  "enq.phone": "Телефон",
+  "enq.message": "Какво бихте искали да знаете?",
+  "enq.send": "Изпрати запитване",
+  "enq.sending": "Изпращане…",
+  "enq.sent": "Изпратено.",
+  "enq.sentSub": "Ателието го получи и ще ви отговори.",
+  "enq.failed": "Не се изпрати. Опитайте отново или пишете на support@tidoteatelier.com.",
+  "enq.needContact": "Оставете имейл или телефон, за да можем да отговорим.",
+  "enq.privacy":
+    "Използваме написаното тук само за да ви отговорим. Вижте Политиката за поверителност.",
+  "enqadmin.open": "Чакащи запитвания ({n})",
+  "enqadmin.done": "Отбележи като отговорено",
 
   // worn by
   "nav.wornBy": "Носят Tidote",

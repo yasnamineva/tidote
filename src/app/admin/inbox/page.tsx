@@ -8,6 +8,7 @@ import { useNotifications } from "@/lib/notifications";
 import { getAllClientsWithLiveData, sendStudioMessage } from "@/lib/admin-data";
 import { getLatestMessages, getMessages } from "@/lib/messages";
 import { markReadWhere } from "@/lib/notifications-data";
+import { getEnquiries, setEnquiryHandled, type Enquiry } from "@/lib/enquiries";
 import { seedTextById } from "@/lib/translations";
 import type { Client, Message } from "@/lib/mock-data";
 
@@ -20,11 +21,21 @@ export default function AdminInboxPage() {
   // The last message of every thread, so the list can be ordered without one
   // request per client.
   const [latest, setLatest] = useState<Map<string, Message>>(new Map());
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
 
   useEffect(() => {
     void getAllClientsWithLiveData().then(setClients);
     void getLatestMessages().then(setLatest);
+    void getEnquiries().then(setEnquiries).catch(() => setEnquiries([]));
   }, []);
+
+  async function resolveEnquiry(id: string, handled: boolean) {
+    await setEnquiryHandled(id, handled);
+    setEnquiries(await getEnquiries());
+    // The bell pointed at this page; the reason has now been dealt with.
+    await markReadWhere("admin", "", (n) => n.kind === "enquiry");
+    refreshBell();
+  }
 
   async function openConversation(clientId: string) {
     setSelected(clientId);
@@ -60,11 +71,55 @@ export default function AdminInboxPage() {
     });
 
   const selectedClient = clients.find((c) => c.id === selected);
+  const open = enquiries.filter((e) => !e.handled);
 
   return (
     <>
       <AdminTopBar title={t("inbox.title")} />
       <p className="text-sm text-ink-soft mb-8 -mt-4">{t("inbox.sub")}</p>
+
+      {open.length > 0 && (
+        <div className="mb-10 flex flex-col gap-3">
+          <h2 className="font-display text-xl">
+            {t("enqadmin.open", { n: open.length })}
+          </h2>
+          {open.map((e) => (
+            <article key={e.id} className="border border-accent/30 bg-paper px-5 py-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <p className="font-display text-lg">{e.name}</p>
+                <p className="text-xs uppercase tracking-[0.15em] text-ink-soft">
+                  {new Date(e.createdAt).toLocaleString()} · {e.lang.toUpperCase()}
+                </p>
+              </div>
+              {e.pieceName && (
+                <p className="mt-1 text-xs uppercase tracking-[0.15em] text-moss-deep">
+                  {e.pieceName}
+                </p>
+              )}
+              <p className="mt-3 whitespace-pre-wrap text-sm">{e.message}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                {e.email && (
+                  <a href={`mailto:${e.email}`} className="link-underline text-ink-soft hover:text-moss-deep">
+                    {e.email}
+                  </a>
+                )}
+                {e.phone && (
+                  <a href={`tel:${e.phone.replace(/\s+/g, "")}`} className="link-underline text-ink-soft hover:text-moss-deep">
+                    {e.phone}
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void resolveEnquiry(e.id, true)}
+                  className="ml-auto border border-ink px-4 py-1.5 text-xs uppercase tracking-[0.15em] transition-colors hover:bg-ink hover:text-cream"
+                >
+                  {t("enqadmin.done")}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       <div className="grid md:grid-cols-5 gap-8">
         {/* conversation list */}

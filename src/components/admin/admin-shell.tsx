@@ -203,8 +203,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const orders = clients.flatMap((c) => c.orders);
   const categoryCount = (cat: string) =>
     orders.filter((o) => o.category === cat).length;
+  // Enquiries land on the inbox page as well, so they count toward the same
+  // badge — otherwise a stranger's question arrives silently.
   const unread = notifications.filter(
-    (n) => n.kind === "message" && !n.read
+    (n) => (n.kind === "message" || n.kind === "enquiry") && !n.read
   ).length;
   const onAllOrders = pathname === ALL_ORDERS_HREF;
 
