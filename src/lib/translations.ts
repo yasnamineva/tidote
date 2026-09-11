@@ -78,6 +78,10 @@ const en: Dict = {
   "instock.available": "Available",
   "instock.priceOnRequest": "Price on request",
   "instock.ask": "Enquire",
+  "instock.countUnknown": "Could not load",
+  "instock.errorTitle": "We could not load the rail.",
+  "instock.errorSub":
+    "Something went wrong between here and the studio — this is not the same as there being nothing in stock. Try again, or just ask us what is on the rail.",
   "instock.empty": "The rail is empty right now.",
   "instock.emptySub":
     "Everything here started as a commission. Tell us what you want and we will cut it for you.",
@@ -87,6 +91,39 @@ const en: Dict = {
   "instock.commissionCta": "Start a commission",
   "instock.lookbook": "See the lookbook",
 
+  // buying journey — explicit CTAs, and the facts a buyer needs first
+  "cta.explore": "Explore pieces",
+  "cta.viewPieces": "View pieces",
+  "cta.commission": "Commission a piece",
+  "cta.shopInStock": "Shop in stock",
+  "cta.browseFree": "No account needed to look around.",
+  "cta.signInLater": "You sign in when you place the order.",
+
+  "hero.prop": "Made-to-measure streetwear, built in Sofia.",
+  "hero.propSub":
+    "Every piece is cut to your own measurements in our studio. Nothing here is mass-produced, and nothing is made twice.",
+
+  "choose.title": "Three ways to get one",
+  "choose.sub":
+    "Browse all of it without an account. You only sign in when there is an order to place.",
+  "choose.stock.title": "In Stock",
+  "choose.stock.copy":
+    "Finished pieces, ready to take today. One of each, in the size listed.",
+  "choose.custom.title": "Custom",
+  "choose.custom.copy":
+    "Start from a piece in the lookbook and have it cut to your measurements.",
+  "choose.bespoke.title": "Bespoke",
+  "choose.bespoke.copy":
+    "Bring an idea the lookbook does not have, and the atelier makes it.",
+
+  "fact.madeToMeasure": "Made to measure",
+  "fact.inStockNow": "In stock now",
+  "fact.readyToday": "Ready today",
+  "fact.lead": "{min}–{max} working days",
+  "fact.fittings": "{n} fittings included",
+  "fact.adjust": "Adjustments free for {n} days",
+  "fact.from": "from {price}",
+  "fact.quoted": "Priced on enquiry",
   // enquiries
   "enq.title": "Ask the atelier",
   "enq.sub": "No account needed — we answer by email or telephone.",
@@ -223,6 +260,7 @@ const en: Dict = {
 
   // common
   "common.loading": "Loading…",
+  "common.retry": "Try again",
   "common.loadingAccount": "Loading account…",
 
   // dashboard
@@ -897,6 +935,10 @@ const bg: Dict = {
   "instock.available": "Свободен",
   "instock.priceOnRequest": "Цена при запитване",
   "instock.ask": "Запитване",
+  "instock.countUnknown": "Не се зареди",
+  "instock.errorTitle": "Не успяхме да заредим закачалката.",
+  "instock.errorSub":
+    "Нещо се обърка между тук и ателието — това не значи, че няма налични модели. Опитайте отново или просто ни попитайте какво има.",
   "instock.empty": "В момента закачалката е празна.",
   "instock.emptySub":
     "Всичко тук е започнало като поръчка. Кажи какво искаш и ще го ушием за теб.",
@@ -906,6 +948,39 @@ const bg: Dict = {
   "instock.commissionCta": "Започни поръчка",
   "instock.lookbook": "Виж колекцията",
 
+  // buying journey — explicit CTAs, and the facts a buyer needs first
+  "cta.explore": "Разгледай моделите",
+  "cta.viewPieces": "Виж моделите",
+  "cta.commission": "Заяви по мярка",
+  "cta.shopInStock": "Виж наличните",
+  "cta.browseFree": "За разглеждане не е нужен профил.",
+  "cta.signInLater": "Влизате в профил, когато има поръчка.",
+
+  "hero.prop": "Streetwear по мярка, изработен в София.",
+  "hero.propSub":
+    "Всяка дреха се скроява по вашите мерки в ателието ни. Тук нищо не е масово производство и нищо не се прави два пъти.",
+
+  "choose.title": "Три начина да си вземете",
+  "choose.sub":
+    "Разгледайте всичко без профил. Влизате само когато има поръчка за правене.",
+  "choose.stock.title": "Готови модели",
+  "choose.stock.copy":
+    "Завършени модели, готови за вземане днес. По един брой от всеки, в посочения размер.",
+  "choose.custom.title": "По мярка",
+  "choose.custom.copy":
+    "Започнете от модел от колекцията и го скрояваме по вашите мерки.",
+  "choose.bespoke.title": "По идея",
+  "choose.bespoke.copy":
+    "Донесете идея, която я няма в колекцията, и ателието я изработва.",
+
+  "fact.madeToMeasure": "По мярка",
+  "fact.inStockNow": "В наличност",
+  "fact.readyToday": "Готово днес",
+  "fact.lead": "{min}–{max} работни дни",
+  "fact.fittings": "Включени проби: {n}",
+  "fact.adjust": "Безплатни корекции {n} дни",
+  "fact.from": "от {price}",
+  "fact.quoted": "Цена при запитване",
   // enquiries
   "enq.title": "Попитайте ателието",
   "enq.sub": "Без профил — отговаряме по имейл или телефон.",
@@ -1042,6 +1117,7 @@ const bg: Dict = {
 
   // common
   "common.loading": "Зареждане…",
+  "common.retry": "Опитай отново",
   "common.loadingAccount": "Зареждане на профила…",
 
   // dashboard

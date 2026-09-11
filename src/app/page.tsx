@@ -12,6 +12,7 @@ import { SplitReveal } from "@/components/split-reveal";
 import { ImageReveal } from "@/components/image-reveal";
 import { FloatingShapes } from "@/components/floating-shapes";
 import { JourneyStepper } from "@/components/journey-stepper";
+import { ChoosePath } from "@/components/choose-path";
 import { useLang } from "@/lib/i18n";
 
 const SHOP_CATEGORIES = [
@@ -21,15 +22,6 @@ const SHOP_CATEGORIES = [
 
 const PROCESS = ["1", "2", "3", "4"];
 
-// One photograph per step. The four steps used to be four paragraphs in a row,
-// directly above four more in the journey below them — two walls of text
-// touching. These carry the same meaning with a quarter of the reading.
-const PROCESS_PHOTOS = [
-  "/photos/casual-3.jpg",
-  "/photos/men-1.jpg",
-  "/photos/sports-3.jpg",
-  "/photos/casual-6.jpg",
-];
 
 const GALLERY_PHOTOS = [
   "/photos/gallery-1.jpg",
@@ -65,6 +57,9 @@ export default function Home() {
         {/* Hero */}
         <Hero />
 
+        {/* What you can actually buy, before anything asks for an account. */}
+        <ChoosePath />
+
         {/* Shop categories */}
         <section id="shop" className="scroll-mt-20 bg-moss">
           <div className="grid md:grid-cols-2">
@@ -92,16 +87,10 @@ export default function Home() {
                     </p>
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-6">
                       <Link
-                        href="/login"
+                        href={c.href}
                         className="btn-sweep bg-cream text-ink px-6 py-3 text-xs uppercase tracking-[0.2em] transition-transform duration-300 hover:-translate-y-0.5 pointer-events-auto"
                       >
-                        {t("shop.getYours")} &rarr;
-                      </Link>
-                      <Link
-                        href={c.href}
-                        className="link-underline inline-block py-2 text-xs uppercase tracking-[0.2em] text-cream/80 hover:text-cream transition-colors pointer-events-auto"
-                      >
-                        {t("shop.viewLookbook")} &rarr;
+                        {t("cta.viewPieces")} &rarr;
                       </Link>
                     </div>
                   </div>
@@ -111,6 +100,44 @@ export default function Home() {
           </div>
         </section>
 
+        {/* How a Piece Comes Together */}
+        <section id="how" className="relative border-b border-line overflow-hidden scroll-mt-20">
+          <FloatingShapes variant="light" />
+          <div className="relative z-10 mx-auto max-w-7xl px-6 py-16 md:py-20">
+            <Reveal className="text-center mb-10">
+              <h2 className="font-display text-2xl md:text-3xl">
+                <SplitReveal text={t("home.process.title")} />
+              </h2>
+            </Reveal>
+            <div className="grid md:grid-cols-4">
+              {PROCESS.map((p, i) => (
+                <Reveal key={p} delay={i * 100}>
+                  <div
+                    className={`group px-6 py-8 border-line h-full transition-colors duration-300 hover:bg-moss-soft ${
+                      i > 0 ? "border-t md:border-t-0 md:border-l" : ""
+                    }`}
+                  >
+                    <span
+                      className={`font-display text-4xl transition-colors duration-300 ${
+                        i % 2 === 0 ? "text-accent" : "text-moss-deep"
+                      }`}
+                    >
+                      {`0${p}`}
+                    </span>
+                    <h3 className="font-display text-xl mt-4 mb-2">
+                      {t(`process.${p}.title`)}
+                    </h3>
+                    <p className="text-sm text-ink-soft">{t(`process.${p}.copy`)}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Deliberately between the process cards and the journey below:
+            both of those are numbered lists of words, and back to back they
+            read as one wall. A full-bleed photograph breaks them apart. */}
         {/* The third way in. It was a thin strip at the foot of the shop
             section, which made it both easy to scroll past and impossible for
             the menu to track — a 140px band lights "In Stock" for a fifth of a
@@ -144,49 +171,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* How a Piece Comes Together */}
-        <section id="how" className="relative border-b border-line overflow-hidden scroll-mt-20">
-          <FloatingShapes variant="light" />
-          <div className="relative z-10 mx-auto max-w-7xl px-6 py-16 md:py-20">
-            <Reveal className="text-center mb-10">
-              <h2 className="font-display text-2xl md:text-3xl">
-                <SplitReveal text={t("home.process.title")} />
-              </h2>
-            </Reveal>
-            <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-4">
-              {PROCESS.map((p, i) => (
-                <Reveal key={p} delay={i * 100}>
-                  <div className="group relative h-72 md:h-80 overflow-hidden bg-cream">
-                    <PlaceholderImage
-                      label={t(`process.${p}.title`)}
-                      src={PROCESS_PHOTOS[i]}
-                      className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/5" />
-                    <div className="absolute inset-x-0 bottom-0 p-6 text-cream">
-                      <span
-                        className={`font-display text-3xl ${
-                          i % 2 === 0 ? "text-accent" : "text-moss"
-                        }`}
-                      >
-                        {`0${p}`}
-                      </span>
-                      <h3 className="font-display text-xl mt-1">
-                        {t(`process.${p}.title`)}
-                      </h3>
-                      {/* Stays put on a phone, where there is no hover to ask
-                          for it. On a pointer device it waits to be asked. */}
-                      <p className="text-sm text-cream/85 mt-2 transition-all duration-300 md:max-h-0 md:opacity-0 md:overflow-hidden md:group-hover:max-h-24 md:group-hover:opacity-100">
-                        {t(`process.${p}.copy`)}
-                      </p>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* Your Made-to-Measure Journey */}
         <section className="relative border-b border-line overflow-hidden bg-paper">
           <FloatingShapes variant="light" />
@@ -207,8 +191,9 @@ export default function Home() {
                 href="/login"
                 className="btn-sweep bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5 inline-block"
               >
-                {t("home.journey.cta")}
+                {t("cta.commission")}
               </Link>
+              <p className="mt-3 text-xs text-ink-soft/75">{t("cta.signInLater")}</p>
             </Reveal>
           </div>
         </section>

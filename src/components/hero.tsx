@@ -57,18 +57,35 @@ export function Hero() {
         <Reveal delay={100}>
           <Wordmark size="hero" stacked className="items-center" />
         </Reveal>
+        {/* The proposition first, in plain words: a stranger should know what
+            this place makes before it shows them any personality. The tagline
+            keeps the voice, one line below. */}
         <Reveal delay={200}>
-          <p className="mx-auto mt-6 max-w-xs text-sm leading-relaxed text-ink-soft sm:max-w-sm md:mt-8 md:max-w-md md:text-base">
-            {t("hero.tagline")}
+          <p className="mx-auto mt-6 max-w-sm text-base font-medium leading-snug text-ink md:mt-8 md:max-w-xl md:text-xl">
+            {t("hero.prop")}
+          </p>
+          <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-ink-soft sm:max-w-sm md:max-w-md md:text-base">
+            {t("hero.propSub")}
           </p>
         </Reveal>
+        {/* Both of these are places to look, not forms to fill. Nothing on the
+            first screen asks for an account any more. */}
         <Reveal delay={300}>
-          <Link
-            href="/login"
-            className="btn-sweep btn-sweep-moss mt-8 inline-block border border-ink px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-ink transition-colors duration-300 hover:text-cream md:mt-10 md:text-sm"
-          >
-            {t("hero.cta")}
-          </Link>
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:gap-4 md:mt-10">
+            <Link
+              href="/#choose"
+              className="btn-sweep btn-sweep-moss inline-block border border-ink bg-ink px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-cream transition-colors duration-300 md:text-sm"
+            >
+              {t("cta.explore")}
+            </Link>
+            <Link
+              href="/in-stock"
+              className="btn-sweep inline-block border border-ink px-8 py-3.5 text-xs uppercase tracking-[0.25em] text-ink transition-colors duration-300 hover:text-cream md:text-sm"
+            >
+              {t("cta.shopInStock")}
+            </Link>
+          </div>
+          <p className="mt-4 text-xs text-ink-soft/75">{t("cta.browseFree")}</p>
         </Reveal>
       </div>
 

@@ -10,6 +10,7 @@ import { ImageReveal } from "@/components/image-reveal";
 import { SplitReveal } from "@/components/split-reveal";
 import { FloatingShapes } from "@/components/floating-shapes";
 import { useLang } from "@/lib/i18n";
+import { OFFER, startingFrom } from "@/lib/offer";
 
 const INSTAGRAM_URL = "https://www.instagram.com/tidote.atelier/";
 
@@ -50,7 +51,7 @@ export function CategoryPage({
                   href="/login"
                   className="btn-sweep bg-ink text-cream px-8 py-3.5 text-sm uppercase tracking-[0.2em] transition-transform duration-300 hover:-translate-y-0.5"
                 >
-                  {t("hero.cta")}
+                  {t("cta.commission")}
                 </Link>
               </div>
             </Reveal>
@@ -68,6 +69,38 @@ export function CategoryPage({
                 </ImageReveal>
               </FramedMedia>
             </div>
+          </div>
+        </section>
+
+        {/* What it is, what it costs, how long it takes. Nothing here is
+            invented: each line comes from lib/offer.ts and is left out
+            entirely when that value is still unset. */}
+        <section className="border-b border-line bg-paper">
+          <div className="mx-auto flex max-w-7xl flex-wrap gap-x-10 gap-y-3 px-6 py-5">
+            {[
+              t("fact.madeToMeasure"),
+              startingFrom(categoryKey)
+                ? t("fact.from", { price: startingFrom(categoryKey)! })
+                : t("fact.quoted"),
+              OFFER.lead
+                ? t("fact.lead", { min: OFFER.lead.minDays, max: OFFER.lead.maxDays })
+                : null,
+              OFFER.fittingsIncluded
+                ? t("fact.fittings", { n: OFFER.fittingsIncluded })
+                : null,
+              OFFER.adjustmentDays
+                ? t("fact.adjust", { n: OFFER.adjustmentDays })
+                : null,
+            ]
+              .filter((fact): fact is string => Boolean(fact))
+              .map((fact) => (
+                <p
+                  key={fact}
+                  className="text-xs uppercase tracking-[0.15em] text-ink-soft"
+                >
+                  {fact}
+                </p>
+              ))}
           </div>
         </section>
 

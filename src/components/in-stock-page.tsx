@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Photo } from "@/components/photo";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -13,6 +13,7 @@ import { useLang } from "@/lib/i18n";
 import { formatMoney } from "@/lib/analytics";
 import { categoryLabel, pieceLabel } from "@/lib/translations";
 import { getPublicStock, sizeLabel, type ReadyPiece } from "@/lib/ready-pieces";
+import { useAsync } from "@/lib/use-async";
 
 /**
  * The shop-window half of the ready rail. It shows the same pieces the studio
@@ -22,18 +23,13 @@ import { getPublicStock, sizeLabel, type ReadyPiece } from "@/lib/ready-pieces";
  */
 export function InStockPage() {
   const { t } = useLang();
-  const [pieces, setPieces] = useState<ReadyPiece[] | null>(null);
   const [asking, setAsking] = useState<ReadyPiece | null>(null);
 
-  // Read from the `public_stock` view, which a stranger is allowed to see:
-  // sold pieces are absent and there is no column for the buyer's name.
-  useEffect(() => {
-    void getPublicStock()
-      .then(setPieces)
-      .catch(() => setPieces([]));
-  }, []);
-
-  const count = pieces?.length ?? 0;
+  // Reads the `public_stock` view, which a stranger is allowed to see: sold
+  // pieces are absent and there is no column for the buyer's name.
+  const { state, reload } = useAsync(() => getPublicStock(), "public-stock");
+  const pieces = state.status === "ready" ? state.data : [];
+  const count = pieces.length;
 
   return (
     <>
@@ -60,11 +56,13 @@ export function InStockPage() {
               </div>
               <div className="flex shrink-0 items-center gap-6 md:flex-col md:items-end md:gap-1.5">
                 <p className="font-display text-2xl md:text-3xl whitespace-nowrap">
-                  {pieces === null
+                  {state.status === "loading"
                     ? t("common.loading")
-                    : count === 1
-                      ? t("instock.countOne")
-                      : t("instock.count", { n: count })}
+                    : state.status === "error"
+                      ? t("instock.countUnknown")
+                      : count === 1
+                        ? t("instock.countOne")
+                        : t("instock.count", { n: count })}
                 </p>
                 <Link
                   href="/#shop"
@@ -80,7 +78,46 @@ export function InStockPage() {
         <section className="relative mx-auto max-w-7xl px-6 pt-6 md:pt-8 pb-16 md:pb-20 overflow-hidden">
           <FloatingShapes variant="light" />
 
-          {pieces !== null && count === 0 ? (
+          {state.status === "loading" ? (
+            /* Shaped like what is coming, so the page does not jump when it
+               arrives, and captioned so it is never a bare spinner. */
+            <div className="relative z-10">
+              <p className="mb-4 text-sm text-ink-soft">{t("common.loading")}</p>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="border border-line bg-paper">
+                    <div className="aspect-[4/5] animate-pulse bg-line/40" />
+                    <div className="flex flex-col gap-2 px-4 py-4">
+                      <div className="h-4 w-3/4 animate-pulse bg-line/40" />
+                      <div className="h-3 w-1/2 animate-pulse bg-line/30" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : state.status === "error" ? (
+            /* Failure is not emptiness. Saying "the rail is empty" when the
+               truth is "we could not reach the database" tells a customer
+               there is nothing to buy, which may be entirely false. */
+            <div className="relative z-10 flex flex-col items-center gap-3 border border-accent/30 bg-paper px-6 py-16 text-center">
+              <p className="font-display text-2xl">{t("instock.errorTitle")}</p>
+              <p className="max-w-md text-sm text-ink-soft">{t("instock.errorSub")}</p>
+              <button
+                type="button"
+                onClick={reload}
+                className="btn-sweep mt-3 border border-ink px-8 py-3 text-sm uppercase tracking-[0.2em] transition-colors duration-300 hover:text-cream"
+              >
+                {t("common.retry")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAsking({ id: "", name: "" } as ReadyPiece)}
+                className="link-underline mt-1 py-1 text-sm text-ink-soft hover:text-moss-deep"
+              >
+                {t("enq.title")}
+              </button>
+            </div>
+          ) : count === 0 ? (
             <div className="relative z-10 border border-line bg-paper px-6 py-16 text-center flex flex-col items-center gap-3">
               <p className="font-display text-2xl">{t("instock.empty")}</p>
               <p className="text-sm text-ink-soft max-w-md">
@@ -95,7 +132,7 @@ export function InStockPage() {
             </div>
           ) : (
             <div className={`relative z-10 grid gap-4 md:gap-5 ${gridColumns(count)}`}>
-              {(pieces ?? []).map((piece, i) => (
+              {pieces.map((piece, i) => (
                 <Reveal key={piece.id} delay={(i % 4) * 80}>
                   <StockCard piece={piece} onAsk={setAsking} />
                 </Reveal>
@@ -203,6 +240,12 @@ function StockCard({
           {piece.price > 0
             ? formatMoney(piece.price, lang)
             : t("instock.priceOnRequest")}
+        </p>
+        {/* Which of the two things this is. Everything else on the site is cut
+            to order and takes weeks; this one is on a hanger now, and that is
+            the whole reason to buy it. */}
+        <p className="mt-2 text-[10px] uppercase tracking-[0.1em] text-moss-deep">
+          {reserved ? t("instock.reserved") : t("fact.readyToday")}
         </p>
       </div>
 
