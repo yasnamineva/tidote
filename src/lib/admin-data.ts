@@ -4,6 +4,7 @@ import { todayKey } from "@/lib/hours";
 import { parseTotal } from "@/lib/analytics";
 import { removeReturnedPiece, saveReadyPiece } from "@/lib/ready-pieces";
 import { appendMessage } from "@/lib/messages";
+import { deletePhotos } from "@/lib/photos";
 import { pushNotification } from "@/lib/notifications-data";
 import { getSupabase } from "@/lib/supabase/client";
 import {
@@ -290,4 +291,54 @@ export async function sendStudioMessage(clientId: string, text: string) {
     href: "/dashboard#messages",
   });
   return messages;
+}
+
+/**
+ * Photographs of clothes a client already owns, filed by the studio.
+ *
+ * Everything a client wore before the site existed has no order behind it, and
+ * the studio is the one holding the photographs of it. She can put them
+ * straight into the client's wardrobe, which is what the wardrobe is for:
+ * something to cut the next piece against.
+ *
+ * The database already allowed this on both sides — the wardrobe policy and
+ * the photo-folder policies each say `or is_admin()`. Only the panel said no.
+ */
+export async function addClientWardrobeItem(
+  clientId: string,
+  input: { name: string; category: string; photos: string[]; notes?: string }
+): Promise<Client | undefined> {
+  const { error } = await getSupabase().from("wardrobe_items").insert({
+    profile_id: clientId,
+    name: input.name,
+    category: input.category,
+    photos: input.photos,
+    notes: input.notes ?? "",
+  });
+  if (error) throw error;
+  const lang = getStoredLang();
+  await pushNotification("client", clientId, {
+    kind: "wardrobe_added",
+    text: translate(lang, "gen.notif.wardrobeAdded", { piece: input.name }),
+    href: "/dashboard#wardrobe",
+  });
+  return getClientWithLiveData(clientId);
+}
+
+/** Removes one, and the photographs with it — nothing should outlive its row. */
+export async function removeClientWardrobeItem(
+  clientId: string,
+  itemId: string
+): Promise<Client | undefined> {
+  const supabase = getSupabase();
+  const { data: row } = await supabase
+    .from("wardrobe_items")
+    .select("photos")
+    .eq("id", itemId)
+    .maybeSingle();
+  const { error } = await supabase.from("wardrobe_items").delete().eq("id", itemId);
+  if (error) throw error;
+  const photos = (row?.photos as string[] | undefined) ?? [];
+  if (photos.length) await deletePhotos(photos);
+  return getClientWithLiveData(clientId);
 }

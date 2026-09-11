@@ -4,17 +4,18 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 /**
- * The right-hand menu for a signed-in account.
+ * The menu for a signed-in account: a full-height column down the left, the
+ * way an application's own navigation usually sits.
  *
- * Same shape as the studio panel's sidebar so the two feel like one product,
- * but on the right, and built for anchors on a single page rather than routes.
- * Sign out sits at the bottom, below a rule, away from everything you might
+ * Not a panel floating in the margin — it holds the left edge from under the
+ * site header to the foot of the window, and stays there as the page scrolls.
+ * Same shape as the studio panel's sidebar, so the two feel like one product.
+ * Sign out sits at the bottom, below a rule, away from anything you might
  * click on purpose.
  *
- * Below `lg` there is no room for a rail beside the content, so it becomes a
- * drawer over the same edge — opened from a button pinned within thumb reach,
- * not from the site's own hamburger, which is a different menu about a
- * different thing.
+ * Below `lg` there is no room for a column beside the content, so it becomes a
+ * drawer over the same edge — opened from a pinned button, not the site's own
+ * hamburger, which is a different menu about a different thing.
  */
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -199,20 +200,20 @@ export function ProfileMenu({
 
   return (
     <>
-      {/* The rail. Its own scroll, so a long account cannot push sign out off
-          the bottom of the screen. */}
-      <aside className="hidden w-56 shrink-0 lg:block">
+      {/* The column. Sticks under the site header and runs to the foot of the
+          window; its list scrolls on its own, so a long account cannot push
+          sign out off the bottom. */}
+      <aside className="hidden w-60 shrink-0 border-r border-line bg-paper lg:block">
         <div
-          className="sticky border border-line"
-          style={{ top: stickyTop, maxHeight: `calc(100vh - ${stickyTop + 24}px)` }}
+          className="sticky flex flex-col"
+          style={{ top: stickyTop, height: `calc(100vh - ${stickyTop}px)` }}
         >
-          <div className="flex h-full flex-col" style={{ minHeight: "20rem" }}>
-            {panel}
-          </div>
+          {panel}
         </div>
       </aside>
 
-      {/* Below lg: a pinned button, and the same list as a drawer. */}
+      {/* Below lg: a pinned button, and the same list as a drawer over the
+          same edge it holds on a wide screen. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -224,15 +225,15 @@ export function ProfileMenu({
 
       {open && (
         <div className="fixed inset-0 z-[70] flex lg:hidden">
+          <div className="w-64 max-w-[80vw] border-r border-line bg-paper">
+            {panel}
+          </div>
           <button
             type="button"
             aria-label={closeLabel}
             className="flex-1 bg-ink/40"
             onClick={() => setOpen(false)}
           />
-          <div className="w-64 max-w-[80vw] border-l border-line bg-paper">
-            {panel}
-          </div>
         </div>
       )}
     </>

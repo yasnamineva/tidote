@@ -318,10 +318,18 @@ html.lenis body {
   transform: scaleX(1);
 }
 
-.btn-sweep {
-  position: relative;
-  overflow: hidden;
-  z-index: 0;
+/* In `components`, so Tailwind's own utilities — which live in the later
+   `utilities` layer — can override it. Unlayered, this rule beat every
+   utility no matter how specific, because layer order is settled before
+   specificity is even looked at: `position: relative` here silently won
+   against `fixed`, and the floating profile-menu button landed in the layout
+   at 101px wide, shoving the page 22px sideways on a 320px screen. */
+@layer components {
+  .btn-sweep {
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+  }
 }
 
 .btn-sweep::before {

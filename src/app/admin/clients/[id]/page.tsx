@@ -12,7 +12,12 @@ import { PendingOrdersList } from "@/components/admin/pending-orders-list";
 import { MessageThread } from "@/components/messages/message-thread";
 import { WardrobeSection } from "@/components/wardrobe-section";
 import { useLang } from "@/lib/i18n";
-import { getClientWithLiveData, sendStudioMessage } from "@/lib/admin-data";
+import {
+  addClientWardrobeItem,
+  getClientWithLiveData,
+  removeClientWardrobeItem,
+  sendStudioMessage,
+} from "@/lib/admin-data";
 import { getMessages } from "@/lib/messages";
 import { MEASUREMENT_FIELDS } from "@/lib/measurements";
 import type { Client, Message } from "@/lib/mock-data";
@@ -232,11 +237,23 @@ export default function AdminClientPage() {
             {t("wardrobe.adminTitle")}
           </h2>
           <p className="text-sm text-ink-soft mb-6">{t("wardrobe.adminSub")}</p>
+          {/* Editable from here too. Everything a client wore before this
+              site existed has no order behind it, and the studio is the one
+              holding the photographs — so she files them, and they become
+              what the next piece gets cut against. */}
           <WardrobeSection
             items={client.items}
             ownerId={client.id}
             orders={client.orders}
-            editable={false}
+            editable
+            onAdd={async (input) => {
+              const next = await addClientWardrobeItem(client.id, input);
+              if (next) setClient(next);
+            }}
+            onRemove={async (id) => {
+              const next = await removeClientWardrobeItem(client.id, id);
+              if (next) setClient(next);
+            }}
           />
         </Reveal>
 

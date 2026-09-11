@@ -97,7 +97,11 @@ export type NotificationKind =
   | "order_reviewed"
   | "status_changed"
   | "order_note"
-  | "message";
+  | "message"
+  /** The studio filed a photograph of something the client already owns. */
+  | "wardrobe_added"
+  /** Somebody asked about a piece without having an account. */
+  | "enquiry";
 
 export type Notification = {
   id: string;

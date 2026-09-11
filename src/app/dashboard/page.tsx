@@ -275,9 +275,20 @@ export default function DashboardPage() {
   return (
     <>
       <SiteHeader />
-      <main className="flex-1">
+      {/* The menu holds the left edge; the page proper is the column beside
+          it, header band and sticky stepper included. */}
+      <div className="flex flex-1">
+        <ProfileMenu
+          title={t("dash.myAccount")}
+          stickyTop={headerH}
+          openLabel={t("dash.menu")}
+          closeLabel={t("common.close")}
+          items={menuItems}
+          bottom={menuBottom}
+        />
+      <main className="min-w-0 flex-1">
         <section className="border-b border-line bg-paper">
-          <div className="mx-auto max-w-7xl px-6 py-10 flex items-center justify-between animate-[fade-up_0.6s_cubic-bezier(0.16,1,0.3,1)_both]">
+          <div className="mx-auto max-w-5xl px-6 py-10 flex items-center justify-between animate-[fade-up_0.6s_cubic-bezier(0.16,1,0.3,1)_both]">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-moss-deep mb-2">
                 {t("dash.myAccount")}
@@ -321,7 +332,7 @@ export default function DashboardPage() {
           className="sticky z-30 bg-cream/95 backdrop-blur border-b border-line"
           style={{ top: headerH }}
         >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3">
             <JourneyStepper
               compact
               activeStep={activeStep}
@@ -330,8 +341,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-7xl gap-10 px-6">
-        <section className="flex min-w-0 flex-1 flex-col gap-16 py-14">
+        <section className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-6 py-14">
           {/* 1. Measurements */}
           <div id="measurements" style={{ scrollMarginTop: stickyOffset }}>
             <Reveal>
@@ -593,17 +603,8 @@ export default function DashboardPage() {
           </div>
 
         </section>
-
-        <ProfileMenu
-          title={t("dash.myAccount")}
-          stickyTop={stickyOffset}
-          openLabel={t("dash.menu")}
-          closeLabel={t("common.close")}
-          items={menuItems}
-          bottom={menuBottom}
-        />
-        </div>
       </main>
+      </div>
 
       {showMessages && (
         <div
