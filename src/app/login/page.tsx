@@ -26,7 +26,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const { session, ready, login, requestPasswordReset } = useAuth();
+  const { session, ready, sessionError, login, requestPasswordReset } = useAuth();
   const { t } = useLang();
   const router = useRouter();
   const params = useSearchParams();
@@ -100,6 +100,19 @@ function LoginForm() {
           <h1 className="font-display text-3xl md:text-4xl mb-8 text-center">
             {t("login.title")}
           </h1>
+
+          {/* Sent here by a failed read rather than by signing out: the
+              session is still in the cookies and there is nothing wrong with
+              the password, so saying nothing would have them hunting for a
+              typo that is not there. */}
+          {sessionError && (
+            <p
+              role="alert"
+              className="mb-4 border border-accent/40 bg-accent/5 px-4 py-3 text-sm text-ink-soft"
+            >
+              {t("login.sessionUnreadable")}
+            </p>
+          )}
 
           <form
             onSubmit={handleSubmit}

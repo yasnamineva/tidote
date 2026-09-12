@@ -90,7 +90,13 @@ export function OrderDetail({
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - notePhotos.length;
-    const result = await importAndUpload(Array.from(fileList), room, clientId);
+    let result;
+    try {
+      result = await importAndUpload(Array.from(fileList), room, clientId);
+    } catch {
+      setWarning(t("photo.uploadFailed"));
+      return;
+    }
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setNotePhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }
@@ -102,6 +108,31 @@ export function OrderDetail({
     setNoteText("");
     setNotePhotos([]);
     setWarning(null);
+  }
+
+  /**
+   * Runs a studio action and only then re-reads the order.
+   *
+   * These used to be called without awaiting, with `onChange()` on the next
+   * line — so the refetch raced the write and usually won. The studio priced
+   * an order, the screen went on saying the quote was pending, and there was
+   * nothing to do but press the button again. The row was right all along; the
+   * page was reading it too early.
+   */
+  const [busy, setBusy] = useState(false);
+  const [actionFailed, setActionFailed] = useState(false);
+  async function run(action: () => Promise<unknown>) {
+    if (busy) return;
+    setBusy(true);
+    setActionFailed(false);
+    try {
+      await action();
+      onChange();
+    } catch {
+      setActionFailed(true);
+    } finally {
+      setBusy(false);
+    }
   }
 
   const isAdmin = role === "admin";
@@ -243,6 +274,12 @@ export function OrderDetail({
             <div className="border border-line bg-paper px-6 py-6">
               <h2 className="font-display text-xl mb-4">{t("od.manageOrder")}</h2>
 
+              {actionFailed && (
+                <p role="alert" className="mb-4 text-sm text-accent">
+                  {t("common.saveFailed")}
+                </p>
+              )}
+
               {order.reviewStatus === "pending" ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -262,11 +299,10 @@ export function OrderDetail({
                     />
                     <button
                       type="button"
-                      disabled={!price.trim()}
-                      onClick={() => {
-                        acceptOrder(clientId, order.id, price, eta);
-                        onChange();
-                      }}
+                      disabled={busy || !price.trim()}
+                      onClick={() =>
+                        void run(() => acceptOrder(clientId, order.id, price, eta))
+                      }
                       className="bg-moss text-cream px-4 py-2 text-xs uppercase tracking-[0.15em] transition-colors hover:bg-moss-deep disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {t("od.accept")}
@@ -290,10 +326,11 @@ export function OrderDetail({
                       />
                       <button
                         type="button"
-                        onClick={() => {
-                          denyOrder(clientId, order.id, reason || undefined);
-                          onChange();
-                        }}
+                        onClick={() =>
+                          void run(() =>
+                            denyOrder(clientId, order.id, reason || undefined)
+                          )
+                        }
                         className="bg-accent text-cream px-4 py-2 text-xs uppercase tracking-[0.15em] transition-colors hover:bg-accent/80"
                       >
                         {t("od.confirmDeny")}
@@ -320,8 +357,7 @@ export function OrderDetail({
                             aria-current={isCurrent ? "step" : undefined}
                             onClick={() => {
                               if (isCurrent) return;
-                              updateOrderStatus(clientId, order.id, s);
-                              onChange();
+                              void run(() => updateOrderStatus(clientId, order.id, s));
                             }}
                             className={`flex items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
                               isCurrent
@@ -374,10 +410,9 @@ export function OrderDetail({
                       <button
                         type="button"
                         disabled={!eta}
-                        onClick={() => {
-                          updateOrderDeadline(clientId, order.id, eta);
-                          onChange();
-                        }}
+                        onClick={() =>
+                          void run(() => updateOrderDeadline(clientId, order.id, eta))
+                        }
                         className="bg-moss text-cream px-4 py-2 text-xs uppercase tracking-[0.15em] transition-colors hover:bg-moss-deep disabled:opacity-40"
                       >
                         {t("od.setDate")}

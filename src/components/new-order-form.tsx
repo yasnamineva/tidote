@@ -30,11 +30,17 @@ export function NewOrderForm() {
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - photos.length;
-    const result = await importAndUpload(
-      Array.from(fileList),
-      room,
-      session?.clientId ?? ""
-    );
+    let result;
+    try {
+      result = await importAndUpload(
+        Array.from(fileList),
+        room,
+        session?.clientId ?? ""
+      );
+    } catch {
+      setWarning(t("photo.uploadFailed"));
+      return;
+    }
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }

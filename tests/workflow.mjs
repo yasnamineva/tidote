@@ -185,15 +185,20 @@ await page.setInputFiles("#wardrobe input[type=file]", {
   buffer: PNG,
 });
 // The file goes to storage before the row is written, and how long that takes
-// is the network's business. Wait for the thumbnail, which is the proof it
-// landed, rather than for a number of seconds.
+// is the network's business. Wait for the draft thumbnail, which is the proof
+// it landed, rather than for a number of seconds.
+//
+// Specifically the one inside the add form: `#wardrobe img` also matches the
+// photographs of garments already in the wardrobe, so it was satisfied
+// instantly and the item went in with no photograph at all — which is how a
+// file ended up in the bucket with no row pointing at it.
 const uploaded = await page
-  .locator("#wardrobe img")
+  .locator("#wardrobe form img")
   .first()
   .waitFor({ state: "visible", timeout: 30000 })
   .then(() => true)
   .catch(() => false);
-check(uploaded, "the photo uploads");
+check(uploaded, "the photo uploads and shows as a draft");
 await page.locator('#wardrobe button[type="submit"]').first().click();
 const filed = await page
   .locator(`text=${MARK} coat`)
@@ -202,6 +207,26 @@ const filed = await page
   .then(() => true)
   .catch(() => false);
 check(filed, "a garment with a photo is filed");
+// What the row holds, not just what the screen shows: the reference belongs in
+// the bucket path, and a `data:` URL here means the photograph went into the
+// database instead.
+if (E.SUPABASE_SERVICE_ROLE_KEY) {
+  const res = await fetch(
+    `${E.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/wardrobe_items?name=like.${MARK}*&select=photos`,
+    {
+      headers: {
+        apikey: E.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${E.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    }
+  );
+  const rows = res.ok ? await res.json() : [];
+  const refs = (rows[0]?.photos ?? []).join(",");
+  check(
+    refs.startsWith("client-photos/"),
+    `the row stores a bucket reference, not base64 (${refs.slice(0, 40) || "nothing"})`
+  );
+}
 await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForTimeout(4000);
 check((await page.locator(`text=${MARK} coat`).count()) >= 1, "and it survives a reload");
@@ -379,14 +404,35 @@ if (!url || !key) {
   console.log(`  ** no service key: delete anything named ${MARK} by hand **`);
 } else {
   const headers = { apikey: key, Authorization: `Bearer ${key}` };
+  // Photographs live in the bucket, not in the row, so deleting the row leaves
+  // the file behind. Collect the references off the rows on their way out.
+  const files = [];
   for (const [table, column] of [["orders", "piece"], ["wardrobe_items", "name"]]) {
     const res = await fetch(
       `${url}/rest/v1/${table}?${column}=like.${MARK}*`,
       { method: "DELETE", headers: { ...headers, Prefer: "return=representation" } }
     );
     const rows = res.ok ? await res.json() : [];
+    for (const row of rows) {
+      for (const field of ["photos", "wear_photos"]) {
+        for (const ref of row[field] ?? []) {
+          if (typeof ref === "string" && ref.startsWith("client-photos/")) {
+            files.push(ref.slice("client-photos/".length));
+          }
+        }
+      }
+    }
     console.log(`  removed ${rows.length} from ${table}${res.ok ? "" : ` (HTTP ${res.status})`}`);
     if (!res.ok) bad.push(`teardown failed for ${table}`);
+  }
+  if (files.length > 0) {
+    const res = await fetch(`${url}/storage/v1/object/client-photos`, {
+      method: "DELETE",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ prefixes: files }),
+    });
+    console.log(`  removed ${files.length} uploaded file(s)${res.ok ? "" : ` (HTTP ${res.status})`}`);
+    if (!res.ok) bad.push("teardown left files in the bucket");
   }
   // The notifications those actions raised in the studio's bell.
   const res = await fetch(`${url}/rest/v1/notifications?text=like.*${MARK}*`, {

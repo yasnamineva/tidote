@@ -96,7 +96,15 @@ export function WardrobeSection({
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - photos.length;
-    const result = await importAndUpload(Array.from(fileList), room, ownerId);
+    let result;
+    try {
+      result = await importAndUpload(Array.from(fileList), room, ownerId);
+    } catch {
+      // The file never reached storage. Without this the failure was an
+      // unhandled rejection: no photo, no message, nothing to do about it.
+      setWarning(t("photo.uploadFailed"));
+      return;
+    }
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     setPhotos((prev) => [...prev, ...result.photos].slice(0, MAX_PHOTOS));
   }

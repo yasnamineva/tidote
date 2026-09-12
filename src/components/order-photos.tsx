@@ -56,7 +56,13 @@ export function OrderPhotos({
     if (!fileList) return;
     setWarning(null);
     const room = MAX_PHOTOS - photos.length;
-    const result = await importAndUpload(Array.from(fileList), room, ownerId);
+    let result;
+    try {
+      result = await importAndUpload(Array.from(fileList), room, ownerId);
+    } catch {
+      setWarning(t("photo.uploadFailed"));
+      return;
+    }
     setWarning(photoWarning(t, result, MAX_PHOTOS, room));
     if (result.photos.length > 0) onAdd?.(result.photos.slice(0, room));
   }

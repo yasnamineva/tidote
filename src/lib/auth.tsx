@@ -58,6 +58,12 @@ type AuthContextValue = {
    * an empty list would otherwise be saying.
    */
   dataError: boolean;
+  /**
+   * There is a session in the cookies, but the profile behind it could not be
+   * read — so we cannot say who this is or where to send them. Distinct from
+   * being signed out, and shown as such.
+   */
+  sessionError: boolean;
   orders: Order[];
   measurements: Measurements;
   delivery: DeliveryInfo;
@@ -104,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [dataError, setDataError] = useState(false);
+  const [sessionError, setSessionError] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [measurements, setMeasurements] = useState<Measurements>(EMPTY_MEASUREMENTS);
   const [delivery, setDelivery] = useState<DeliveryInfo>(EMPTY_DELIVERY);
@@ -155,12 +162,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setReady(true);
         return;
       }
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("id,name,email,role")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
+      // "We could not read who you are" is not "you are not signed in". Both
+      // used to end with session null, which sends a signed-in person to the
+      // login page over a dropped connection — with a valid session in their
+      // cookies and nothing on screen to explain it. The flag is what the
+      // login page uses to say so.
+      if (profileError) {
+        setSessionError(true);
+        setSession(null);
+        setReady(true);
+        return;
+      }
+      setSessionError(false);
       if (!profile) {
         setSession(null);
         setReady(true);
@@ -275,10 +294,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         });
         if (error) {
-          const taken = error.message?.toLowerCase().includes("already");
+          const message = error.message?.toLowerCase() ?? "";
+          const taken = message.includes("already");
+          // The confirmation email is what is rate limited, not the account.
+          // "Try again" is useless advice for a limit measured in hours, and
+          // this is the failure registration actually hits until custom SMTP
+          // is configured — see SETUP.md step 5.
+          const rateLimited =
+            error.status === 429 || message.includes("rate limit");
           return {
             ok: false,
-            error: translate(lang, taken ? "signup.taken" : "signup.failed"),
+            error: translate(
+              lang,
+              taken
+                ? "signup.taken"
+                : rateLimited
+                  ? "signup.rateLimited"
+                  : "signup.failed"
+            ),
           };
         }
         // Supabase returns a user with no session when the address still has to
@@ -515,6 +548,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         ready,
         dataError,
+        sessionError,
         orders,
         measurements,
         delivery,

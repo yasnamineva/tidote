@@ -26,6 +26,22 @@ function isDirectUrl(ref: string) {
 }
 
 /**
+ * Already somewhere that can serve it, so there is nothing to upload.
+ *
+ * Deliberately *not* `isDirectUrl`: that one counts a `data:` URL as direct,
+ * which is right when deciding whether a reference needs a signed URL or has a
+ * file to delete, and wrong here. `importPhotos` hands this module data URLs
+ * and nothing else — they are the photograph, freshly read off the device —
+ * so treating them as already-stored meant the upload loop pushed every single
+ * one straight through and no client photo ever reached the bucket. They went
+ * into the database row instead, base64 and all, which is the thing this file
+ * exists to stop.
+ */
+function isAlreadyStored(ref: string) {
+  return !ref.startsWith("data:") && isDirectUrl(ref);
+}
+
+/**
  * Whether this photo may be served from a shared cache.
  *
  * True for assets shipped with the site and for the rail, which is on a public
@@ -74,7 +90,7 @@ export async function uploadPhotos(
   const supabase = getSupabase();
   const refs: string[] = [];
   for (const dataUrl of dataUrls) {
-    if (isDirectUrl(dataUrl)) {
+    if (isAlreadyStored(dataUrl)) {
       refs.push(dataUrl);
       continue;
     }

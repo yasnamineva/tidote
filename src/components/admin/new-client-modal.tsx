@@ -116,7 +116,11 @@ export function NewClientModal({
             />
           </div>
 
-          {error && <p className="text-sm text-accent">{error}</p>}
+          {error && (
+            <p role="alert" className="text-sm text-accent">
+              {error}
+            </p>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <button

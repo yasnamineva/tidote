@@ -261,6 +261,8 @@ const en: Dict = {
   // login
   "login.eyebrow": "Client Access",
   "login.title": "LOGIN TO TRACK YOUR ORDER",
+  "login.sessionUnreadable":
+    "You are still signed in, but we could not reach the database to read your account. Nothing is wrong with your password — try again in a moment.",
   "login.email": "Email",
   "login.password": "Password",
   "login.submit": "Login",
@@ -278,6 +280,8 @@ const en: Dict = {
   "signup.shortPassword": "Use at least 8 characters.",
   "signup.taken": "That email already has an account. Try signing in instead.",
   "signup.failed": "Could not create the account. Please try again.",
+  "signup.rateLimited":
+    "Too many registrations have been attempted from here in the last hour, so the confirmation email could not be sent. Try again later, or write to support@tidoteatelier.com and we will set the account up for you.",
   "signup.checkEmail": "Check {email} for a link to confirm your address.",
   "signup.checkEmailSub":
     "You can sign in as soon as you have clicked it. If nothing arrives, look in your spam folder.",
@@ -452,6 +456,8 @@ const en: Dict = {
   "neworder.warnMax":
     "You can attach up to {max} reference photos — only the first {room} were added.",
   "neworder.warnLarge": "\"{name}\" is too large (max 20MB) — skipped.",
+  "photo.uploadFailed":
+    "The photo did not upload. Check your connection and choose it again.",
   "neworder.warnUnreadable":
     "\"{name}\" could not be read — try saving it as a JPEG or PNG.",
 
@@ -1175,6 +1181,8 @@ const bg: Dict = {
   // login
   "login.eyebrow": "Достъп за клиенти",
   "login.title": "ВЛЕЗТЕ, ЗА ДА ПРОСЛЕДИТЕ ПОРЪЧКАТА СИ",
+  "login.sessionUnreadable":
+    "Все още сте влезли, но не успяхме да се свържем с базата, за да прочетем профила ви. Паролата ви е наред — опитайте отново след малко.",
   "login.email": "Имейл",
   "login.password": "Парола",
   "login.submit": "Вход",
@@ -1192,6 +1200,8 @@ const bg: Dict = {
   "signup.shortPassword": "Използвайте поне 8 символа.",
   "signup.taken": "Вече има профил с този имейл. Опитайте да влезете.",
   "signup.failed": "Профилът не можа да бъде създаден. Опитайте отново.",
+  "signup.rateLimited":
+    "Твърде много опити за регистрация от тук през последния час, затова имейлът за потвърждение не можа да се изпрати. Опитайте по-късно или ни пишете на support@tidoteatelier.com и ще създадем профила вместо вас.",
   "signup.checkEmail": "Проверете {email} за връзка, с която да потвърдите адреса си.",
   "signup.checkEmailSub":
     "Ще може да влезете веднага щом я отворите. Ако не пристигне нищо, проверете в спам.",
@@ -1367,6 +1377,8 @@ const bg: Dict = {
   "neworder.warnMax":
     "Можете да прикачите до {max} снимки — добавени са само първите {room}.",
   "neworder.warnLarge": "„{name}“ е твърде голяма (макс. 20MB) — пропусната.",
+  "photo.uploadFailed":
+    "Снимката не се качи. Провери връзката и я избери отново.",
   "neworder.warnUnreadable":
     "„{name}“ не може да бъде прочетена — запишете я като JPEG или PNG.",
 
