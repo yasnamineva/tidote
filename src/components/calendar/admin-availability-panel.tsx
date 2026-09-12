@@ -23,7 +23,12 @@ export function AdminAvailabilityPanel() {
 
   const [clients, setClients] = useState<Client[]>([]);
   useEffect(() => {
-    void getAllClientsWithLiveData().then(setClients);
+    // Only the dots marking delivery dates on the calendar. Worth catching so
+    // a failed read does not surface as an unhandled rejection; the calendar
+    // itself works without them.
+    void getAllClientsWithLiveData()
+      .then(setClients)
+      .catch(() => setClients([]));
   }, []);
   const etaDates = new Set(clients.flatMap((c) => c.orders.map((o) => o.eta)));
   const bookingDates = new Set(bookings.map((b) => b.date));

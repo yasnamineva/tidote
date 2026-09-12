@@ -21,6 +21,10 @@ export function NewOrderForm() {
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [warning, setWarning] = useState<string | null>(null);
+  // One order per press. Without this the button stays live while the insert
+  // is in flight, and an impatient second click places the same order twice.
+  const [submitting, setSubmitting] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList) return;
@@ -45,13 +49,24 @@ export function NewOrderForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!piece.trim()) return;
-    await addOrder({
-      piece: piece.trim(),
-      category,
-      notes: notes.trim() || undefined,
-      photos,
-    });
+    if (submitting || !piece.trim()) return;
+    setSubmitting(true);
+    setFailed(null);
+    try {
+      await addOrder({
+        piece: piece.trim(),
+        category,
+        notes: notes.trim() || undefined,
+        photos,
+      });
+    } catch {
+      // The order did not reach the database. Saying so is the difference
+      // between "try again" and thinking the studio has it.
+      setFailed(t("common.saveFailed"));
+      setSubmitting(false);
+      return;
+    }
+    // Stays disabled: we are leaving the page.
     router.push("/dashboard");
   }
 
@@ -144,11 +159,18 @@ export function NewOrderForm() {
         )}
       </div>
 
+      {failed && (
+        <p role="alert" className="text-sm text-accent">
+          {failed}
+        </p>
+      )}
+
       <button
         type="submit"
-        className="btn-sweep mt-2 bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5"
+        disabled={submitting}
+        className="btn-sweep mt-2 bg-ink text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
       >
-        {t("neworder.submit")}
+        {submitting ? t("common.saving") : t("neworder.submit")}
       </button>
     </form>
   );

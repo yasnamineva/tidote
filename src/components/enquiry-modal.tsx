@@ -56,8 +56,15 @@ export function EnquiryModal({
         }),
       });
       if (!response.ok) {
+        // The route answers with a code, never with the database's own
+        // sentence; the words a visitor reads are ours and in their language.
         const b = await response.json().catch(() => ({}));
-        setError(b.error ?? t("enq.failed"));
+        const byCode: Record<string, string> = {
+          missing_fields: t("enq.needBoth"),
+          no_contact: t("enq.needContact"),
+          rate_limited: t("enq.tooMany"),
+        };
+        setError(byCode[b.code] ?? t("enq.failed"));
         return;
       }
       setSent(true);

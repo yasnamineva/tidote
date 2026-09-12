@@ -48,10 +48,13 @@ export function WardrobeSection({
   /** Orders to fold in — the delivered ones are part of the wardrobe too. */
   orders?: Order[];
   editable: boolean;
-  onAdd?: (input: AddInput) => void;
-  onRemove?: (id: string) => void;
+  /** May be async: both callers write to the database. */
+  onAdd?: (input: AddInput) => void | Promise<void>;
+  onRemove?: (id: string) => void | Promise<void>;
 }) {
   const { lang, t } = useLang();
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
 
   // A piece that has arrived is something she owns; making her re-enter it by
   // hand would be asking her to type back what we already know.
@@ -105,20 +108,40 @@ export function WardrobeSection({
     if (dropped) void deletePhotos([dropped]);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
-    onAdd?.({
-      name: name.trim(),
-      category,
-      notes: notes.trim() || undefined,
-      photos,
-    });
+    if (saving || !name.trim()) return;
+    setSaving(true);
+    setFailed(null);
+    try {
+      await onAdd?.({
+        name: name.trim(),
+        category,
+        notes: notes.trim() || undefined,
+        photos,
+      });
+    } catch {
+      // The form used to empty itself the instant you pressed the button, so a
+      // failed write took the typed description with it and left no trace.
+      setFailed(t("common.saveFailed"));
+      return;
+    } finally {
+      setSaving(false);
+    }
     setName("");
     setCategory(ORDER_CATEGORIES[0]);
     setNotes("");
     setPhotos([]);
     setWarning(null);
+  }
+
+  async function handleRemove(id: string) {
+    setFailed(null);
+    try {
+      await onRemove?.(id);
+    } catch {
+      setFailed(t("common.saveFailed"));
+    }
   }
 
   return (
@@ -169,7 +192,7 @@ export function WardrobeSection({
               {editable && card.removeId && (
                 <button
                   type="button"
-                  onClick={() => onRemove?.(card.removeId!)}
+                  onClick={() => void handleRemove(card.removeId!)}
                   aria-label={t("wardrobe.remove")}
                   className="absolute top-2 right-2 h-6 w-6 rounded-full bg-ink/90 text-cream text-sm leading-none flex items-center justify-center hover:bg-accent transition-colors before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
                 >
@@ -288,10 +311,16 @@ export function WardrobeSection({
 
           <button
             type="submit"
-            className="btn-sweep w-fit bg-ink text-cream px-6 py-2.5 text-xs uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5"
+            disabled={saving}
+            className="btn-sweep w-fit bg-ink text-cream px-6 py-2.5 text-xs uppercase tracking-[0.15em] transition-transform duration-300 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
           >
-            {t("wardrobe.add")}
+            {saving ? t("common.saving") : t("wardrobe.add")}
           </button>
+          {failed && (
+            <p role="alert" className="text-sm text-accent">
+              {failed}
+            </p>
+          )}
         </form>
       )}
     </div>

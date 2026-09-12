@@ -52,6 +52,12 @@ type NewItemInput = {
 type AuthContextValue = {
   session: Session | null;
   ready: boolean;
+  /**
+   * The session is good but the client's own records could not be read. Shown
+   * as a failure rather than as an account with no orders in it, which is what
+   * an empty list would otherwise be saying.
+   */
+  dataError: boolean;
   orders: Order[];
   measurements: Measurements;
   delivery: DeliveryInfo;
@@ -97,6 +103,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
+  const [dataError, setDataError] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [measurements, setMeasurements] = useState<Measurements>(EMPTY_MEASUREMENTS);
   const [delivery, setDelivery] = useState<DeliveryInfo>(EMPTY_DELIVERY);
@@ -104,10 +111,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<OwnedItem[]>([]);
 
   const loadClientData = useCallback(async (profileId: string) => {
-    const [client, thread] = await Promise.all([
-      getBaseClientById(profileId),
-      getMessages(profileId),
-    ]);
+    let client, thread;
+    try {
+      [client, thread] = await Promise.all([
+        getBaseClientById(profileId),
+        getMessages(profileId),
+      ]);
+    } catch (e) {
+      // Leave whatever is already loaded in place and say so. Blanking the
+      // lists here is what made a failed read look like an empty account.
+      setDataError(true);
+      throw e;
+    }
+    setDataError(false);
     if (client) {
       setOrders(client.orders);
       setMeasurements(client.measurements);
@@ -156,7 +172,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: profile.role as Role,
         clientId: profile.id,
       });
-      if (profile.role === "client") await loadClientData(profile.id);
+      // A failure to read the orders/measurements must not leave `ready` false
+      // for the life of the tab: every gated page renders "Loading…" until it
+      // flips, so an error here used to look like a hung spinner with the real
+      // cause only in the console. The session stands; the records are simply
+      // not here yet, and each page says so in its own empty/error state.
+      if (profile.role === "client") {
+        try {
+          await loadClientData(profile.id);
+        } catch {
+          // Nothing to add: the lists stay as they are.
+        }
+      }
       if (!cancelled) setReady(true);
     }
 
@@ -169,8 +196,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     // onAuthStateChange fires immediately with the stored session, but getUser
-    // is what actually revalidates it against the server.
-    supabase.auth.getUser().then(({ data }) => void hydrate(data.user?.id));
+    // is what actually revalidates it against the server. If that call itself
+    // fails — offline, project paused — we still have to settle, or the portal
+    // sits on "Loading…" with nothing to click.
+    supabase.auth
+      .getUser()
+      .then(({ data }) => void hydrate(data.user?.id))
+      .catch(() => {
+        if (!cancelled) setReady(true);
+      });
 
     return () => {
       cancelled = true;
@@ -180,7 +214,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     if (session?.clientId && session.role === "client") {
-      await loadClientData(session.clientId);
+      try {
+        await loadClientData(session.clientId);
+      } catch {
+        // `dataError` is already set, and the pages read that. Rethrowing
+        // here would only become an unhandled rejection in whichever retry
+        // button called us.
+      }
     }
   }, [session, loadClientData]);
 
@@ -347,7 +387,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }),
         href: `/admin/orders/${clientId}/${data.id}`,
       });
-      await loadClientData(clientId);
+      // The order is in. Failing to read the account back is a display
+      // problem, not a failed order, and the form must not tell her to place
+      // it again.
+      try {
+        await loadClientData(clientId);
+      } catch {
+        // dataError is set; the dashboard shows it.
+      }
     },
     [session, loadClientData]
   );
@@ -467,6 +514,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         session,
         ready,
+        dataError,
         orders,
         measurements,
         delivery,

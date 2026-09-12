@@ -16,7 +16,8 @@
     "seed:rail": "node scripts/add-rail-piece.mjs",
     "test:auth": "node tests/auth-flows.mjs",
     "test:layout": "node tests/layout.mjs",
-    "test": "npm run test:db && npm run test:wiring"
+    "test": "npm run test:db && npm run test:wiring",
+    "test:workflow": "node tests/workflow.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

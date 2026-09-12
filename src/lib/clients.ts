@@ -124,7 +124,8 @@ export async function addStoredClient(input: NewClientInput): Promise<Client> {
     body: JSON.stringify(input),
   });
   const body = await response.json();
-  if (!response.ok) throw new Error(body.error ?? "Could not create the client");
+  // The code travels as the error's message, so the form can translate it.
+  if (!response.ok) throw new Error(body.code ?? "server");
   return body.client as Client;
 }
 

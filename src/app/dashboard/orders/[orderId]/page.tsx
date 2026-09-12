@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Reveal } from "@/components/reveal";
 import { OrderDetail } from "@/components/order-detail";
+import { LoadFailed } from "@/components/data-state";
 import { useAuth } from "@/lib/auth";
 import { useBooking } from "@/lib/booking";
 import { useLang } from "@/lib/i18n";
@@ -15,6 +16,8 @@ export default function ClientOrderPage() {
   const {
     session,
     ready,
+    dataError,
+    refresh,
     orders,
     addOrderNote,
     addOrderPhotos,
@@ -77,6 +80,13 @@ export default function ClientOrderPage() {
                 onConsent={(consent) => setOrderPhotoConsent(order.id, consent)}
               />
             </Reveal>
+          ) : dataError ? (
+            /* The order may well exist; we could not read the account. Saying
+               "not found" here sends someone looking for an order they think
+               they have lost. */
+            <div className="mt-8">
+              <LoadFailed onRetry={() => void refresh()} />
+            </div>
           ) : (
             <p className="text-ink-soft mt-8">{t("od.notFound")}</p>
           )}

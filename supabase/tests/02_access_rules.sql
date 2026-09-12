@@ -109,6 +109,139 @@ from measurements;
 insert into results (test, expected, got, pass)
 select 'A client cannot list other profiles', '1', count(*)::text, count(*) = 1 from profiles;
 
+-- Everything else a client's private life lives in. Each of these tables holds
+-- one row for Ann and one for Boris, so "1" is the whole assertion: seeing 2
+-- would mean seeing someone else's.
+insert into results (test, expected, got, pass)
+select 'A client sees only their own wardrobe', '1', count(*)::text, count(*) = 1
+from wardrobe_items;
+
+insert into results (test, expected, got, pass)
+select 'A client sees only their own message thread', '1', count(*)::text, count(*) = 1
+from messages;
+
+insert into results (test, expected, got, pass)
+select 'A client sees only notes on their own orders', '1', count(*)::text, count(*) = 1
+from order_notes;
+
+insert into results (test, expected, got, pass)
+select 'A client sees only their own notifications', '1', count(*)::text, count(*) = 1
+from notifications;
+
+insert into results (test, expected, got, pass)
+select 'A client sees only their own delivery address', '1', count(*)::text, count(*) = 1
+from delivery_info;
+
+-- The write side. Reading is not the only way to reach into another account:
+-- filing a garment, or a message, under someone else's id would put content in
+-- their portal that they did not put there.
+do $$
+declare blocked boolean;
+begin
+  begin
+    insert into wardrobe_items (profile_id, name)
+    values ('33333333-3333-3333-3333-333333333333', 'Planted coat');
+    blocked := false;
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('A client cannot file a garment in another wardrobe', 'blocked',
+          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
+do $$
+declare blocked boolean;
+begin
+  begin
+    insert into messages (profile_id, sender, text)
+    values ('33333333-3333-3333-3333-333333333333', 'client', 'Planted message');
+    blocked := false;
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('A client cannot write into another thread', 'blocked',
+          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
+do $$
+declare blocked boolean;
+begin
+  begin
+    insert into notifications (audience, profile_id, kind, text)
+    values ('client', '33333333-3333-3333-3333-333333333333', 'order_update', 'Planted alert');
+    blocked := false;
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('A client cannot raise an alert in another inbox', 'blocked',
+          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
+-- ------------------------------------------------------------------ photos
+-- Uploads are the one private thing that does not live in a table. The folder
+-- name is the permission: client-photos/<uuid>/… . So the test is whether Ann
+-- can see into, write into, or delete out of Boris's folder.
+insert into results (test, expected, got, pass)
+select 'A client sees only their own photo folder', '1', count(*)::text, count(*) = 1
+from storage.objects where bucket_id = 'client-photos';
+
+do $$
+declare blocked boolean;
+begin
+  begin
+    insert into storage.objects (bucket_id, name, owner)
+    values ('client-photos', '33333333-3333-3333-3333-333333333333/planted.jpg',
+            '22222222-2222-2222-2222-222222222222');
+    blocked := false;
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('A client cannot upload into another photo folder', 'blocked',
+          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
+do $$
+declare gone int;
+begin
+  delete from storage.objects
+  where name = '33333333-3333-3333-3333-333333333333/boris.jpg';
+  get diagnostics gone = row_count;
+  insert into results (test, expected, got, pass)
+  values ('A client cannot delete another client''s photo', '0', gone::text, gone = 0);
+end $$;
+
+-- The rail's photographs are the opposite case: they are on a public page, so
+-- everyone may read them and only the studio may put them there.
+insert into results (test, expected, got, pass)
+select 'A client can read the rail photographs', '1', count(*)::text, count(*) = 1
+from storage.objects where bucket_id = 'stock-photos';
+
+do $$
+declare blocked boolean;
+begin
+  begin
+    insert into storage.objects (bucket_id, name) values ('stock-photos', 'rail/fake.jpg');
+    blocked := false;
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('A client cannot add to the public rail photographs', 'blocked',
+          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
+-- And cannot edit what they can see: a client may mark their own alert read,
+-- not rewrite what it says for someone else.
+do $$
+declare touched int;
+begin
+  update notifications set read = true
+  where profile_id = '33333333-3333-3333-3333-333333333333';
+  get diagnostics touched = row_count;
+  insert into results (test, expected, got, pass)
+  values ('A client cannot mark another client''s alerts read', '0',
+          touched::text, touched = 0);
+end $$;
+
 ------------------------------------------------- the money guard (the big one)
 do $$
 declare ok boolean := false;

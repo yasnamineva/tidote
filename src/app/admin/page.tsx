@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AdminTopBar } from "@/components/admin/admin-shell";
 import { ClientsTable } from "@/components/admin/clients-table";
 import { NewClientModal } from "@/components/admin/new-client-modal";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import { getAllClientsWithLiveData } from "@/lib/admin-data";
 import type { Client } from "@/lib/mock-data";
 
@@ -16,17 +18,16 @@ function parseTotal(total: string): number {
 
 export default function AdminOverviewPage() {
   const { t } = useLang();
-  const [clients, setClients] = useState<Client[]>([]);
   const [query, setQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
-
-  function refresh() {
-    void getAllClientsWithLiveData().then(setClients);
-  }
-
-  useEffect(() => {
-    refresh();
-  }, []);
+  // Held as a state, not as an array that starts empty: an empty table is a
+  // real answer here ("no clients yet") and must not double as "the request
+  // failed", which is what it used to mean too.
+  const { state, reload } = useAsync<Client[]>(
+    () => getAllClientsWithLiveData(),
+    "admin-clients"
+  );
+  const clients = state.status === "ready" ? state.data : [];
 
   const orders = clients.flatMap((c) => c.orders);
   const inProgress = orders.filter((o) => o.status !== "delivered").length;
@@ -34,13 +35,16 @@ export default function AdminOverviewPage() {
     .filter((o) => o.reviewStatus === "accepted")
     .reduce((sum, o) => sum + parseTotal(o.total), 0);
 
+  // A zero on these cards is a claim about the business. Until the data is
+  // actually here they show a dash instead of counting an empty array.
+  const known = state.status === "ready";
   const stats = [
-    { label: t("admin.stat.clientsCount"), value: String(clients.length) },
-    { label: t("admin.stat.totalOrders"), value: String(orders.length) },
-    { label: t("admin.stat.inProgress"), value: String(inProgress) },
+    { label: t("admin.stat.clientsCount"), value: known ? String(clients.length) : "—" },
+    { label: t("admin.stat.totalOrders"), value: known ? String(orders.length) : "—" },
+    { label: t("admin.stat.inProgress"), value: known ? String(inProgress) : "—" },
     {
       label: t("admin.stat.revenue"),
-      value: revenue > 0 ? `€${revenue.toLocaleString()}` : "—",
+      value: known && revenue > 0 ? `€${revenue.toLocaleString()}` : "—",
     },
   ];
 
@@ -90,12 +94,18 @@ export default function AdminOverviewPage() {
         ))}
       </div>
 
-      <ClientsTable clients={filtered} />
+      {state.status === "loading" ? (
+        <Loading />
+      ) : state.status === "error" ? (
+        <LoadFailed onRetry={reload} />
+      ) : (
+        <ClientsTable clients={filtered} />
+      )}
 
       {showModal && (
         <NewClientModal
           onClose={() => setShowModal(false)}
-          onCreated={refresh}
+          onCreated={reload}
         />
       )}
     </>

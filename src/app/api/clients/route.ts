@@ -21,10 +21,7 @@ export async function POST(request: Request) {
   const phone = String(body?.phone ?? "").trim();
 
   if (!name || !email || password.length < 8) {
-    return Response.json(
-      { error: "A name, an email and a password of at least 8 characters." },
-      { status: 400 }
-    );
+    return Response.json({ code: "bad_input" }, { status: 400 });
   }
 
   const admin = getAdminSupabase();
@@ -36,8 +33,12 @@ export async function POST(request: Request) {
   });
   if (error || !created.user) {
     const taken = error?.message?.toLowerCase().includes("already");
+    // GoTrue's own wording is English and written for developers. The studio
+    // gets a code her own screen can put into her own language, and the
+    // detail goes to the server log where it is actually useful.
+    if (!taken) console.error("createUser failed:", error?.message);
     return Response.json(
-      { error: taken ? "That email already has an account." : error?.message },
+      { code: taken ? "email_taken" : "server" },
       { status: taken ? 409 : 500 }
     );
   }

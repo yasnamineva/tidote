@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Panel, StatTile } from "@/components/admin/panels";
 import { Reveal } from "@/components/reveal";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import {
   DOC_GROUPS,
   DOC_STATUSES,
@@ -208,25 +210,15 @@ function DocRow({
 
 export function DocumentsPanel() {
   const { t, lang } = useLang();
-  const [items, setItems] = useState<ComplianceItem[] | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newGroup, setNewGroup] = useState<DocGroup>("setup");
 
-  function refresh() {
-    void getComplianceItems().then(setItems);
-  }
+  const { state, reload } = useAsync(() => getComplianceItems(), "compliance");
+  const refresh = reload;
 
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  if (!items) {
-    return (
-      <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-        {t("common.loading")}
-      </p>
-    );
-  }
+  if (state.status === "loading") return <Loading />;
+  if (state.status === "error") return <LoadFailed onRetry={reload} />;
+  const items = state.data;
 
   const summary = summarizeCompliance(items);
 

@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AdminTopBar } from "@/components/admin/admin-shell";
 import { AnalyticsOverview } from "@/components/admin/analytics-overview";
 import { DocumentsPanel } from "@/components/admin/documents-panel";
 import { ExpensesPanel } from "@/components/admin/expenses-panel";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import { getAllClientsWithLiveData } from "@/lib/admin-data";
 import type { Client } from "@/lib/mock-data";
 
@@ -14,20 +16,17 @@ type Tab = (typeof TABS)[number];
 
 export default function AdminAnalyticsPage() {
   const { t } = useLang();
-  const [clients, setClients] = useState<Client[] | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
+  const { state, reload } = useAsync<Client[]>(
+    () => getAllClientsWithLiveData(),
+    "analytics-clients"
+  );
 
-  useEffect(() => {
-    void getAllClientsWithLiveData().then(setClients);
-  }, []);
-
-  if (!clients) {
-    return (
-      <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-        {t("common.loading")}
-      </p>
-    );
-  }
+  // Every number on this page is money. A failed load must not be rendered as
+  // a page of zeroes.
+  if (state.status === "loading") return <Loading />;
+  if (state.status === "error") return <LoadFailed onRetry={reload} />;
+  const clients = state.data;
 
   return (
     <>

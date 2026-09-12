@@ -17,17 +17,31 @@ export function DeliveryForm() {
   const { t } = useLang();
   const [form, setForm] = useState<DeliveryInfo>(delivery);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
     setForm(delivery);
   }, [delivery]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    updateDeliveryInfo({
-      ...form,
-      updatedAt: new Date().toISOString().slice(0, 10),
-    });
+    if (saving) return;
+    setSaving(true);
+    setFailed(null);
+    try {
+      await updateDeliveryInfo({
+        ...form,
+        updatedAt: new Date().toISOString().slice(0, 10),
+      });
+    } catch {
+      // "Saved" used to appear whether or not the write landed, which is the
+      // one thing a save confirmation must never do.
+      setFailed(t("common.saveFailed"));
+      return;
+    } finally {
+      setSaving(false);
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -80,10 +94,16 @@ export function DeliveryForm() {
 
       <button
         type="submit"
-        className="mt-2 bg-moss text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-all duration-300 hover:-translate-y-0.5 hover:bg-moss-deep"
+        disabled={saving}
+        className="mt-2 bg-moss text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-all duration-300 hover:-translate-y-0.5 hover:bg-moss-deep disabled:opacity-60 disabled:hover:translate-y-0"
       >
-        {t("deliv.save")}
+        {saving ? t("common.saving") : t("deliv.save")}
       </button>
+      {failed && (
+        <p role="alert" className="text-sm text-accent">
+          {failed}
+        </p>
+      )}
       {saved && (
         <p className="text-sm text-moss-deep animate-[fade-up_0.3s_ease-out_both]">
           {t("deliv.saved")}

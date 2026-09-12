@@ -35,7 +35,13 @@ export function NewClientModal({
     } catch (e) {
       // Creating a login can fail for reasons the form cannot predict — a
       // duplicate the check above raced, or a password the server rejects.
-      setError(e instanceof Error ? e.message : t("newclient.dupEmail"));
+      // The route answers with a code; the sentence is ours.
+      const code = e instanceof Error ? e.message : "server";
+      const byCode: Record<string, string> = {
+        email_taken: t("newclient.dupEmail"),
+        bad_input: t("newclient.badInput"),
+      };
+      setError(byCode[code] ?? t("newclient.failed"));
     } finally {
       setSaving(false);
     }

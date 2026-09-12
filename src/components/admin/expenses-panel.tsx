@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BarList, ColumnChart } from "@/components/admin/charts";
 import { ExpenseModal } from "@/components/admin/expense-modal";
 import { Panel, StatTile } from "@/components/admin/panels";
 import { Reveal } from "@/components/reveal";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import {
   computeAnalytics,
   formatMoney,
@@ -24,31 +26,25 @@ import type { Client } from "@/lib/mock-data";
 
 export function ExpensesPanel({ clients }: { clients: Client[] }) {
   const { t, lang } = useLang();
-  const [expenses, setExpenses] = useState<Expense[] | null>(null);
-  const [readySales, setReadySales] = useState(0);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [creating, setCreating] = useState(false);
   const [missingOnly, setMissingOnly] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
 
-  function refresh() {
-    void getExpenses().then(setExpenses);
-    void getReadyPieces().then((pieces) =>
-      setReadySales(summarizeReadyStock(pieces).soldValue)
-    );
-  }
+  // Both figures come from the same load: a ledger showing expenses but no
+  // sales, because one of two requests failed, is a wrong bottom line.
+  const { state, reload } = useAsync(async () => {
+    const [expenses, pieces] = await Promise.all([
+      getExpenses(),
+      getReadyPieces(),
+    ]);
+    return { expenses, readySales: summarizeReadyStock(pieces).soldValue };
+  }, "expenses");
+  const refresh = reload;
 
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  if (!expenses) {
-    return (
-      <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-        {t("common.loading")}
-      </p>
-    );
-  }
+  if (state.status === "loading") return <Loading />;
+  if (state.status === "error") return <LoadFailed onRetry={reload} />;
+  const { expenses, readySales } = state.data;
 
   // Ledger figures keep their cents; only the chart axis rounds.
   const money = (v: number) => formatMoneyExact(v, lang);

@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { Reveal } from "@/components/reveal";
 import { OrderDetail } from "@/components/order-detail";
 import { useBooking } from "@/lib/booking";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import { appendOrderNote, getClientWithLiveData } from "@/lib/admin-data";
 import type { Client } from "@/lib/mock-data";
 
@@ -14,23 +16,16 @@ export default function AdminOrderPage() {
   const { bookings } = useBooking();
   const { t } = useLang();
   const params = useParams<{ clientId: string; orderId: string }>();
-  const [client, setClient] = useState<Client | null | undefined>(undefined);
+  const load = useCallback(
+    async () => (await getClientWithLiveData(params.clientId)) ?? null,
+    [params.clientId]
+  );
+  const { state, reload } = useAsync<Client | null>(load, params.clientId);
 
-  const refresh = useCallback(async () => {
-    setClient((await getClientWithLiveData(params.clientId)) ?? null);
-  }, [params.clientId]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  if (client === undefined) {
-    return (
-      <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-        {t("common.loading")}
-      </p>
-    );
-  }
+  // "We could not reach the database" must not read as "this order is gone".
+  if (state.status === "loading") return <Loading />;
+  if (state.status === "error") return <LoadFailed onRetry={reload} />;
+  const client = state.data;
 
   const order = client?.orders.find((o) => o.id === params.orderId);
   const booking = bookings.find((b) => b.orderId === params.orderId);
@@ -53,9 +48,9 @@ export default function AdminOrderPage() {
             booking={booking}
             onAddNote={(text, photos) => {
               appendOrderNote(client.id, order.id, "studio", text, photos);
-              refresh();
+              reload();
             }}
-            onChange={refresh}
+            onChange={reload}
           />
         </Reveal>
       ) : (

@@ -64,19 +64,16 @@ export async function POST(request: Request) {
   const lang = body?.lang === "en" ? "en" : "bg";
 
   if (!name || !message) {
-    return Response.json({ error: "A name and a message." }, { status: 400 });
+    return Response.json({ code: "missing_fields" }, { status: 400 });
   }
   // One way to reach them back, or the enquiry is a dead end.
   const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
   if (!looksLikeEmail && phone.length < 6) {
-    return Response.json({ error: "An email address or a telephone number." }, { status: 400 });
+    return Response.json({ code: "no_contact" }, { status: 400 });
   }
 
   if (rateLimited(clientIp(request))) {
-    return Response.json(
-      { error: "Too many enquiries from here just now. Try again later." },
-      { status: 429 }
-    );
+    return Response.json({ code: "rate_limited" }, { status: 429 });
   }
 
   const admin = getAdminSupabase();
@@ -95,7 +92,12 @@ export async function POST(request: Request) {
     .select("id")
     .single();
   if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    // The reason belongs in the server log, not on a stranger's screen: the
+    // database's own words here are "Could not find the table
+    // 'public.enquiries' in the schema cache", which tells the visitor
+    // nothing and tells anyone else too much.
+    console.error("enquiry insert failed:", error.message);
+    return Response.json({ code: "server" }, { status: 500 });
   }
 
   // In the panel, whether or not the mail gets through.

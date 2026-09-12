@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AdminTopBar } from "@/components/admin/admin-shell";
 import { ReadyPieceCard } from "@/components/admin/ready-piece-card";
 import { ReadyPieceModal } from "@/components/admin/ready-piece-modal";
 import { Reveal } from "@/components/reveal";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import { formatMoney } from "@/lib/analytics";
 import {
   READY_STATUSES,
@@ -20,26 +22,18 @@ type Filter = ReadyPieceStatus | "all";
 
 export default function AdminReadyPage() {
   const { t, lang } = useLang();
-  const [pieces, setPieces] = useState<ReadyPiece[] | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<ReadyPiece | null>(null);
   const [creating, setCreating] = useState(false);
-
-  function refresh() {
-    void getReadyPieces().then(setPieces);
-  }
-
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  if (!pieces) {
-    return (
-      <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-        {t("common.loading")}
-      </p>
-    );
-  }
+  const { state, reload } = useAsync<ReadyPiece[]>(
+    () => getReadyPieces(),
+    "admin-ready"
+  );
+  // "The rail is empty" and "we could not read the rail" are different
+  // sentences, and the studio acts on them differently.
+  if (state.status === "loading") return <Loading />;
+  if (state.status === "error") return <LoadFailed onRetry={reload} />;
+  const pieces = state.data;
 
   const summary = summarizeReadyStock(pieces);
   const visible =
@@ -131,7 +125,7 @@ export default function AdminReadyPage() {
                 key={piece.id}
                 piece={piece}
                 onEdit={() => setEditing(piece)}
-                onChanged={refresh}
+                onChanged={reload}
               />
             ))}
           </div>
@@ -145,7 +139,7 @@ export default function AdminReadyPage() {
             setCreating(false);
             setEditing(null);
           }}
-          onSaved={refresh}
+          onSaved={reload}
         />
       )}
     </>

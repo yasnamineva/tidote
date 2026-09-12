@@ -182,11 +182,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (ready && session?.role === "admin") {
-      void getAllClientsWithLiveData().then(setClients);
+      // These two feed the sidebar counts only. A failure costs the badges
+      // their numbers — the pages behind them each say what went wrong — so it
+      // is caught here rather than left as an unhandled rejection.
+      void getAllClientsWithLiveData()
+        .then(setClients)
+        .catch(() => setClients([]));
       // Sold pieces have left the rail, so the badge counts what is still here.
-      void getReadyPieces().then((pieces) =>
-        setReadyInStock(pieces.filter((p) => p.status !== "sold").length)
-      );
+      void getReadyPieces()
+        .then((pieces) =>
+          setReadyInStock(pieces.filter((p) => p.status !== "sold").length)
+        )
+        .catch(() => setReadyInStock(0));
     }
   }, [ready, session, pathname]);
 

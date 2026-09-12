@@ -1,10 +1,12 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { AdminTopBar, useOrderFilter } from "@/components/admin/admin-shell";
 import { PendingOrdersList } from "@/components/admin/pending-orders-list";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import { categoryLabel } from "@/lib/translations";
 import { getAllClientsWithLiveData } from "@/lib/admin-data";
 import {
@@ -16,22 +18,18 @@ import {
 export default function AdminCategoryOrdersPage() {
   const { lang, t } = useLang();
   const params = useParams<{ category: string }>();
-  const [clients, setClients] = useState<Client[]>([]);
   const { filterCategory, setFilterCategory } = useOrderFilter();
+  const { state, reload } = useAsync<Client[]>(
+    () => getAllClientsWithLiveData(),
+    "category-orders"
+  );
+  const clients = state.status === "ready" ? state.data : [];
 
   const raw = decodeURIComponent(params.category);
   const isAll = raw === "all";
   const category = (ORDER_CATEGORIES as string[]).includes(raw)
     ? (raw as OrderCategory)
     : undefined;
-
-  function refresh() {
-    void getAllClientsWithLiveData().then(setClients);
-  }
-
-  useEffect(() => {
-    refresh();
-  }, []);
 
   // Leave the sidebar highlight behind when navigating away from All Orders.
   useEffect(() => () => setFilterCategory(null), [setFilterCategory]);
@@ -54,13 +52,17 @@ export default function AdminCategoryOrdersPage() {
               : raw
         }
       />
-      <p className="text-sm text-ink-soft mb-6">
-        {t(shown ? "admin.ordersInCategory" : "admin.ordersTotal", { n: count })}
-      </p>
-      {(isAll || category) && (
+      {state.status === "ready" && (
+        <p className="text-sm text-ink-soft mb-6">
+          {t(shown ? "admin.ordersInCategory" : "admin.ordersTotal", { n: count })}
+        </p>
+      )}
+      {state.status === "loading" && <Loading />}
+      {state.status === "error" && <LoadFailed onRetry={reload} />}
+      {state.status === "ready" && (isAll || category) && (
         <PendingOrdersList
           clients={clients}
-          onChange={refresh}
+          onChange={reload}
           fixedCategory={category}
           filterable={isAll}
           onCategoryChange={(next) =>

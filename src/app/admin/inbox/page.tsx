@@ -1,37 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AdminTopBar } from "@/components/admin/admin-shell";
 import { MessageThread } from "@/components/messages/message-thread";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import { useNotifications } from "@/lib/notifications";
 import { getAllClientsWithLiveData, sendStudioMessage } from "@/lib/admin-data";
 import { getLatestMessages, getMessages } from "@/lib/messages";
 import { markReadWhere } from "@/lib/notifications-data";
-import { getEnquiries, setEnquiryHandled, type Enquiry } from "@/lib/enquiries";
+import { getEnquiries, setEnquiryHandled } from "@/lib/enquiries";
 import { seedTextById } from "@/lib/translations";
-import type { Client, Message } from "@/lib/mock-data";
+import type { Message } from "@/lib/mock-data";
 
 export default function AdminInboxPage() {
   const { t, lang } = useLang();
   const { notifications, refresh: refreshBell } = useNotifications();
-  const [clients, setClients] = useState<Client[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   // The last message of every thread, so the list can be ordered without one
-  // request per client.
-  const [latest, setLatest] = useState<Map<string, Message>>(new Map());
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  // request per client. Held beside the load rather than inside it, because
+  // sending a message moves it on without a refetch of everything.
+  const [latestSent, setLatestSent] = useState<Map<string, Message> | null>(null);
 
-  useEffect(() => {
-    void getAllClientsWithLiveData().then(setClients);
-    void getLatestMessages().then(setLatest);
-    void getEnquiries().then(setEnquiries).catch(() => setEnquiries([]));
-  }, []);
+  const core = useAsync(async () => {
+    const [clients, latest] = await Promise.all([
+      getAllClientsWithLiveData(),
+      getLatestMessages(),
+    ]);
+    return { clients, latest };
+  }, "inbox-core");
+
+  // Loaded separately on purpose: enquiries are a newer table, and if reading
+  // them fails the studio must still be able to answer her clients. One dead
+  // request should not take the inbox down with it.
+  const enq = useAsync(() => getEnquiries(), "inbox-enquiries");
+
+  const clients = core.state.status === "ready" ? core.state.data.clients : [];
+  const latest =
+    latestSent ??
+    (core.state.status === "ready" ? core.state.data.latest : new Map<string, Message>());
+  const enquiries = enq.state.status === "ready" ? enq.state.data : [];
 
   async function resolveEnquiry(id: string, handled: boolean) {
     await setEnquiryHandled(id, handled);
-    setEnquiries(await getEnquiries());
+    enq.reload();
     // The bell pointed at this page; the reason has now been dealt with.
     await markReadWhere("admin", "", (n) => n.kind === "enquiry");
     refreshBell();
@@ -53,7 +67,7 @@ export default function AdminInboxPage() {
     if (!selected) return;
     await sendStudioMessage(selected, text);
     setMessages(await getMessages(selected));
-    setLatest(await getLatestMessages());
+    setLatestSent(await getLatestMessages());
   }
 
   const unreadByClient = new Set(
@@ -77,6 +91,16 @@ export default function AdminInboxPage() {
     <>
       <AdminTopBar title={t("inbox.title")} />
       <p className="text-sm text-ink-soft mb-8 -mt-4">{t("inbox.sub")}</p>
+
+      {enq.state.status === "error" && (
+        <div className="mb-8">
+          <LoadFailed
+            onRetry={enq.reload}
+            title={t("enqadmin.failedTitle")}
+            sub={t("enqadmin.failedSub")}
+          />
+        </div>
+      )}
 
       {open.length > 0 && (
         <div className="mb-10 flex flex-col gap-3">
@@ -121,6 +145,13 @@ export default function AdminInboxPage() {
         </div>
       )}
 
+      {core.state.status === "loading" && <Loading />}
+      {core.state.status === "error" && <LoadFailed onRetry={core.reload} />}
+
+      {/* Rendered only when the data is here: the `hidden` attribute would not
+          hide it, because Tailwind's own `display: grid` beats the browser's
+          rule for the attribute. */}
+      {core.state.status === "ready" && (
       <div className="grid md:grid-cols-5 gap-8">
         {/* conversation list */}
         <div className="md:col-span-2 min-w-0 flex flex-col gap-2">
@@ -173,6 +204,7 @@ export default function AdminInboxPage() {
             )}
           </div>
       </div>
+      )}
     </>
   );
 }

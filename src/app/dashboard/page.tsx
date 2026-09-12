@@ -17,6 +17,7 @@ import { WardrobeSection } from "@/components/wardrobe-section";
 import { ProfileMenu, type MenuItem } from "@/components/profile-menu";
 import { useAuth } from "@/lib/auth";
 import { useBooking } from "@/lib/booking";
+import { LoadFailed } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
 import {
   categoryLabel,
@@ -124,6 +125,8 @@ export default function DashboardPage() {
   const {
     session,
     ready,
+    dataError,
+    refresh,
     orders,
     measurements,
     delivery,
@@ -141,6 +144,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [form, setForm] = useState<Measurements>(measurements);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const [headerH, setHeaderH] = useState(0);
   const [barH, setBarH] = useState(0);
   const barRef = useRef<HTMLDivElement | null>(null);
@@ -226,12 +231,24 @@ export default function DashboardPage() {
     );
   }
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    updateMeasurements({
-      ...form,
-      updatedAt: new Date().toISOString().slice(0, 10),
-    });
+    if (saving) return;
+    setSaving(true);
+    setSaveFailed(false);
+    try {
+      await updateMeasurements({
+        ...form,
+        updatedAt: new Date().toISOString().slice(0, 10),
+      });
+    } catch {
+      // These are the numbers the garment gets cut against. "Saved" appearing
+      // when the write failed is the worst possible lie on this page.
+      setSaveFailed(true);
+      return;
+    } finally {
+      setSaving(false);
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -392,6 +409,13 @@ export default function DashboardPage() {
                               id={key}
                               type="number"
                               inputMode="decimal"
+                              /* A measurement in centimetres cannot be
+                                 negative and is not 4000. The browser refuses
+                                 the save itself and says which field, which is
+                                 a better message than any we would write. */
+                              min="0"
+                              max="300"
+                              step="0.5"
                               value={form[key]}
                               onChange={(e) =>
                                 setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -429,10 +453,16 @@ export default function DashboardPage() {
 
                 <button
                   type="submit"
-                  className="bg-moss text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-all duration-300 hover:-translate-y-0.5 hover:bg-moss-deep"
+                  disabled={saving}
+                  className="bg-moss text-cream px-6 py-3 text-sm uppercase tracking-[0.15em] transition-all duration-300 hover:-translate-y-0.5 hover:bg-moss-deep disabled:opacity-60 disabled:hover:translate-y-0"
                 >
-                  {t("measure.save")}
+                  {saving ? t("common.saving") : t("measure.save")}
                 </button>
+                {saveFailed && (
+                  <p role="alert" className="text-sm text-accent">
+                    {t("common.saveFailed")}
+                  </p>
+                )}
                 {saved && (
                   <p className="text-sm text-moss-deep animate-[fade-up_0.3s_ease-out_both]">
                     {t("measure.saved")}
@@ -454,25 +484,37 @@ export default function DashboardPage() {
                   {t("dash.newOrder")}
                 </Link>
               </div>
-              {orders.length === 0 && (
-                <p className="text-sm text-ink-soft border border-line bg-paper px-6 py-8 text-center">
-                  {t("dash.noOrders")}
-                </p>
+              {/* An account with no orders and an account we could not read
+                  are different things, and only one of them is the client's
+                  own doing. */}
+              {dataError ? (
+                <LoadFailed onRetry={() => void refresh()} />
+              ) : (
+                orders.length === 0 && (
+                  <p className="text-sm text-ink-soft border border-line bg-paper px-6 py-8 text-center">
+                    {t("dash.noOrders")}
+                  </p>
+                )
               )}
               <div className="flex flex-col gap-4">
                 {[...orders].sort(byArrival).map((order, i) => (
                   <Reveal key={order.id} delay={i * 100}>
                     <div className="group border border-line bg-paper px-6 py-5 transition-all duration-300 hover:border-moss-deep hover:shadow-[0_8px_24px_-12px_rgba(74,82,56,0.35)]">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
+                      {/* The price is short ("€450"); the words that stand in
+                          for one before it is quoted are not. With nowrap on
+                          the row, "Очаква оферта" pushed a 320px screen 41px
+                          sideways — so the row may wrap and the text may
+                          break. Every new order starts in that state. */}
+                      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+                        <div className="min-w-0">
                           <p className="text-xs uppercase tracking-[0.15em] text-ink-soft">
                             {order.id}
                           </p>
-                          <h3 className="font-display text-xl mt-1">
+                          <h3 className="font-display text-xl mt-1 break-words">
                             {pieceLabel(lang, order.piece)}
                           </h3>
                         </div>
-                        <p className="font-display text-lg text-accent whitespace-nowrap">
+                        <p className="min-w-0 break-words font-display text-lg text-accent">
                           {displayTotal(order.total)}
                         </p>
                       </div>

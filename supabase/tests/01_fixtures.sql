@@ -6,6 +6,10 @@ grant execute on all functions in schema auth to anon, authenticated, service_ro
 grant all on all tables in schema public to authenticated, service_role;
 grant all on all sequences in schema public to authenticated, service_role;
 grant select on public_stock to anon, authenticated;
+-- Supabase grants these too; the stub does not, and without them the storage
+-- tests fail on privileges before any policy is consulted.
+grant all on storage.objects to anon, authenticated, service_role;
+grant select on storage.buckets to anon, authenticated, service_role;
 revoke all on admin_emails from anon, authenticated;
 
 -- The suite brings its own studio address rather than reusing whichever one
@@ -42,3 +46,32 @@ values
 insert into ready_pieces (name, category, size, price, status, held_for, notes) values
   ('On the rail','Jacket','M',230,'available','',''),
   ('Already gone','Hoodie','S',190,'sold','Kaloyan Ivanov','paid cash');
+
+-- Both clients own one of each private thing, so an isolation test that counts
+-- rows proves the policy and not the emptiness of the table: if Ann can see
+-- two wardrobe items, she is seeing Boris's.
+insert into wardrobe_items (profile_id, name, category, notes) values
+  ('22222222-2222-2222-2222-222222222222','Ann Coat','Jacket',''),
+  ('33333333-3333-3333-3333-333333333333','Boris Tee','T-Shirt','');
+
+insert into messages (profile_id, sender, text) values
+  ('22222222-2222-2222-2222-222222222222','client','Ann asks a question'),
+  ('33333333-3333-3333-3333-333333333333','client','Boris asks a question');
+
+insert into order_notes (order_id, author, text)
+select id, 'client', 'note on ' || piece from orders;
+
+insert into notifications (audience, profile_id, kind, text) values
+  ('client','22222222-2222-2222-2222-222222222222','order_update','Ann''s piece moved on'),
+  ('client','33333333-3333-3333-3333-333333333333','order_update','Boris''s piece moved on');
+
+-- Two private uploads and one rail photograph. Inserted here, as the owner, so
+-- that the isolation tests can run as one client and still have someone else's
+-- file to fail to reach.
+insert into storage.objects (bucket_id, name, owner) values
+  ('client-photos', '22222222-2222-2222-2222-222222222222/ann.jpg',
+   '22222222-2222-2222-2222-222222222222'),
+  ('client-photos', '33333333-3333-3333-3333-333333333333/boris.jpg',
+   '33333333-3333-3333-3333-333333333333'),
+  ('stock-photos', 'rail/jacket.jpg', null);
+

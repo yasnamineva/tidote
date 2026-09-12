@@ -11,7 +11,9 @@ import { InfoTip } from "@/components/info-tip";
 import { PendingOrdersList } from "@/components/admin/pending-orders-list";
 import { MessageThread } from "@/components/messages/message-thread";
 import { WardrobeSection } from "@/components/wardrobe-section";
+import { LoadFailed, Loading } from "@/components/data-state";
 import { useLang } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import {
   addClientWardrobeItem,
   getClientWithLiveData,
@@ -20,16 +22,17 @@ import {
 } from "@/lib/admin-data";
 import { getMessages } from "@/lib/messages";
 import { MEASUREMENT_FIELDS } from "@/lib/measurements";
-import type { Client, Message } from "@/lib/mock-data";
+import type { Message } from "@/lib/mock-data";
 
 export default function AdminClientPage() {
   const { t } = useLang();
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const [client, setClient] = useState<Client | null | undefined>(undefined);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [showMessages, setShowMessages] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  // Messages sent from this screen, which are ahead of the last load. Kept
+  // beside the loaded thread rather than copied into state by an effect.
+  const [sent, setSent] = useState<Message[] | null>(null);
 
   useEffect(() => {
     if (!showMessages) return;
@@ -40,30 +43,31 @@ export default function AdminClientPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [showMessages]);
 
-  const refresh = useCallback(async () => {
+  const load = useCallback(async () => {
     const [record, thread] = await Promise.all([
       getClientWithLiveData(params.id),
       getMessages(params.id),
     ]);
-    setClient(record ?? null);
-    setMessages(thread);
+    return { client: record ?? null, thread };
   }, [params.id]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const { state, reload } = useAsync(load, params.id);
+  const refresh = useCallback(() => {
+    setSent(null);
+    reload();
+  }, [reload]);
 
   async function handleSend(text: string) {
-    setMessages(await sendStudioMessage(params.id, text));
+    setSent(await sendStudioMessage(params.id, text));
   }
 
-  if (client === undefined) {
-    return (
-      <p className="text-ink-soft text-sm uppercase tracking-[0.15em] animate-pulse">
-        {t("common.loading")}
-      </p>
-    );
-  }
+  // A client record that failed to load is not a client who does not exist:
+  // showing "not found" here would invite deleting and recreating someone
+  // whose record is perfectly intact.
+  if (state.status === "loading") return <Loading />;
+  if (state.status === "error") return <LoadFailed onRetry={reload} />;
+  const client = state.data.client;
+  const messages = sent ?? state.data.thread;
 
   if (!client) {
     return (
@@ -247,12 +251,12 @@ export default function AdminClientPage() {
             orders={client.orders}
             editable
             onAdd={async (input) => {
-              const next = await addClientWardrobeItem(client.id, input);
-              if (next) setClient(next);
+              await addClientWardrobeItem(client.id, input);
+              refresh();
             }}
             onRemove={async (id) => {
-              const next = await removeClientWardrobeItem(client.id, id);
-              if (next) setClient(next);
+              await removeClientWardrobeItem(client.id, id);
+              refresh();
             }}
           />
         </Reveal>
