@@ -11,6 +11,7 @@ import { SplitReveal } from "@/components/split-reveal";
 import { FloatingShapes } from "@/components/floating-shapes";
 import { useLang } from "@/lib/i18n";
 import { OFFER, startingFrom } from "@/lib/offer";
+import { CommissionTerms } from "@/components/commission-terms";
 
 const INSTAGRAM_URL = "https://www.instagram.com/tidote.atelier/";
 
@@ -103,6 +104,11 @@ export function CategoryPage({
               ))}
           </div>
         </section>
+
+        {/* The six steps and the three questions, after the facts strip and
+            before the lookbook: by here they have seen the price line and want
+            to know what actually happens next. */}
+        <CommissionTerms />
 
         <section className="relative mx-auto max-w-7xl px-6 py-16 md:py-20 overflow-hidden">
           <FloatingShapes variant="light" />

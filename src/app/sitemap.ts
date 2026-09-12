@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { hasPublicWall } from "@/lib/worn-by";
 
 const SITE_URL = "https://tidoteatelier.com";
 
@@ -28,12 +29,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.8,
     },
-    {
-      url: `${SITE_URL}/worn-by`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
+    // Offered to search engines only once someone real is on the wall. An
+    // indexed page that says "nobody yet" is not a page worth finding.
+    ...(hasPublicWall()
+      ? [
+          {
+            url: `${SITE_URL}/worn-by`,
+            lastModified,
+            changeFrequency: "monthly" as const,
+            priority: 0.6,
+          },
+        ]
+      : []),
     {
       url: `${SITE_URL}/privacy`,
       lastModified,

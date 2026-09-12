@@ -66,7 +66,7 @@ export function InStockPage() {
                 </p>
                 <Link
                   href="/#shop"
-                  className="link-underline inline-block py-1 text-xs uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
+                  className="link-underline inline-block py-2 text-xs uppercase tracking-[0.15em] hover:text-moss-deep transition-colors whitespace-nowrap"
                 >
                   {t("instock.lookbook")} &rarr;
                 </Link>
@@ -112,7 +112,7 @@ export function InStockPage() {
               <button
                 type="button"
                 onClick={() => setAsking({ id: "", name: "" } as ReadyPiece)}
-                className="link-underline mt-1 py-1 text-sm text-ink-soft hover:text-moss-deep"
+                className="link-underline mt-1 py-2 text-sm text-ink-soft hover:text-moss-deep"
               >
                 {t("enq.title")}
               </button>

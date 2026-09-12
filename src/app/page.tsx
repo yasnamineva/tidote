@@ -13,6 +13,7 @@ import { ImageReveal } from "@/components/image-reveal";
 import { FloatingShapes } from "@/components/floating-shapes";
 import { JourneyStepper } from "@/components/journey-stepper";
 import { ChoosePath } from "@/components/choose-path";
+import { AtelierFacts, AtelierShots } from "@/components/atelier-proof";
 import { useLang } from "@/lib/i18n";
 
 const SHOP_CATEGORIES = [
@@ -194,6 +195,15 @@ export default function Home() {
                 {t("cta.commission")}
               </Link>
               <p className="mt-3 text-xs text-ink-soft/75">{t("cta.signInLater")}</p>
+              {/* The long answers — lead time, fittings, adjustments — live on
+                  the lookbook pages rather than here. A link keeps the homepage
+                  from turning into a third numbered list. */}
+              <Link
+                href="/casual#how-it-works"
+                className="link-underline mt-4 inline-block py-2 text-xs uppercase tracking-[0.15em] text-ink-soft transition-colors hover:text-moss-deep"
+              >
+                {t("terms.title")} &rarr;
+              </Link>
             </Reveal>
           </div>
         </section>
@@ -218,6 +228,9 @@ export default function Home() {
               <p className="text-ink-soft text-base md:text-lg max-w-md">
                 {t("about.copy")}
               </p>
+              {/* Specifics, not adjectives: where, by whom, how many, and what
+                  a fitting actually is. */}
+              <AtelierFacts />
             </Reveal>
             <div className="aspect-[4/5]">
               <FramedMedia className="h-full w-full">
@@ -232,6 +245,10 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Photographs of the work. Renders nothing until there are real
+            ones — see lib/atelier.ts. */}
+        <AtelierShots />
 
         {/* Gallery pulled from Instagram */}
         <section

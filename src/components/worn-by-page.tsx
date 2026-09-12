@@ -8,11 +8,20 @@ import { Reveal } from "@/components/reveal";
 import { SplitReveal } from "@/components/split-reveal";
 import { FloatingShapes } from "@/components/floating-shapes";
 import { useLang } from "@/lib/i18n";
-import { WORN_BY, type Person } from "@/lib/worn-by";
+import { useAuth } from "@/lib/auth";
+import { WORN_BY, publicPeople, type Person } from "@/lib/worn-by";
 
 export function WornByPage() {
   const { t } = useLang();
-  const people = WORN_BY;
+  const { session, ready } = useAuth();
+
+  /**
+   * The studio sees the example entry; a visitor never does. Until the session
+   * has settled we show the visitor's view, so the example cannot flash up on
+   * a stranger's screen while we work out who they are.
+   */
+  const isStudio = ready && session?.role === "admin";
+  const people = isStudio ? WORN_BY : publicPeople();
 
   return (
     <>
@@ -53,6 +62,11 @@ export function WornByPage() {
             </div>
           ) : (
             <div className="relative z-10 flex flex-col gap-12 md:gap-16">
+              {isStudio && WORN_BY.some((p) => p.demo) && (
+                <p className="border border-accent/40 bg-paper px-4 py-3 text-xs text-ink-soft">
+                  {t("worn.studioOnly")}
+                </p>
+              )}
               {people.map((person, i) => (
                 <Reveal key={person.slug}>
                   <PersonBand person={person} flip={i % 2 === 1} />
@@ -114,7 +128,7 @@ function PersonBand({ person, flip }: { person: Person; flip: boolean }) {
             href={`https://www.instagram.com/${person.instagram}/`}
             target="_blank"
             rel="noreferrer"
-            className="link-underline mt-2 inline-block py-1 text-sm tracking-[0.1em] text-ink-soft hover:text-moss-deep transition-colors"
+            className="link-underline mt-2 inline-block py-2 text-sm tracking-[0.1em] text-ink-soft hover:text-moss-deep transition-colors"
           >
             @{person.instagram}
           </a>

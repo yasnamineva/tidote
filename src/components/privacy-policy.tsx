@@ -72,7 +72,7 @@ export function PrivacyPolicy() {
                 <li key={section.id}>
                   <a
                     href={`#${section.id}`}
-                    className="link-underline inline-block py-1 text-ink-soft hover:text-moss-deep transition-colors"
+                    className="link-underline inline-block py-2 text-ink-soft hover:text-moss-deep transition-colors"
                   >
                     {section.heading}
                   </a>

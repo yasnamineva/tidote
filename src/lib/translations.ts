@@ -124,6 +124,33 @@ const en: Dict = {
   "fact.adjust": "Adjustments free for {n} days",
   "fact.from": "from {price}",
   "fact.quoted": "Priced on enquiry",
+
+  // How a commission works, and the three questions that decide it. The
+  // "*Unset" answers describe only what the site actually does; fill the
+  // figures into lib/offer.ts and the exact terms replace them.
+  "terms.eyebrow": "Made to measure",
+  "terms.title": "How a commission works",
+  "flow.1": "Choose a piece",
+  "flow.2": "Tell us what you want",
+  "flow.3": "Measurements",
+  "flow.4": "We make it",
+  "flow.5": "Fitting",
+  "flow.6": "Finished garment",
+  "terms.q.lead": "How long does it take?",
+  "terms.a.lead":
+    "{min}\u2013{max} working days from the moment you accept the quote.",
+  "terms.a.leadUnset":
+    "It depends on the piece, so you get the date together with the quote \u2014 before you commit to anything. Your order page then shows where it has got to.",
+  "terms.q.fitting": "How does the fitting work?",
+  "terms.a.fitting":
+    "{n} fittings at the atelier in Sofia are part of the price. When the piece is ready you pick a slot from the studio\u2019s calendar in your account.",
+  "terms.a.fittingUnset":
+    "When the piece is ready you are notified and you pick a fitting slot at the atelier in Sofia, from the studio\u2019s own calendar in your account.",
+  "terms.q.adjust": "What if the fit is not right?",
+  "terms.a.adjust":
+    "Adjustments are made at no charge for {n} days after you receive the piece. Write to us from your account and we arrange it.",
+  "terms.a.adjustUnset":
+    "That is what the fitting is for: it is adjusted at the atelier before it goes anywhere. Anything you notice later, write to us from your account and we will tell you what can be done.",
   // enquiries
   "enq.title": "Ask the atelier",
   "enq.sub": "No account needed — we answer by email or telephone.",
@@ -138,10 +165,16 @@ const en: Dict = {
   "enq.sentSub": "The atelier has it and will come back to you.",
   "enq.failed": "That did not send. Try again, or write to support@tidoteatelier.com.",
   "enq.needContact": "Leave an email address or a telephone number, so we can answer.",
+  "enq.needBoth": "A name and a message, so we know who is asking and what for.",
+  "enq.tooMany":
+    "That is a lot of enquiries from one place. Wait a few minutes, or write to support@tidoteatelier.com.",
   "enq.privacy":
     "We use what you write here only to answer you. See the Privacy Policy.",
   "enqadmin.open": "Enquiries waiting ({n})",
   "enqadmin.done": "Mark answered",
+  "enqadmin.failedTitle": "Enquiries could not be loaded.",
+  "enqadmin.failedSub":
+    "Your client conversations below are unaffected. If this is the first time you have opened this page, the enquiries table may not have been created in the database yet.",
 
   // worn by
   "nav.wornBy": "Worn By",
@@ -157,6 +190,8 @@ const en: Dict = {
   "worn.example": "Example entry",
   "worn.exampleNote":
     "An invented entry, here to show how a real one will look. It goes when the first real name arrives.",
+  "worn.studioOnly":
+    "Visible only to you. Visitors see an empty wall until a real name is added — an invented endorsement is not something we show them.",
   "shop.inStockCta": "See what's in stock",
   "shop.inStockCopy":
     "Not everything has to be waited for \u2014 some pieces are finished and on the rail today.",
@@ -202,6 +237,22 @@ const en: Dict = {
   "about.headline": "The anTIDOTE to mediocrity",
   "about.copy":
     "Tidote Atelier is a Sofia-based menswear house building unique, unrepeatable streetwear for men who refuse to blend in. Every collection reworks street culture through a made-to-order lens — meaning what you wear was actually made for you.",
+
+  // Four checkable specifics, in place of another paragraph about care.
+  "proof.eyebrow": "Inside the atelier",
+  "proof.title": "Where it is made",
+  "proof.sofia.title": "One atelier, in Sofia",
+  "proof.sofia.copy":
+    "Everything is made in the same studio, and that is where the fittings happen too.",
+  "proof.inHouse.title": "Cut and sewn here",
+  "proof.inHouse.copy":
+    "Patterns, cutting and sewing are done in-house — nothing is sent out to a factory.",
+  "proof.oneOff.title": "One garment at a time",
+  "proof.oneOff.copy":
+    "A commission is cut to your measurements, so it is made once and fits one person.",
+  "proof.fitting.title": "Fitted in person",
+  "proof.fitting.copy":
+    "You try the piece on before it is finished, and it is corrected while it is still on the stand.",
 
   // gallery
   "gallery.eyebrow": "Straight From Instagram",
@@ -262,6 +313,12 @@ const en: Dict = {
   "common.loading": "Loading…",
   "common.retry": "Try again",
   "common.loadingAccount": "Loading account…",
+  "common.saving": "Saving…",
+  "common.saveFailed":
+    "That did not save. Nothing has been lost — check your connection and try again.",
+  "common.failedTitle": "We could not load this.",
+  "common.failedSub":
+    "The connection to the database failed, so this is not showing everything — nothing has been lost. Try again, and if it keeps happening check that the Supabase project is awake.",
 
   // dashboard
   "dash.myAccount": "My Account",
@@ -700,6 +757,10 @@ const en: Dict = {
   "newclient.create": "Create Client",
   "newclient.cancel": "Cancel",
   "newclient.dupEmail": "A client with that email already exists.",
+  "newclient.badInput":
+    "A name, an email address and a password of at least 8 characters.",
+  "newclient.failed":
+    "The account was not created. Nothing has been half-made — try again.",
 
   // client roster
   "roster.orders": "{n} orders",
@@ -981,6 +1042,30 @@ const bg: Dict = {
   "fact.adjust": "Безплатни корекции {n} дни",
   "fact.from": "от {price}",
   "fact.quoted": "Цена при запитване",
+
+  "terms.eyebrow": "По мярка",
+  "terms.title": "Как става поръчката по мярка",
+  "flow.1": "Избирате модел",
+  "flow.2": "Казвате какво искате",
+  "flow.3": "Мерки",
+  "flow.4": "Изработваме я",
+  "flow.5": "Проба",
+  "flow.6": "Готова дреха",
+  "terms.q.lead": "Колко време отнема?",
+  "terms.a.lead":
+    "{min}\u2013{max} работни дни от момента, в който приемете офертата.",
+  "terms.a.leadUnset":
+    "Зависи от дрехата, затова получавате срока заедно с офертата \u2014 преди да се обвържете с нещо. После в страницата на поръчката виждате докъде е стигнала.",
+  "terms.q.fitting": "Как става пробата?",
+  "terms.a.fitting":
+    "{n} проби в ателието в София са включени в цената. Щом дрехата е готова, си избирате час от календара на ателието в профила си.",
+  "terms.a.fittingUnset":
+    "Щом дрехата е готова, получавате известие и си избирате час за проба в ателието в София \u2014 от календара на ателието в профила си.",
+  "terms.q.adjust": "А ако не стои както трябва?",
+  "terms.a.adjust":
+    "Корекциите са безплатни {n} дни след като получите дрехата. Пишете ни от профила си и ги насрочваме.",
+  "terms.a.adjustUnset":
+    "Точно за това е пробата: дрехата се коригира в ателието, преди да излезе от него. Ако забележите нещо по-късно, пишете ни от профила си и ще ви кажем какво може да се направи.",
   // enquiries
   "enq.title": "Попитайте ателието",
   "enq.sub": "Без профил — отговаряме по имейл или телефон.",
@@ -995,10 +1080,16 @@ const bg: Dict = {
   "enq.sentSub": "Ателието го получи и ще ви отговори.",
   "enq.failed": "Не се изпрати. Опитайте отново или пишете на support@tidoteatelier.com.",
   "enq.needContact": "Оставете имейл или телефон, за да можем да отговорим.",
+  "enq.needBoth": "Име и съобщение, за да знаем кой пита и за какво.",
+  "enq.tooMany":
+    "Твърде много запитвания от едно място. Изчакайте няколко минути или пишете на support@tidoteatelier.com.",
   "enq.privacy":
     "Използваме написаното тук само за да ви отговорим. Вижте Политиката за поверителност.",
   "enqadmin.open": "Чакащи запитвания ({n})",
   "enqadmin.done": "Отбележи като отговорено",
+  "enqadmin.failedTitle": "Запитванията не се заредиха.",
+  "enqadmin.failedSub":
+    "Разговорите с клиентите отдолу не са засегнати. Ако отваряш страницата за пръв път, таблицата за запитвания може още да не е създадена в базата.",
 
   // worn by
   "nav.wornBy": "Носят Tidote",
@@ -1014,6 +1105,8 @@ const bg: Dict = {
   "worn.example": "Примерен запис",
   "worn.exampleNote":
     "Измислен запис, показващ как ще изглежда истинският. Махаме го щом дойде първото истинско име.",
+  "worn.studioOnly":
+    "Вижда се само от теб. Посетителите виждат празна стена, докато не добавим истинско име — измислена препоръка не им показваме.",
   "shop.inStockCta": "Виж наличните модели",
   "shop.inStockCopy":
     "Не за всичко се чака \u2014 някои модели са готови и висят на закачалката днес.",
@@ -1059,6 +1152,21 @@ const bg: Dict = {
   "about.headline": "Антидотът срещу посредствеността",
   "about.copy":
     "Tidote Atelier е софийско ателие за мъжка мода, което създава уникален, неповторим streetwear за мъже, които не искат да се сливат с тълпата. Всяка колекция пресъздава streetwear културата през призмата на изработката по мярка — това, което носите, е направено специално за вас.",
+
+  "proof.eyebrow": "В ателието",
+  "proof.title": "Къде се изработва",
+  "proof.sofia.title": "Едно ателие, в София",
+  "proof.sofia.copy":
+    "Всичко се изработва в същото студио — там минават и пробите.",
+  "proof.inHouse.title": "Кроим и шием на място",
+  "proof.inHouse.copy":
+    "Кройките, кроенето и шиенето са тук — нищо не се дава на фабрика.",
+  "proof.oneOff.title": "Една дреха наведнъж",
+  "proof.oneOff.copy":
+    "Дрехата по поръчка се крои по вашите мерки — прави се веднъж и става на един човек.",
+  "proof.fitting.title": "Проба на живо",
+  "proof.fitting.copy":
+    "Пробвате дрехата, преди да е завършена, и се коригира, докато още е на манекена.",
 
   // gallery
   "gallery.eyebrow": "Директно от Instagram",
@@ -1119,6 +1227,12 @@ const bg: Dict = {
   "common.loading": "Зареждане…",
   "common.retry": "Опитай отново",
   "common.loadingAccount": "Зареждане на профила…",
+  "common.saving": "Запазване…",
+  "common.saveFailed":
+    "Това не се запази. Нищо не е загубено — провери връзката и опитай отново.",
+  "common.failedTitle": "Не успяхме да заредим това.",
+  "common.failedSub":
+    "Връзката с базата не сработи, така че тук не се вижда всичко — нищо не е загубено. Опитай отново, а ако продължава, провери дали Supabase проектът работи.",
 
   // dashboard
   "dash.myAccount": "Моят профил",
@@ -1559,6 +1673,9 @@ const bg: Dict = {
   "newclient.create": "Създай клиент",
   "newclient.cancel": "Отказ",
   "newclient.dupEmail": "Вече съществува клиент с този имейл.",
+  "newclient.badInput": "Име, имейл и парола от поне 8 знака.",
+  "newclient.failed":
+    "Профилът не беше създаден. Няма нищо недовършено — опитай отново.",
 
   // client roster
   "roster.orders": "{n} поръчки",

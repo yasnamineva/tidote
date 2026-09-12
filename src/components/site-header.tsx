@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 import { LANGS } from "@/lib/translations";
@@ -11,8 +11,18 @@ import { useLenis } from "@/lib/smooth-scroll";
 import { useScrollSpy } from "@/lib/use-scroll-spy";
 import { Wordmark } from "@/components/wordmark";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { hasPublicWall } from "@/lib/worn-by";
 
-type NavChild = { href: string; key: string };
+type NavChild = {
+  href: string;
+  key: string;
+  /**
+   * Shown to visitors only once there is something behind it. The wall of
+   * people is empty until someone real agrees to be on it, and a link that
+   * leads to "nobody yet" costs more trust than it earns.
+   */
+  needsContent?: boolean;
+};
 
 type NavLink = {
   href: string;
@@ -50,7 +60,7 @@ const NAV_LINKS: NavLink[] = [
     id: "about",
     key: "nav.about",
     sectionId: "about",
-    children: [{ href: "/worn-by", key: "nav.wornBy" }],
+    children: [{ href: "/worn-by", key: "nav.wornBy", needsContent: true }],
   },
   { href: "/#gallery", id: "gallery", key: "nav.gallery", sectionId: "gallery" },
 ];
@@ -58,6 +68,19 @@ const NAV_LINKS: NavLink[] = [
 const SPY_SECTION_IDS = Array.from(
   new Set(NAV_LINKS.map((l) => l.sectionId).filter((id) => id !== undefined))
 );
+
+/**
+ * The menu minus anything with nothing behind it yet. A parent left with no
+ * children loses its dropdown rather than opening onto an empty panel.
+ */
+function gatedNav(showGated: boolean): NavLink[] {
+  if (showGated) return NAV_LINKS;
+  return NAV_LINKS.map((link) => {
+    if (!link.children) return link;
+    const children = link.children.filter((c) => !c.needsContent);
+    return { ...link, children: children.length > 0 ? children : undefined };
+  });
+}
 
 function Chevron() {
   return (
@@ -105,6 +128,11 @@ export function SiteHeader() {
   const pathname = usePathname();
   const lenis = useLenis();
   const { progress, activeId } = useScrollSpy(SPY_SECTION_IDS);
+
+  // The studio needs the link even while the wall is empty — that is how she
+  // gets to the page to see what it will look like.
+  const showGated = hasPublicWall() || (ready && session?.role === "admin");
+  const navLinks = useMemo(() => gatedNav(showGated), [showGated]);
 
   function isActive(link: NavLink) {
     if (pathname === link.href) return true;
@@ -191,7 +219,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden xl:flex items-center gap-4 2xl:gap-7 text-sm uppercase tracking-[0.15em]">
-          {NAV_LINKS.map((link) =>
+          {navLinks.map((link) =>
             link.children ? (
               <div key={link.href} className="relative group">
                 <Link
@@ -313,7 +341,7 @@ export function SiteHeader() {
           {/* One column on a phone. Above that the panel is as wide as the
               screen, and a single left-hugging list leaves most of it empty. */}
           <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <div key={link.href} className="flex flex-col">
               <Link
                 href={link.href}
@@ -321,7 +349,7 @@ export function SiteHeader() {
                   setOpen(false);
                   handleNavClick(e, link.href);
                 }}
-                className={`block py-1.5 ${isActive(link) ? "text-accent" : ""}`}
+                className={`block py-2.5 ${isActive(link) ? "text-accent" : ""}`}
               >
                 {t(link.key)}
               </Link>
@@ -332,7 +360,7 @@ export function SiteHeader() {
                   key={child.href}
                   href={child.href}
                   onClick={() => setOpen(false)}
-                  className={`block py-1.5 pl-4 text-xs border-l border-line ml-0.5 ${
+                  className={`block py-2.5 pl-4 text-xs border-l border-line ml-0.5 ${
                     pathname === child.href ? "text-accent" : "text-ink-soft"
                   }`}
                 >

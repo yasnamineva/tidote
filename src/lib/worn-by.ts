@@ -55,11 +55,10 @@ export type Person = {
 
 /**
  * One invented entry, so the studio can see the shape of a filled page before
- * anyone real is on it. Delete it when the first actual name arrives — or
- * sooner, if the page goes live before then.
+ * anyone real is on it.
  *
- * The page also knows how to be empty, which is the state it returns to when
- * this is removed.
+ * It is deliberately *not* reachable by a visitor: see `publicPeople` below.
+ * Delete it when the first actual name arrives.
  */
 export const WORN_BY: Person[] = [
   {
@@ -81,3 +80,24 @@ export const WORN_BY: Person[] = [
     demo: true,
   },
 ];
+
+/**
+ * What a visitor is allowed to see.
+ *
+ * An example entry that looks like a real endorsement is the one thing this
+ * page must never show to a stranger — it is a claim about a person who does
+ * not exist. So the demo rows are for the studio's eyes only, and to everyone
+ * else the wall is simply empty, which is the truth.
+ */
+export function publicPeople(): Person[] {
+  return WORN_BY.filter((p) => !p.demo);
+}
+
+/**
+ * Whether there is anything behind a link to the wall. The header and the
+ * sitemap ask this rather than assuming: a menu item that leads to "nobody
+ * yet" is worse than no menu item.
+ */
+export function hasPublicWall(): boolean {
+  return publicPeople().length > 0;
+}
