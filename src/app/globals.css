@@ -124,6 +124,100 @@ html.lenis body {
   }
 }
 
+/* ---------------------------------------------------------------- the tag
+
+   The hero is a swing tag on a cord, the way the atelier's own labels hang.
+   Three separate movements, kept on separate elements so they do not fight:
+
+   - the cord draws itself downward (scaleY from the top),
+   - the tag falls in (translateY only — rotating a falling object about a
+     pendulum anchor sends it through an arc, which reads as a swat, not a drop),
+   - the cord and tag together swing about the anchor at the ceiling, four
+     decreasing oscillations, and then stop. A tag that swings for ever is an
+     animation; a tag that settles is a tag.
+*/
+@keyframes cord-drop {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes tag-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-120%);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tag-swing {
+  0% {
+    transform: rotate(-7.5deg);
+  }
+  22% {
+    transform: rotate(4.6deg);
+  }
+  44% {
+    transform: rotate(-2.6deg);
+  }
+  64% {
+    transform: rotate(1.4deg);
+  }
+  82% {
+    transform: rotate(-0.6deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* A push as the pointer goes by. Shorter and shallower than the arrival. */
+@keyframes tag-nudge {
+  0% {
+    transform: rotate(0deg);
+  }
+  18% {
+    transform: rotate(2.6deg);
+  }
+  44% {
+    transform: rotate(-1.5deg);
+  }
+  70% {
+    transform: rotate(0.7deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.tag-pendulum {
+  transform-origin: top center;
+  animation: tag-swing 3.6s cubic-bezier(0.33, 0, 0.22, 1) 0.52s both;
+}
+
+/* Re-applied on hover, which restarts it — the tag answers the pointer. */
+.group:hover .tag-pendulum {
+  animation: tag-nudge 2s cubic-bezier(0.33, 0, 0.22, 1) both;
+}
+
+.tag-drop {
+  animation: tag-drop 0.62s cubic-bezier(0.3, 0.9, 0.3, 1) both;
+}
+
+.tag-cord {
+  transform-origin: top center;
+  animation: cord-drop 0.42s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
 @keyframes drift {
   0%,
   100% {
@@ -390,6 +484,13 @@ html.lenis body {
     animation: none;
   }
   .shimmer {
+    animation: none;
+  }
+  /* The tag is simply hanging there, already at rest. */
+  .tag-pendulum,
+  .group:hover .tag-pendulum,
+  .tag-drop,
+  .tag-cord {
     animation: none;
   }
 }

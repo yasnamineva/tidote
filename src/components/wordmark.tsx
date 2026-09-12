@@ -1,12 +1,8 @@
-// Monospace glyphs are much wider than the old condensed display face, so the
-// hero wordmark sizes are pulled down to keep "TIDOTE" from overflowing.
 const SIZES = {
   sm: { tidote: "text-lg", atelier: "text-[10px]" },
   md: { tidote: "text-2xl md:text-3xl", atelier: "text-xs md:text-sm" },
-  hero: {
-    tidote: "text-[17vw] md:text-[11vw] lg:text-[9rem]",
-    atelier: "text-xl md:text-3xl",
-  },
+  // There was a `hero` size here for a name set across the top of the landing
+  // page. The name is on the swing tag now, so nothing asks for it.
 } as const;
 
 export function Wordmark({
