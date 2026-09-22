@@ -278,6 +278,61 @@ console.log("\nfiles that cannot be used");
   await ctx.close();
 }
 
+// ------------------------------------------ the studio door, from outside
+console.log("\nthe studio setup page, to someone who should not get in");
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+  await ctx.addInitScript(() => {
+    try {
+      localStorage.setItem("tidote_lang", "bg");
+    } catch {}
+  });
+  const page = await ctx.newPage();
+
+  const res = await page.request.post(`${BASE}/api/studio/claim`, {
+    data: {
+      email: `nobody-${Date.now()}@tidote.invalid`,
+      code: "not the code at all",
+      password: "long-enough-password",
+    },
+  });
+  const body = await res.json().catch(() => ({}));
+  console.log(`    route answered ${res.status()} ${JSON.stringify(body)}`);
+  // `refused` once 0009 is applied, `not_configured` before that. Either is a
+  // code this page can put into her language; neither is Postgres's own words,
+  // and neither says whether the address is on the allow-list.
+  check(
+    ["refused", "not_configured"].includes(body.code),
+    "a stranger with a wrong code is refused by code, not by database error"
+  );
+  check(res.status() !== 201, "and no account is created");
+  check(
+    !JSON.stringify(body).includes("admin_emails"),
+    "without naming the allow-list"
+  );
+
+  const short = await page.request.post(`${BASE}/api/studio/claim`, {
+    data: { email: "someone@tidote.invalid", code: "a code", password: "short" },
+  });
+  check((await short.json()).code === "bad_input", "a short password is refused before anything else");
+
+  // And the page itself renders, in both languages, with its three fields.
+  await page.goto(`${BASE}/studio-setup`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(2500);
+  check(
+    (await page.locator("#studio-email").count()) === 1 &&
+      (await page.locator("#studio-code").count()) === 1 &&
+      (await page.locator("#studio-password").count()) === 1,
+    "the setup page has an address, a code and a password"
+  );
+  const seen = await page.evaluate(() => document.body.innerText);
+  check(
+    !/admin_emails|verify_studio_code|sb_secret/i.test(seen),
+    "and gives nothing away about how the door works"
+  );
+  await ctx.close();
+}
+
 // ------------------------------------------------- where a photograph lands
 console.log("\na photograph, and where it actually goes");
 {

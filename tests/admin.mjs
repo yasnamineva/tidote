@@ -58,31 +58,67 @@ async function rest(path, init = {}) {
 }
 
 // ------------------------------------------------------------------ the setup
+//
+// The studio account is not created here. It is created the way the atelier
+// creates it — by claiming an allow-listed address on /studio-setup with the
+// one-time code set on its row — which is the flow this suite is now the only
+// test of. All this does is put the row and the code in place, at an
+// `.invalid` address that can receive no mail and is removed again below.
 const studio = {
   email: `studio-probe-${Date.now()}@tidote.invalid`,
-  password: `Probe!${Date.now()}`,
+  password: `Probe-password-${Date.now()}`,
+  code: `probe-code-${Math.random().toString(36).slice(2)}-${Date.now()}`,
 };
-console.log(`\nmaking a temporary studio account: ${studio.email}`);
-const made = await fetch(`${URL_}/auth/v1/admin/users`, {
+console.log(`\nallow-listing a temporary address: ${studio.email}`);
+const listed = await rest("admin_emails", {
+  method: "POST",
+  body: JSON.stringify({ email: studio.email }),
+});
+check(listed.ok, "the address is on the studio allow-list");
+const coded = await fetch(`${URL_}/rest/v1/rpc/set_studio_code`, {
   method: "POST",
   headers: H,
-  body: JSON.stringify({
-    email: studio.email,
-    password: studio.password,
-    email_confirm: true,
-    user_metadata: { name: "Probe Studio" },
-  }),
+  body: JSON.stringify({ p_email: studio.email, p_code: studio.code }),
 });
-const studioUser = await made.json();
-if (!made.ok || !studioUser.id) {
-  console.error("Could not create the probe account:", made.status, studioUser);
-  process.exit(1);
+
+/**
+ * Whether this database knows about the claim flow yet.
+ *
+ * 0009 is applied by hand in the SQL editor, so a checkout can be ahead of the
+ * project it is pointed at. Rather than fail nineteen studio checks because of
+ * one unapplied migration, the suite says which mode it is in and makes the
+ * account the old way — and the SQL itself is covered either way by
+ * `npm run test:db`, which applies every migration to a local Postgres.
+ */
+const CLAIMABLE = coded.ok;
+if (CLAIMABLE) {
+  check(true, "a one-time setup code is set on it");
+} else {
+  console.log(
+    `  ** 0009_studio_claim.sql is not applied to this project (HTTP ${coded.status}) —\n` +
+      "     the claim page cannot be exercised here. Apply it and run this again."
+  );
+  const made = await fetch(`${URL_}/auth/v1/admin/users`, {
+    method: "POST",
+    headers: H,
+    body: JSON.stringify({
+      email: studio.email,
+      password: studio.password,
+      email_confirm: true,
+      user_metadata: { name: "Probe Studio" },
+    }),
+  });
+  const user = await made.json();
+  if (!made.ok || !user.id) {
+    console.error("Could not create the probe account:", made.status, user);
+    process.exit(1);
+  }
+  const promoted = await rest(`profiles?id=eq.${user.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role: "admin" }),
+  });
+  check(promoted.ok && promoted.body?.[0]?.role === "admin", "the probe account is the studio");
 }
-const promoted = await rest(`profiles?id=eq.${studioUser.id}`, {
-  method: "PATCH",
-  body: JSON.stringify({ role: "admin" }),
-});
-check(promoted.ok && promoted.body?.[0]?.role === "admin", "the probe account is the studio");
 
 // A client with an order for the studio to price. The demo client's own
 // records are left alone.
@@ -120,16 +156,31 @@ async function teardown() {
     await fetch(`${URL_}/auth/v1/admin/users/${p.id}`, { method: "DELETE", headers: H });
   }
   results.push(["probe clients", (probes.body ?? []).length]);
-  const gone = await fetch(`${URL_}/auth/v1/admin/users/${studioUser.id}`, {
+  // The studio login the claim created, found by its address rather than by an
+  // id this run happens to know — if the claim failed there is no id, and if it
+  // succeeded the account is still the thing to remove.
+  const studioProfiles = await rest(
+    `profiles?email=eq.${encodeURIComponent(studio.email)}&select=id`
+  );
+  for (const p of studioProfiles.body ?? []) {
+    await fetch(`${URL_}/auth/v1/admin/users/${p.id}`, { method: "DELETE", headers: H });
+  }
+  results.push(["studio account", (studioProfiles.body ?? []).length]);
+  const unlisted = await rest(`admin_emails?email=eq.${encodeURIComponent(studio.email)}`, {
     method: "DELETE",
-    headers: H,
   });
-  results.push(["studio account", gone.ok ? "removed" : `HTTP ${gone.status}`]);
+  results.push(["allow-list row", unlisted.body?.length ?? "?"]);
   for (const [what, n] of results) console.log(`  ${what}: ${n}`);
 
   // Verify, rather than assume.
-  const stillThere = await rest(`profiles?id=eq.${studioUser.id}&select=id`);
+  const stillThere = await rest(
+    `profiles?email=eq.${encodeURIComponent(studio.email)}&select=id`
+  );
   check((stillThere.body ?? []).length === 0, "the probe studio account is gone");
+  const stillListed = await rest(
+    `admin_emails?email=eq.${encodeURIComponent(studio.email)}&select=email`
+  );
+  check((stillListed.body ?? []).length === 0, "the probe allow-list row is gone");
   const leftovers = await rest(`orders?piece=like.${MARK}*&select=id`);
   check((leftovers.body ?? []).length === 0, "no fixture orders are left behind");
   const admins = await rest("profiles?role=eq.admin&select=email");
@@ -191,11 +242,100 @@ async function signIn(email, password, expect) {
 
 const text = (page) => page.evaluate(() => document.body.innerText);
 
+/** Fills /studio-setup and submits. Returns the page it ended up on. */
+async function claim({ email, code, password, confirm = password }) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.addInitScript(() => {
+    try {
+      localStorage.setItem("tidote_lang", "bg");
+    } catch {}
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(`${BASE}/studio-setup`, { waitUntil: "domcontentloaded" });
+  await page.waitForSelector("#studio-code", { timeout: 30000 });
+  await page.fill("#studio-email", email);
+  await page.fill("#studio-code", code);
+  await page.fill("#studio-password", password);
+  await page.fill("#studio-confirm", confirm);
+  await page.locator('button[type="submit"]').first().click();
+  await page.waitForURL(/\/admin/, { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(4000);
+  return { ctx, page, errors };
+}
+
 try {
-  // ------------------------------------------------------------- signing in
-  console.log("\nthe studio signs in");
-  const { ctx, page, errors } = await signIn(studio.email, studio.password, "/admin");
-  check(page.url().includes("/admin"), `a studio login lands on the panel (${page.url().replace(BASE, "")})`);
+  // ------------------------------------------- claiming the studio account
+  // The real way in, and the only one once 0009 is applied: an allow-listed
+  // address, the code set on its row, and a password she picks here. No mail
+  // anywhere in it — which is the point, because Supabase will not send it.
+  console.log(
+    CLAIMABLE
+      ? "\nthe studio account is claimed at /studio-setup"
+      : "\nsigning in (the claim page needs 0009 applied)"
+  );
+
+  let session;
+  if (CLAIMABLE) {
+    // A wrong code first, so a pass below means the code was actually checked.
+    const wrong = await claim({ ...studio, code: `${studio.code}x` });
+    check(!wrong.page.url().includes("/admin"), "a wrong code does not let you in");
+    const wrongMsg =
+      (await wrong.page.locator('[role="alert"]').first().textContent()) || "";
+    check(
+      /не отварят нищо/i.test(wrongMsg),
+      `and says so in her own language: "${wrongMsg.trim().slice(0, 44)}"`
+    );
+    await wrong.ctx.close();
+    const afterWrong = await rest(
+      `profiles?email=eq.${encodeURIComponent(studio.email)}&select=id`
+    );
+    check((afterWrong.body ?? []).length === 0, "and creates no account");
+
+    // Two passwords that disagree are caught in the page, before the request.
+    const mismatched = await claim({ ...studio, confirm: `${studio.password}x` });
+    const mismatchMsg =
+      (await mismatched.page.locator('[role="alert"]').first().textContent()) || "";
+    check(/не съвпадат/i.test(mismatchMsg), "two different passwords are refused");
+    await mismatched.ctx.close();
+
+    // Now the real one.
+    session = await claim(studio);
+    check(
+      session.page.url().includes("/admin"),
+      `the right code lands in the panel (${session.page.url().replace(BASE, "")})`
+    );
+
+    const role = await rest(
+      `profiles?email=eq.${encodeURIComponent(studio.email)}&select=role`
+    );
+    check(
+      role.body?.[0]?.role === "admin",
+      `the profile it made is the studio (${role.body?.[0]?.role})`
+    );
+    const row = await rest(
+      `admin_emails?email=eq.${encodeURIComponent(studio.email)}&select=claimed_at,setup_code_hash`
+    );
+    check(Boolean(row.body?.[0]?.claimed_at), "the allow-list row is marked claimed");
+    check(
+      row.body?.[0]?.setup_code_hash !== studio.code,
+      "and the code was never stored as itself"
+    );
+
+    // One claim per code.
+    const again = await claim(studio);
+    check(!again.page.url().includes("/admin"), "the same code cannot be used twice");
+    await again.ctx.close();
+  } else {
+    session = await signIn(studio.email, studio.password, "/admin");
+    check(
+      session.page.url().includes("/admin"),
+      `a studio login lands on the panel (${session.page.url().replace(BASE, "")})`
+    );
+  }
+
+  const { ctx, page, errors } = session;
   if (!page.url().includes("/admin")) throw new Error("no studio session");
 
   // --------------------------------------------------------- the client list
