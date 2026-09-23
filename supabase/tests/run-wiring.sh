@@ -9,9 +9,9 @@ export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$HERE/../.."
 CONF="$(mktemp -t postgrest).conf"
-# 3099, not 3001: the dev servers on this machine have 3000 (tidote) and 3001
-# (odyssway), and a suite that quietly tests whichever app answers is worse
-# than one that does not run.
+# 3099 rather than 3001. Dev servers land on the low 3000s, and a suite that
+# quietly tests whichever app happens to answer is worse than one that does not
+# run at all — which is what happened once, below.
 PORT="${PORT:-3099}"
 
 "$HERE/run.sh" > /dev/null
@@ -26,9 +26,9 @@ server-port = $PORT
 CONF
 
 # Whatever answers on this port is what the suite will believe. Once, another
-# project's dev server was sitting on it: PostgREST could not bind, the checks
-# ran against that app, and eleven of them failed with its 404 page quoted back
-# as the row they were expecting. Refuse rather than test a stranger.
+# dev server was sitting on it: PostgREST could not bind, the checks ran against
+# that app instead, and eleven of them failed with its 404 page quoted back as
+# the row they were expecting. Refuse rather than test a stranger.
 if curl -sf -o /dev/null "http://localhost:$PORT/" 2>/dev/null; then
   echo "Something is already listening on port $PORT — stop it, or set PORT."
   exit 1
