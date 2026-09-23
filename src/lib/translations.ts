@@ -288,16 +288,17 @@ const en: Dict = {
   "studio.eyebrow": "Studio",
   "studio.title": "SET UP THE STUDIO ACCOUNT",
   "studio.blurb":
-    "For the atelier's own account. The address has to be on the studio list in the database, with a setup code already set on it — then the password below is yours to choose.",
+    "For the atelier's own account. The address has to be on the studio list in the database — then the password below is yours to choose, and nothing is emailed.",
   "studio.code": "Setup code",
+  "studio.codeOptional": "(only if one was set)",
   "studio.codeHint":
-    "The one-time code set on your address in the database. Used once, and never as your password.",
+    "Leave this empty unless a setup code has been set on your address with set_studio_code(). It is used once, and it is never your password.",
   "studio.newPassword": "Your password",
   "studio.repeatPassword": "Your password again",
   "studio.submit": "Create the studio account",
   "studio.mismatch": "The two passwords are not the same.",
   "studio.refused":
-    "That address and code do not open anything. Check both — and that the address is on the studio list with a code set on it.",
+    "That did not open anything. The address has to be on the studio list in the database and not already claimed — and if a setup code was set on it, it has to match.",
   "studio.exists":
     "There is already an account for that address. Sign in with it, or set a new setup code in the database and come back.",
   "studio.tooMany":
@@ -1232,16 +1233,17 @@ const bg: Dict = {
   "studio.eyebrow": "Ателие",
   "studio.title": "СЪЗДАЙ ПРОФИЛА НА АТЕЛИЕТО",
   "studio.blurb":
-    "За профила на самото ателие. Адресът трябва да е в списъка на ателието в базата и да има зададен код за настройка — паролата отдолу си я избираш ти.",
+    "За профила на самото ателие. Адресът трябва да е в списъка на ателието в базата — паролата отдолу си я избираш ти и нищо не се изпраща по имейл.",
   "studio.code": "Код за настройка",
+  "studio.codeOptional": "(само ако има зададен)",
   "studio.codeHint":
-    "Еднократният код, зададен на адреса ти в базата. Използва се веднъж и никога не е парола.",
+    "Остави го празно, освен ако на адреса ти е зададен код със set_studio_code(). Използва се веднъж и никога не е парола.",
   "studio.newPassword": "Твоята парола",
   "studio.repeatPassword": "Повтори паролата",
   "studio.submit": "Създай профила на ателието",
   "studio.mismatch": "Двете пароли не съвпадат.",
   "studio.refused":
-    "Този адрес и код не отварят нищо. Провери и двете — и дали адресът е в списъка на ателието със зададен код.",
+    "Това не отвори нищо. Адресът трябва да е в списъка на ателието в базата и да не е вече използван — а ако на него е зададен код, той трябва да съвпада.",
   "studio.exists":
     "Вече има профил с този адрес. Влез с него или задай нов код за настройка в базата и опитай пак.",
   "studio.tooMany": "Твърде много опити от тук. Изчакай един час и опитай отново.",

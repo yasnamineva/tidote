@@ -75,10 +75,14 @@ const listed = await rest("admin_emails", {
   body: JSON.stringify({ email: studio.email }),
 });
 check(listed.ok, "the address is on the studio allow-list");
-const coded = await fetch(`${URL_}/rest/v1/rpc/set_studio_code`, {
+// Deliberately no code on this row. With none set, the allow-list is the whole
+// gate — the default since 0010, and the path the studio actually uses. The
+// coded path is covered in the access-rule tests, which can set one without a
+// round trip through the website.
+const coded = await fetch(`${URL_}/rest/v1/rpc/studio_code_required`, {
   method: "POST",
   headers: H,
-  body: JSON.stringify({ p_email: studio.email, p_code: studio.code }),
+  body: JSON.stringify({ p_email: studio.email }),
 });
 
 /**
@@ -92,10 +96,10 @@ const coded = await fetch(`${URL_}/rest/v1/rpc/set_studio_code`, {
  */
 const CLAIMABLE = coded.ok;
 if (CLAIMABLE) {
-  check(true, "a one-time setup code is set on it");
+  check((await coded.json()) === false, "and needs no setup code, which is the default");
 } else {
   console.log(
-    `  ** 0009_studio_claim.sql is not applied to this project (HTTP ${coded.status}) —\n` +
+    `  ** 0009/0010_studio_claim*.sql are not applied to this project (HTTP ${coded.status}) —\n` +
       "     the claim page cannot be exercised here. Apply it and run this again."
   );
   const made = await fetch(`${URL_}/auth/v1/admin/users`, {
@@ -278,33 +282,41 @@ try {
 
   let session;
   if (CLAIMABLE) {
-    // A wrong code first, so a pass below means the code was actually checked.
-    const wrong = await claim({ ...studio, code: `${studio.code}x` });
-    check(!wrong.page.url().includes("/admin"), "a wrong code does not let you in");
-    const wrongMsg =
-      (await wrong.page.locator('[role="alert"]').first().textContent()) || "";
+    // An address nobody listed, first — so a pass below means the allow-list
+    // was actually consulted and is not just letting everyone through.
+    const stranger = await claim({
+      email: `stranger-${Date.now()}@tidote.invalid`,
+      code: "",
+      password: "a-password-long-enough",
+    });
     check(
-      /не отварят нищо/i.test(wrongMsg),
-      `and says so in her own language: "${wrongMsg.trim().slice(0, 44)}"`
+      !stranger.page.url().includes("/admin"),
+      "an address that is not on the list gets nowhere"
     );
-    await wrong.ctx.close();
-    const afterWrong = await rest(
-      `profiles?email=eq.${encodeURIComponent(studio.email)}&select=id`
+    const strangerMsg =
+      (await stranger.page.locator('[role="alert"]').first().textContent()) || "";
+    check(
+      /не отвори нищо/i.test(strangerMsg),
+      `and is told so in her own language: "${strangerMsg.trim().slice(0, 40)}"`
     );
-    check((afterWrong.body ?? []).length === 0, "and creates no account");
+    await stranger.ctx.close();
 
     // Two passwords that disagree are caught in the page, before the request.
-    const mismatched = await claim({ ...studio, confirm: `${studio.password}x` });
+    const mismatched = await claim({
+      ...studio,
+      code: "",
+      confirm: `${studio.password}x`,
+    });
     const mismatchMsg =
       (await mismatched.page.locator('[role="alert"]').first().textContent()) || "";
     check(/не съвпадат/i.test(mismatchMsg), "two different passwords are refused");
     await mismatched.ctx.close();
 
-    // Now the real one.
-    session = await claim(studio);
+    // The real one: the listed address and a password, nothing else.
+    session = await claim({ ...studio, code: "" });
     check(
       session.page.url().includes("/admin"),
-      `the right code lands in the panel (${session.page.url().replace(BASE, "")})`
+      `a listed address and a password land in the panel (${session.page.url().replace(BASE, "")})`
     );
 
     const role = await rest(
@@ -315,17 +327,17 @@ try {
       `the profile it made is the studio (${role.body?.[0]?.role})`
     );
     const row = await rest(
-      `admin_emails?email=eq.${encodeURIComponent(studio.email)}&select=claimed_at,setup_code_hash`
+      `admin_emails?email=eq.${encodeURIComponent(studio.email)}&select=claimed_at`
     );
     check(Boolean(row.body?.[0]?.claimed_at), "the allow-list row is marked claimed");
-    check(
-      row.body?.[0]?.setup_code_hash !== studio.code,
-      "and the code was never stored as itself"
-    );
 
-    // One claim per code.
-    const again = await claim(studio);
-    check(!again.page.url().includes("/admin"), "the same code cannot be used twice");
+    // And a claimed row is closed: the second person to try that address, or
+    // the same person twice, gets nothing.
+    const again = await claim({ ...studio, code: "" });
+    check(
+      !again.page.url().includes("/admin"),
+      "a claimed address cannot be claimed again"
+    );
     await again.ctx.close();
   } else {
     session = await signIn(studio.email, studio.password, "/admin");

@@ -27,7 +27,7 @@ const strip = (input, init) =>
   fetch(String(input).replace("/rest/v1", ""), init);
 
 const as = (token) =>
-  createClient(`http://localhost:${process.env.PORT || 3001}`, token, {
+  createClient(`http://localhost:${process.env.PORT || 3099}`, token, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { fetch: strip },
   });

@@ -185,10 +185,24 @@ reset role;
 
 insert into admin_emails (email) values ('claim@test.invalid') on conflict do nothing;
 
+-- 0010 made the code optional, and its absence the open state: on a site with
+-- no traffic, the studio would rather type an address and a password than visit
+-- the SQL editor first. So a listed row with no code set opens with the address
+-- alone, and asking for a code on it is not an error either.
 insert into results (test, expected, got, pass)
-select 'A listed address with no code set cannot be claimed', 'false',
+select 'A listed address with no code set opens on the address alone', 'true',
+       verify_studio_code('claim@test.invalid', '')::text,
+       verify_studio_code('claim@test.invalid', '');
+
+insert into results (test, expected, got, pass)
+select 'And still opens if a code is offered when none is needed', 'true',
        verify_studio_code('claim@test.invalid', 'anything at all')::text,
-       verify_studio_code('claim@test.invalid', 'anything at all') = false;
+       verify_studio_code('claim@test.invalid', 'anything at all');
+
+insert into results (test, expected, got, pass)
+select 'An address with no code does not need one', 'false',
+       studio_code_required('claim@test.invalid')::text,
+       studio_code_required('claim@test.invalid') = false;
 
 select set_studio_code('claim@test.invalid', 'correct horse battery');
 
@@ -217,10 +231,32 @@ select 'A wrong code does not', 'false',
        verify_studio_code('claim@test.invalid', 'correct horse batteryy')::text,
        verify_studio_code('claim@test.invalid', 'correct horse batteryy') = false;
 
+-- The open state must not leak into the hardened one: once a code is set, the
+-- empty string is a wrong code like any other.
+insert into results (test, expected, got, pass)
+select 'Nor an empty one, once a code has been set', 'false',
+       verify_studio_code('claim@test.invalid', '')::text,
+       verify_studio_code('claim@test.invalid', '') = false;
+
+insert into results (test, expected, got, pass)
+select 'And the page is told that this address needs a code', 'true',
+       studio_code_required('claim@test.invalid')::text,
+       studio_code_required('claim@test.invalid');
+
+insert into results (test, expected, got, pass)
+select 'An address that is not listed needs nothing, because it opens nothing',
+       'false', studio_code_required('stranger@test.invalid')::text,
+       studio_code_required('stranger@test.invalid') = false;
+
 insert into results (test, expected, got, pass)
 select 'An address that is not listed does not, whatever the code', 'false',
        verify_studio_code('stranger@test.invalid', 'correct horse battery')::text,
        verify_studio_code('stranger@test.invalid', 'correct horse battery') = false;
+
+insert into results (test, expected, got, pass)
+select 'An address that is not listed is refused with no code at all', 'false',
+       verify_studio_code('stranger@test.invalid', '')::text,
+       verify_studio_code('stranger@test.invalid', '') = false;
 
 -- The hash is salted with the address, so a code lifted from one row cannot be
 -- replayed against another.
@@ -308,6 +344,19 @@ begin
   insert into results (test, expected, got, pass)
   values ('A signed-in client cannot set a setup code', 'blocked',
           case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
+do $$
+declare blocked boolean;
+begin
+  begin
+    perform studio_code_required('claim@test.invalid');
+    blocked := false;
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('A signed-in client cannot ask whether an address needs a code',
+          'blocked', case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
 end $$;
 
 -- ------------------------------------------------------------------ photos

@@ -9,10 +9,15 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
  * the owner of the atelier could not get into her own panel.
  *
  * This is the replacement, and it is the only door: the address has to be on
- * the allow-list, the one-time code set on that row has to match, and the row
- * has to be unclaimed. It then creates the login with the password she typed,
- * already confirmed, which is the state `handle_new_user` reads as studio for a
- * listed address — so the role still comes from the database, not from here.
+ * the allow-list, the row has to be unclaimed, and — if a one-time code has
+ * been set on that row — the code has to match. With no code set, the
+ * allow-list is the whole gate, which is the studio's own decision: there is no
+ * traffic on the site yet and nobody is going to register her address before
+ * she does. `set_studio_code()` tightens it again later, with no deploy.
+ *
+ * It creates the login with the password she typed, already confirmed, which is
+ * the state `handle_new_user` reads as studio for a listed address — so the
+ * role still comes from the database, not from here.
  *
  * The service key is required and never leaves the server: the allow-list is
  * not readable by anyone else, and the code is compared inside Postgres
@@ -52,7 +57,9 @@ export async function POST(request: Request) {
   const code = String(body?.code ?? "").trim().slice(0, 200);
   const password = String(body?.password ?? "");
 
-  if (!email || !code || password.length < 8) {
+  // No check for `code` here: whether one is needed depends on the row, and
+  // only the database knows. An address and a password is the minimum.
+  if (!email || password.length < 8) {
     return Response.json({ code: "bad_input" }, { status: 400 });
   }
   if (tooManyAttempts(clientIp(request))) {

@@ -9,7 +9,10 @@ export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$HERE/../.."
 CONF="$(mktemp -t postgrest).conf"
-PORT="${PORT:-3001}"
+# 3099, not 3001: the dev servers on this machine have 3000 (tidote) and 3001
+# (odyssway), and a suite that quietly tests whichever app answers is worse
+# than one that does not run.
+PORT="${PORT:-3099}"
 
 "$HERE/run.sh" > /dev/null
 psql -q -d tidote_test -c "alter role authenticator with password 'testpw';" > /dev/null

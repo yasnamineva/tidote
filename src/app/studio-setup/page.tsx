@@ -17,11 +17,11 @@ import { useLang } from "@/lib/i18n";
 /**
  * Setting up the studio account, once, from the website.
  *
- * Three fields, because three things have to be true: the address is on the
- * allow-list in the database, the one-time code set on that row matches, and
- * the password is hers to choose. Nothing is emailed — that is the whole point
- * of this page; the confirmation mail Supabase's own mailer will not send is
- * what made the old route impossible.
+ * The address has to be on the allow-list in the database, and the password is
+ * hers to choose. The code field is only for an address that has one set on it
+ * — with none set, the allow-list is the whole gate. Nothing is emailed, which
+ * is the point of this page: the confirmation mail Supabase's own mailer will
+ * not send is what made registering impossible.
  *
  * On success it signs her straight in, because the password she just typed is
  * the password of the account that now exists, and asking her to type it again
@@ -120,12 +120,14 @@ export default function StudioSetupPage() {
 
         <div className="flex flex-col gap-2">
           <label htmlFor="studio-code" className={labelCls}>
-            {t("studio.code")}
+            {t("studio.code")}{" "}
+            <span className="normal-case tracking-normal text-ink-soft">
+              {t("studio.codeOptional")}
+            </span>
           </label>
           <input
             id="studio-code"
             type="password"
-            required
             autoComplete="one-time-code"
             value={code}
             onChange={(e) => setCode(e.target.value)}
