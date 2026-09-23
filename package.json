@@ -19,7 +19,8 @@
     "test": "npm run test:db && npm run test:wiring",
     "test:workflow": "node tests/workflow.mjs",
     "test:states": "node tests/states.mjs",
-    "test:admin": "node tests/admin.mjs"
+    "test:admin": "node tests/admin.mjs",
+    "test:prod": "node tests/prod.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
