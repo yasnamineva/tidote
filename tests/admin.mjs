@@ -67,7 +67,6 @@ async function rest(path, init = {}) {
 const studio = {
   email: `studio-probe-${Date.now()}@tidote.invalid`,
   password: `Probe-password-${Date.now()}`,
-  code: `probe-code-${Math.random().toString(36).slice(2)}-${Date.now()}`,
 };
 console.log(`\nallow-listing a temporary address: ${studio.email}`);
 const listed = await rest("admin_emails", {
@@ -75,11 +74,8 @@ const listed = await rest("admin_emails", {
   body: JSON.stringify({ email: studio.email }),
 });
 check(listed.ok, "the address is on the studio allow-list");
-// Deliberately no code on this row. With none set, the allow-list is the whole
-// gate — the default since 0010, and the path the studio actually uses. The
-// coded path is covered in the access-rule tests, which can set one without a
-// round trip through the website.
-const coded = await fetch(`${URL_}/rest/v1/rpc/studio_code_required`, {
+// The allow-list is the whole gate (0011), so all this needs is the row.
+const coded = await fetch(`${URL_}/rest/v1/rpc/studio_claim_allowed`, {
   method: "POST",
   headers: H,
   body: JSON.stringify({ p_email: studio.email }),
@@ -96,10 +92,10 @@ const coded = await fetch(`${URL_}/rest/v1/rpc/studio_code_required`, {
  */
 const CLAIMABLE = coded.ok;
 if (CLAIMABLE) {
-  check((await coded.json()) === false, "and needs no setup code, which is the default");
+  check((await coded.json()) === true, "and the database says it may be claimed");
 } else {
   console.log(
-    `  ** 0009/0010_studio_claim*.sql are not applied to this project (HTTP ${coded.status}) —\n` +
+    `  ** the studio-claim migrations are not applied to this project (HTTP ${coded.status}) —\n` +
       "     the claim page cannot be exercised here. Apply it and run this again."
   );
   const made = await fetch(`${URL_}/auth/v1/admin/users`, {
@@ -247,7 +243,7 @@ async function signIn(email, password, expect) {
 const text = (page) => page.evaluate(() => document.body.innerText);
 
 /** Fills /studio-setup and submits. Returns the page it ended up on. */
-async function claim({ email, code, password, confirm = password }) {
+async function claim({ email, password, confirm = password }) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   await ctx.addInitScript(() => {
     try {
@@ -258,9 +254,8 @@ async function claim({ email, code, password, confirm = password }) {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(`${BASE}/studio-setup`, { waitUntil: "domcontentloaded" });
-  await page.waitForSelector("#studio-code", { timeout: 30000 });
+  await page.waitForSelector("#studio-password", { timeout: 30000 });
   await page.fill("#studio-email", email);
-  await page.fill("#studio-code", code);
   await page.fill("#studio-password", password);
   await page.fill("#studio-confirm", confirm);
   await page.locator('button[type="submit"]').first().click();
@@ -286,7 +281,6 @@ try {
     // was actually consulted and is not just letting everyone through.
     const stranger = await claim({
       email: `stranger-${Date.now()}@tidote.invalid`,
-      code: "",
       password: "a-password-long-enough",
     });
     check(
@@ -302,18 +296,14 @@ try {
     await stranger.ctx.close();
 
     // Two passwords that disagree are caught in the page, before the request.
-    const mismatched = await claim({
-      ...studio,
-      code: "",
-      confirm: `${studio.password}x`,
-    });
+    const mismatched = await claim({ ...studio, confirm: `${studio.password}x` });
     const mismatchMsg =
       (await mismatched.page.locator('[role="alert"]').first().textContent()) || "";
     check(/не съвпадат/i.test(mismatchMsg), "two different passwords are refused");
     await mismatched.ctx.close();
 
     // The real one: the listed address and a password, nothing else.
-    session = await claim({ ...studio, code: "" });
+    session = await claim(studio);
     check(
       session.page.url().includes("/admin"),
       `a listed address and a password land in the panel (${session.page.url().replace(BASE, "")})`
@@ -333,7 +323,7 @@ try {
 
     // And a claimed row is closed: the second person to try that address, or
     // the same person twice, gets nothing.
-    const again = await claim({ ...studio, code: "" });
+    const again = await claim(studio);
     check(
       !again.page.url().includes("/admin"),
       "a claimed address cannot be claimed again"

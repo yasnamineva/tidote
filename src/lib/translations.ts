@@ -289,23 +289,19 @@ const en: Dict = {
   "studio.title": "SET UP THE STUDIO ACCOUNT",
   "studio.blurb":
     "For the atelier's own account. The address has to be on the studio list in the database — then the password below is yours to choose, and nothing is emailed.",
-  "studio.code": "Setup code",
-  "studio.codeOptional": "(only if one was set)",
-  "studio.codeHint":
-    "Leave this empty unless a setup code has been set on your address with set_studio_code(). It is used once, and it is never your password.",
   "studio.newPassword": "Your password",
   "studio.repeatPassword": "Your password again",
   "studio.submit": "Create the studio account",
   "studio.mismatch": "The two passwords are not the same.",
   "studio.refused":
-    "That did not open anything. The address has to be on the studio list in the database and not already claimed — and if a setup code was set on it, it has to match.",
+    "That address does not open anything. It has to be on the studio list in the database, and it must not already have an account.",
   "studio.exists":
-    "There is already an account for that address. Sign in with it, or set a new setup code in the database and come back.",
+    "There is already an account for that address. Sign in with it, or clear claimed_at on its row in the database and come back.",
   "studio.tooMany":
     "Too many attempts from here. Wait an hour and try again.",
-  "studio.badInput": "An address, the setup code, and a password of at least 8 characters.",
+  "studio.badInput": "An address and a password of at least 8 characters.",
   "studio.notReady":
-    "The database is not ready for this yet — 0009_studio_claim.sql has not been applied, or the server has no service key. Nothing you typed is wrong.",
+    "The database is not ready for this yet — the studio-claim migrations have not been applied, or the server has no service key. Nothing you typed is wrong.",
   "studio.failed": "The account was not created. Nothing has been half-made — try again.",
   "studio.madeButNoSignIn":
     "The account was created, but signing in straight away did not work. Go to the login page and sign in with the password you just chose.",
@@ -406,6 +402,8 @@ const en: Dict = {
   "dash.newOrder": "+ New Order",
   "dash.noOrders":
     "No orders yet — place your first commission whenever you're ready.",
+  "dash.noFitting":
+    "Nothing to try on yet. When a piece is finished you are told, and the atelier's free times appear here to pick from.",
   "order.metaReady": "Placed {placed} · Est. ready {eta}",
   "order.metaDelivered": "Placed {placed} · Est. delivered {eta}",
   "order.pendingNotice":
@@ -1234,22 +1232,18 @@ const bg: Dict = {
   "studio.title": "СЪЗДАЙ ПРОФИЛА НА АТЕЛИЕТО",
   "studio.blurb":
     "За профила на самото ателие. Адресът трябва да е в списъка на ателието в базата — паролата отдолу си я избираш ти и нищо не се изпраща по имейл.",
-  "studio.code": "Код за настройка",
-  "studio.codeOptional": "(само ако има зададен)",
-  "studio.codeHint":
-    "Остави го празно, освен ако на адреса ти е зададен код със set_studio_code(). Използва се веднъж и никога не е парола.",
   "studio.newPassword": "Твоята парола",
   "studio.repeatPassword": "Повтори паролата",
   "studio.submit": "Създай профила на ателието",
   "studio.mismatch": "Двете пароли не съвпадат.",
   "studio.refused":
-    "Това не отвори нищо. Адресът трябва да е в списъка на ателието в базата и да не е вече използван — а ако на него е зададен код, той трябва да съвпада.",
+    "Този адрес не отваря нищо. Трябва да е в списъка на ателието в базата и да няма вече профил.",
   "studio.exists":
-    "Вече има профил с този адрес. Влез с него или задай нов код за настройка в базата и опитай пак.",
+    "Вече има профил с този адрес. Влез с него или изчисти claimed_at на реда му в базата и опитай пак.",
   "studio.tooMany": "Твърде много опити от тук. Изчакай един час и опитай отново.",
-  "studio.badInput": "Адрес, код за настройка и парола от поне 8 знака.",
+  "studio.badInput": "Адрес и парола от поне 8 знака.",
   "studio.notReady":
-    "Базата още не е готова за това — 0009_studio_claim.sql не е приложена или сървърът няма service key. Нищо от въведеното не е грешно.",
+    "Базата още не е готова за това — миграциите за профила на ателието не са приложени или сървърът няма service key. Нищо от въведеното не е грешно.",
   "studio.failed": "Профилът не беше създаден. Няма нищо недовършено — опитай отново.",
   "studio.madeButNoSignIn":
     "Профилът е създаден, но автоматичното влизане не сработи. Отиди на страницата за вход и влез с паролата, която току-що избра.",
@@ -1351,6 +1345,8 @@ const bg: Dict = {
   "dash.newOrder": "+ Нова поръчка",
   "dash.noOrders":
     "Все още нямате поръчки — направете първата си, когато сте готови.",
+  "dash.noFitting":
+    "Още няма какво да пробвате. Щом дреха е готова, ще получите известие и тук ще се появят свободните часове на ателието.",
   "order.metaReady": "Поръчана на {placed} · Очаквана готовност: {eta}",
   "order.metaDelivered": "Поръчана на {placed} · Доставена на {eta}",
   "order.pendingNotice":

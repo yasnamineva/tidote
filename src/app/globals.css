@@ -126,15 +126,9 @@ html.lenis body {
 
 /* ---------------------------------------------------------------- the tag
 
-   The hero is a swing tag on a cord, the way the atelier's own labels hang.
-   Three separate movements, kept on separate elements so they do not fight:
-
-   - the cord draws itself downward (scaleY from the top),
-   - the tag falls in (translateY only — rotating a falling object about a
-     pendulum anchor sends it through an arc, which reads as a swat, not a drop),
-   - the cord and tag together swing about the anchor at the ceiling, four
-     decreasing oscillations, and then stop. A tag that swings for ever is an
-     animation; a tag that settles is a tag.
+   A swing tag on a cord, the way the atelier's own labels hang. Three
+   movements on three nested elements, because one element cannot hold them
+   without them overwriting each other.
 */
 @keyframes cord-drop {
   from {
@@ -145,7 +139,7 @@ html.lenis body {
   }
 }
 
-@keyframes tag-drop {
+@keyframes tag-fall {
   from {
     opacity: 0;
     transform: translateY(-120%);
@@ -159,7 +153,9 @@ html.lenis body {
   }
 }
 
-@keyframes tag-swing {
+/* The arrival: four decreasing oscillations, then still. A tag that swings
+   for ever is an animation; a tag that settles is a tag. */
+@keyframes tag-settle {
   0% {
     transform: rotate(-7.5deg);
   }
@@ -180,42 +176,37 @@ html.lenis body {
   }
 }
 
-/* A push as the pointer goes by. Shorter and shallower than the arrival. */
-@keyframes tag-nudge {
-  0% {
-    transform: rotate(0deg);
-  }
-  18% {
-    transform: rotate(2.6deg);
-  }
-  44% {
-    transform: rotate(-1.5deg);
-  }
-  70% {
-    transform: rotate(0.7deg);
-  }
-  100% {
-    transform: rotate(0deg);
-  }
-}
-
-.tag-pendulum {
+.tag-settle {
   transform-origin: top center;
-  animation: tag-swing 3.6s cubic-bezier(0.33, 0, 0.22, 1) 0.52s both;
+  animation: tag-settle 3.6s cubic-bezier(0.33, 0, 0.22, 1) 0.52s both;
 }
 
-/* Re-applied on hover, which restarts it — the tag answers the pointer. */
-.group:hover .tag-pendulum {
-  animation: tag-nudge 2s cubic-bezier(0.33, 0, 0.22, 1) both;
-}
-
-.tag-drop {
-  animation: tag-drop 0.62s cubic-bezier(0.3, 0.9, 0.3, 1) both;
+.tag-fall {
+  animation: tag-fall 0.62s cubic-bezier(0.3, 0.9, 0.3, 1) both;
 }
 
 .tag-cord {
   transform-origin: top center;
   animation: cord-drop 0.42s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* The answer to a pointer.
+   A transition, not a second animation. Swapping `.tag-settle`'s animation on
+   hover meant that taking the pointer away removed the hover animation and
+   restarted the arrival one from its first frame — so the tag snapped to the
+   7.5 degrees it arrives at and hung there, tilted, until something else
+   re-rendered it. A transition has no frames to restart: it goes to the hover
+   value and comes back, and the overshoot in the curve on the way back is the
+   swing. */
+.tag-nudge {
+  transform-origin: top center;
+  rotate: 0deg;
+  transition: rotate 1.5s cubic-bezier(0.34, 1.32, 0.64, 1);
+}
+
+.group:hover .tag-nudge,
+.group:focus-within .tag-nudge {
+  rotate: 2.4deg;
 }
 
 @keyframes drift {
@@ -486,11 +477,18 @@ html.lenis body {
   .shimmer {
     animation: none;
   }
-  /* The tag is simply hanging there, already at rest. */
-  .tag-pendulum,
-  .group:hover .tag-pendulum,
-  .tag-drop,
+  /* The tag is simply hanging there, already at rest, and it does not lean
+     when a pointer goes by. */
+  .tag-settle,
+  .tag-fall,
   .tag-cord {
     animation: none;
+  }
+  .tag-nudge {
+    transition: none;
+  }
+  .group:hover .tag-nudge,
+  .group:focus-within .tag-nudge {
+    rotate: 0deg;
   }
 }

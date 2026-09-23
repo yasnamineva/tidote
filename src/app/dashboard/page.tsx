@@ -200,8 +200,14 @@ export default function DashboardPage() {
     const el = document.getElementById(id);
     if (!el) return;
     if (lenis) {
-      lenis.scrollTo(el, { offset: -stickyOffset, duration: 0.9 });
+      // No `offset` here. Lenis honours the element's own `scroll-margin-top`,
+      // which every one of these sections sets to `stickyOffset` — passing the
+      // offset as well subtracted it twice and left the section a whole header
+      // and bar below where it belongs, with a band of empty page above it.
+      lenis.scrollTo(el, { duration: 0.9 });
     } else {
+      // `window.scrollTo` knows nothing about scroll-margin, so here the
+      // arithmetic is ours to do.
       window.scrollTo({
         top: el.getBoundingClientRect().top + window.scrollY - stickyOffset,
         behavior: "smooth",
@@ -252,6 +258,16 @@ export default function DashboardPage() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
+
+  // Orders there is actually something to book for: finished, accepted, not
+  // already tried on and sent back.
+  const fittable = orders.filter(
+    (o) =>
+      o.reviewStatus === "accepted" &&
+      !o.returnedOn &&
+      o.status === "ready" &&
+      !bookings.some((b) => b.orderId === o.id)
+  );
 
   const displayEta = (eta: string) =>
     eta === "To be confirmed" ? t("val.tbc") : eta;
@@ -566,31 +582,25 @@ export default function DashboardPage() {
                           <OrderTimeline status={order.status} />
                           <StatusPill status={order.status} />
 
+                          {/* Booking a fitting used to live in here, which
+                              meant the anchor for it existed only while some
+                              order happened to be ready — so the Fitting item
+                              in the menu did nothing at all the rest of the
+                              time. It has its own section now; this line is
+                              the reminder, not the control. */}
                           {(() => {
                             const orderBooking = bookings.find(
                               (b) => b.orderId === order.id
                             );
-                            if (orderBooking) {
-                              return (
-                                <div className="border border-moss-deep/40 bg-moss-soft px-4 py-3 text-sm text-moss-deep mt-3">
-                                  {t("order.fittingBooked", {
-                                    date: orderBooking.date,
-                                    time: orderBooking.time,
-                                  })}
-                                </div>
-                              );
-                            }
-                            if (order.status === "ready") {
-                              return (
-                                <div
-                                  id="fitting"
-                                  style={{ scrollMarginTop: stickyOffset }}
-                                >
-                                  <ClientFittingPicker order={order} />
-                                </div>
-                              );
-                            }
-                            return null;
+                            if (!orderBooking) return null;
+                            return (
+                              <div className="border border-moss-deep/40 bg-moss-soft px-4 py-3 text-sm text-moss-deep mt-3">
+                                {t("order.fittingBooked", {
+                                  date: orderBooking.date,
+                                  time: orderBooking.time,
+                                })}
+                              </div>
+                            );
                           })()}
                         </>
                       )}
@@ -607,6 +617,28 @@ export default function DashboardPage() {
                   </Reveal>
                 ))}
               </div>
+            </Reveal>
+          </div>
+
+          {/* 3. Fitting — always here, so the menu always has somewhere to
+              land. What is in it depends on whether anything is ready to try
+              on, which is not the same question as whether the section exists. */}
+          <div id="fitting" style={{ scrollMarginTop: stickyOffset }}>
+            <Reveal delay={100}>
+              <h2 className="font-display text-2xl mb-2">
+                {t("journey.3.title")}
+              </h2>
+              {fittable.length === 0 ? (
+                <p className="text-sm text-ink-soft border border-line bg-paper px-6 py-8 text-center">
+                  {t("dash.noFitting")}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {fittable.map((order) => (
+                    <ClientFittingPicker key={order.id} order={order} />
+                  ))}
+                </div>
+              )}
             </Reveal>
           </div>
 

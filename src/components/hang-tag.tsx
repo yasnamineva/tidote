@@ -6,19 +6,31 @@ import { useLang } from "@/lib/i18n";
 /**
  * The atelier's own swing tag, hanging from a cord.
  *
- * This is not a generic label: it is the one in the studio's photographs — an
- * oatmeal card with rounded corners and a dark eyelet, the blackletter T above
- * the name, a line of small caps under it — with the narrow moss strip that
- * hangs beside it carrying the tagline. Both come straight out of the brand
- * palette, so the tag is the same colour as the paper stock and the strip the
- * same green as the printed one.
+ * It is the label in the studio's own photographs: an oatmeal card with
+ * rounded corners, a dark eyelet, the blackletter T above the name, and the
+ * tagline printed underneath. The colours are the brand's own — the card is
+ * the paper stock, the ink is the ink.
  *
- * The cord and the tag are separate elements on purpose. The cord draws itself
- * down, the tag falls, and the pair swings about the anchor at the top — three
- * movements that read as one object arriving. See `.tag-*` in globals.css.
+ * Three nested elements, one movement each, because a single element cannot
+ * hold them without them fighting:
+ *
+ *   .tag-settle  the arrival swing, once, about the top of the cord
+ *   .tag-nudge   the answer to a pointer, as a *transition* and not an
+ *                animation — see below, this was a bug
+ *   .tag-fall    the drop, which is translation only: rotating a falling
+ *                object about a pendulum anchor sends it along an arc, which
+ *                reads as a swat rather than a drop
+ *
+ * The hover used to swap `.tag-pendulum`'s animation for a second keyframe
+ * set. Taking the pointer away removed that animation and the arrival
+ * animation started again from its first frame — so the tag jumped to the
+ * seven-and-a-half degrees it arrives at and hung there, tilted, which is
+ * exactly what it looked like: stuck to one side. A transition has no frames
+ * to restart. It goes to the hover value and comes back from it, and the
+ * slight overshoot in the curve is the swing.
  */
 
-/** The eyelet. A metal ring with the hole showing dark through it. */
+/** The eyelet. A metal ring with the hole dark inside it. */
 function Eyelet() {
   return (
     <span
@@ -31,77 +43,60 @@ function Eyelet() {
 }
 
 export function HangTag({
-  /**
-   * The cord's height, as Tailwind classes — the length differs between a
-   * phone and a wide screen, and one element with two heights beats two
-   * elements with one each: rendering the tag twice and hiding one meant two
-   * copies of the monogram, and a hidden copy whose animation never ran.
-   */
+  /** The cord's length, as Tailwind classes: shorter on a phone. */
   cordClassName = "h-[68px] lg:h-[236px]",
   className = "",
 }: {
   cordClassName?: string;
   className?: string;
 }) {
-  const { t, lang } = useLang();
+  const { lang } = useLang();
 
   return (
     <div className={`group relative flex flex-col items-center ${className}`}>
-      {/* Everything below this point swings together, about the top of the
-          cord — which is where a hanging thing actually pivots. */}
-      <div className="tag-pendulum flex flex-col items-center">
-        {/* The cord. Slightly off-white and very thin, like thread. */}
-        <span
-          aria-hidden="true"
-          className={`tag-cord w-px bg-gradient-to-b from-ink-soft/35 via-ink-soft/55 to-ink-soft/75 ${cordClassName}`}
-        />
+      <div className="tag-settle flex flex-col items-center">
+        <div className="tag-nudge flex flex-col items-center">
+          {/* The cord and the card are both centred in this column, and the
+              eyelet is centred in the card — so the thread meets the hole.
+              It used to miss by half the width of a second label that hung
+              beside the card and pulled the column's centre sideways. */}
+          <span
+            aria-hidden="true"
+            /* A cream hairline either side of the thread, so it reads against
+               a photograph instead of disappearing into one. */
+            className={`tag-cord w-px bg-gradient-to-b from-ink-soft/45 via-ink-soft/65 to-ink-soft/80 shadow-[0_0_0_1px_rgba(247,244,239,0.5)] ${cordClassName}`}
+          />
 
-        <div className="tag-drop flex items-stretch gap-2.5 md:gap-3">
-          {/* The card. */}
-          <div className="relative w-[190px] shrink-0 rounded-[14px] border border-line-strong/70 bg-gradient-to-b from-paper via-cream to-line/60 px-5 pb-6 text-center shadow-[0_18px_34px_-20px_rgba(34,30,25,0.55)] sm:w-[214px] md:w-[248px] md:rounded-[18px] md:px-6 md:pb-7">
-            <Eyelet />
+          <div className="tag-fall">
+            <div className="relative w-[196px] rounded-[14px] border border-line-strong/70 bg-gradient-to-b from-paper via-cream to-line/60 px-5 pb-6 text-center shadow-[0_18px_34px_-20px_rgba(34,30,25,0.55)] sm:w-[216px] md:w-[248px] md:rounded-[18px] md:px-6 md:pb-7">
+              <Eyelet />
 
-            <Image
-              src="/brand/logo.png"
-              alt=""
-              aria-hidden="true"
-              width={248}
-              height={248}
-              priority
-              className="mx-auto mt-3 h-[84px] w-[84px] object-contain md:mt-4 md:h-[108px] md:w-[108px]"
-            />
+              <Image
+                src="/brand/logo.png"
+                alt=""
+                aria-hidden="true"
+                width={248}
+                height={248}
+                priority
+                className="mx-auto mt-3 h-[84px] w-[84px] object-contain md:mt-4 md:h-[108px] md:w-[108px]"
+              />
 
-            <p className="font-gothic text-2xl font-bold leading-none tracking-tight text-ink md:text-3xl">
-              Tidote
-            </p>
+              <p className="font-gothic text-2xl font-bold leading-none tracking-tight text-ink md:text-3xl">
+                Tidote
+              </p>
 
-            <span
-              aria-hidden="true"
-              className="mx-auto mt-3 block h-px w-10 bg-line-strong md:mt-4 md:w-12"
-            />
+              <span
+                aria-hidden="true"
+                className="mx-auto mt-3 block h-px w-10 bg-line-strong md:mt-4 md:w-12"
+              />
 
-            <p className="mt-3 text-[9px] uppercase leading-relaxed tracking-[0.24em] text-ink-soft md:mt-4 md:text-[10px]">
-              {t("header.tagline")}
-            </p>
-          </div>
-
-          {/* The strip that hangs with it, printed the other way up. Hidden on
-              the narrowest screens, where the pair would be wider than the
-              card is tall. */}
-          <div className="hidden w-7 flex-col items-center justify-start rounded-[8px] bg-moss px-1 py-2.5 shadow-[0_14px_26px_-18px_rgba(34,30,25,0.6)] sm:flex md:w-8 md:rounded-[10px]">
-            <span
-              aria-hidden="true"
-              className="h-[7px] w-[7px] shrink-0 rounded-full bg-cream/45"
-            />
-            {/* Small and tightly tracked so the whole line fits the card's
-                height — the pair should read as two labels on one cord, not as
-                a strip that outgrew the tag it hangs with. */}
-            <p
-              className="mt-2 whitespace-nowrap text-[7px] uppercase tracking-[0.1em] text-cream/90 md:text-[8px]"
-              style={{ writingMode: "vertical-rl", rotate: "180deg" }}
-            >
-              {lang === "bg" ? "Антидотът срещу посредствеността" : "The anTIdote to mediocrity"}
-            </p>
+              {/* Printed on the tag itself, where the studio prints it. */}
+              <p className="mt-3 text-[9px] uppercase leading-relaxed tracking-[0.2em] text-moss-deep md:mt-3.5 md:text-[10px]">
+                {lang === "bg"
+                  ? "Антидотът срещу посредствеността"
+                  : "The anTIdote to mediocrity"}
+              </p>
+            </div>
           </div>
         </div>
       </div>

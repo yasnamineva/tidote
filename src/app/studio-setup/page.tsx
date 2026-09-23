@@ -17,11 +17,10 @@ import { useLang } from "@/lib/i18n";
 /**
  * Setting up the studio account, once, from the website.
  *
- * The address has to be on the allow-list in the database, and the password is
- * hers to choose. The code field is only for an address that has one set on it
- * — with none set, the allow-list is the whole gate. Nothing is emailed, which
- * is the point of this page: the confirmation mail Supabase's own mailer will
- * not send is what made registering impossible.
+ * Two fields, because two things decide it: the address is on the allow-list in
+ * the database, and the password is hers to choose. Nothing is emailed, which is
+ * the point of this page — the confirmation mail Supabase's own mailer will not
+ * send is what made registering impossible.
  *
  * On success it signs her straight in, because the password she just typed is
  * the password of the account that now exists, and asking her to type it again
@@ -32,7 +31,6 @@ export default function StudioSetupPage() {
   const { t } = useLang();
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +59,7 @@ export default function StudioSetupPage() {
       response = await fetch("/api/studio/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, password }),
+        body: JSON.stringify({ email, password }),
       });
     } catch {
       setBusy(false);
@@ -116,24 +114,6 @@ export default function StudioSetupPage() {
             className={fieldCls}
             placeholder="you@tidoteatelier.com"
           />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="studio-code" className={labelCls}>
-            {t("studio.code")}{" "}
-            <span className="normal-case tracking-normal text-ink-soft">
-              {t("studio.codeOptional")}
-            </span>
-          </label>
-          <input
-            id="studio-code"
-            type="password"
-            autoComplete="one-time-code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className={fieldCls}
-          />
-          <p className="text-xs text-ink-soft">{t("studio.codeHint")}</p>
         </div>
 
         <div className="flex flex-col gap-2">

@@ -292,7 +292,6 @@ console.log("\nthe studio setup page, to someone who should not get in");
   const res = await page.request.post(`${BASE}/api/studio/claim`, {
     data: {
       email: `nobody-${Date.now()}@tidote.invalid`,
-      code: "not the code at all",
       password: "long-enough-password",
     },
   });
@@ -303,7 +302,7 @@ console.log("\nthe studio setup page, to someone who should not get in");
   // and neither says whether the address is on the allow-list.
   check(
     ["refused", "not_configured"].includes(body.code),
-    "a stranger with a wrong code is refused by code, not by database error"
+    "an address nobody listed is refused by code, not by database error"
   );
   check(res.status() !== 201, "and no account is created");
   check(
@@ -312,7 +311,7 @@ console.log("\nthe studio setup page, to someone who should not get in");
   );
 
   const short = await page.request.post(`${BASE}/api/studio/claim`, {
-    data: { email: "someone@tidote.invalid", code: "a code", password: "short" },
+    data: { email: "someone@tidote.invalid", password: "short" },
   });
   check((await short.json()).code === "bad_input", "a short password is refused before anything else");
 
@@ -321,13 +320,13 @@ console.log("\nthe studio setup page, to someone who should not get in");
   await page.waitForTimeout(2500);
   check(
     (await page.locator("#studio-email").count()) === 1 &&
-      (await page.locator("#studio-code").count()) === 1 &&
-      (await page.locator("#studio-password").count()) === 1,
-    "the setup page has an address, a code and a password"
+      (await page.locator("#studio-password").count()) === 1 &&
+      (await page.locator("#studio-code").count()) === 0,
+    "the setup page asks for an address and a password, and nothing else"
   );
   const seen = await page.evaluate(() => document.body.innerText);
   check(
-    !/admin_emails|verify_studio_code|sb_secret/i.test(seen),
+    !/admin_emails|studio_claim_allowed|sb_secret/i.test(seen),
     "and gives nothing away about how the door works"
   );
   await ctx.close();

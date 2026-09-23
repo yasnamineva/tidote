@@ -15,12 +15,27 @@ export function PlaceholderImage({
   className = "",
   src,
   priority = false,
+  /**
+   * How wide this will actually be drawn, for Next to pick a file size by.
+   * The default suits the grids and lookbooks, which is everything except a
+   * full-bleed one — and a hero told it was half the viewport is served a
+   * half-width file and looks it.
+   */
+  sizes = "(min-width: 768px) 50vw, 100vw",
+  /**
+   * The slow zoom belongs to a tile you can click. A background does not
+   * benefit from it, and a background the size of the screen means the picture
+   * creeps whenever the pointer is anywhere over it.
+   */
+  zoomOnHover = true,
 }: {
   label: string;
   index?: number;
   className?: string;
   src?: string;
   priority?: boolean;
+  sizes?: string;
+  zoomOnHover?: boolean;
 }) {
   const tone = TONES[index % TONES.length];
   const [loaded, setLoaded] = useState(false);
@@ -38,11 +53,11 @@ export function PlaceholderImage({
           alt={label}
           fill
           priority={priority}
-          sizes="(min-width: 768px) 50vw, 100vw"
+          sizes={sizes}
           onLoad={() => setLoaded(true)}
-          className={`object-cover transition-all duration-700 ease-out group-hover:scale-105 ${
-            loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
-          }`}
+          className={`object-cover transition-all duration-700 ease-out ${
+            zoomOnHover ? "group-hover:scale-105" : ""
+          } ${loaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}
         />
         <div className="absolute inset-0 border border-cream/10 transition-colors duration-500 group-hover:border-moss/40" />
       </div>

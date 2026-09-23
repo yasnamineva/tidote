@@ -177,186 +177,100 @@ begin
           case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
 end $$;
 
--- ------------------------------------------------- becoming the studio (0009)
--- The allow-list says who may be the studio; a one-time code proves it is
--- them. Every wrong answer has to look the same from outside, or the endpoint
--- that calls this becomes a way to find out which addresses are listed.
+-- ------------------------------------------------ becoming the studio (0011)
+-- The allow-list is the gate, on its own: an unclaimed listed address may
+-- claim the studio account, a claimed one may not, and nothing else opens it.
+-- The one-time code 0009 introduced is gone — see 0011 for why — but the
+-- one-shot part is the whole protection now, so it is the part to hold down.
 reset role;
 
 insert into admin_emails (email) values ('claim@test.invalid') on conflict do nothing;
 
--- 0010 made the code optional, and its absence the open state: on a site with
--- no traffic, the studio would rather type an address and a password than visit
--- the SQL editor first. So a listed row with no code set opens with the address
--- alone, and asking for a code on it is not an error either.
 insert into results (test, expected, got, pass)
-select 'A listed address with no code set opens on the address alone', 'true',
-       verify_studio_code('claim@test.invalid', '')::text,
-       verify_studio_code('claim@test.invalid', '');
-
-insert into results (test, expected, got, pass)
-select 'And still opens if a code is offered when none is needed', 'true',
-       verify_studio_code('claim@test.invalid', 'anything at all')::text,
-       verify_studio_code('claim@test.invalid', 'anything at all');
-
-insert into results (test, expected, got, pass)
-select 'An address with no code does not need one', 'false',
-       studio_code_required('claim@test.invalid')::text,
-       studio_code_required('claim@test.invalid') = false;
-
-select set_studio_code('claim@test.invalid', 'correct horse battery');
-
-insert into results (test, expected, got, pass)
-select 'The code is stored hashed, never as itself', 'true',
-       (setup_code_hash is not null
-        and setup_code_hash <> 'correct horse battery'
-        and length(setup_code_hash) = 64)::text,
-       setup_code_hash is not null
-        and setup_code_hash <> 'correct horse battery'
-        and length(setup_code_hash) = 64
-from admin_emails where email = 'claim@test.invalid';
-
-insert into results (test, expected, got, pass)
-select 'The right code on a listed address opens it', 'true',
-       verify_studio_code('claim@test.invalid', 'correct horse battery')::text,
-       verify_studio_code('claim@test.invalid', 'correct horse battery');
+select 'A listed, unclaimed address may claim the studio account', 'true',
+       studio_claim_allowed('claim@test.invalid')::text,
+       studio_claim_allowed('claim@test.invalid');
 
 insert into results (test, expected, got, pass)
 select 'The address is matched without regard to case', 'true',
-       verify_studio_code('CLAIM@TEST.INVALID', 'correct horse battery')::text,
-       verify_studio_code('CLAIM@TEST.INVALID', 'correct horse battery');
+       studio_claim_allowed('CLAIM@TEST.INVALID')::text,
+       studio_claim_allowed('CLAIM@TEST.INVALID');
 
 insert into results (test, expected, got, pass)
-select 'A wrong code does not', 'false',
-       verify_studio_code('claim@test.invalid', 'correct horse batteryy')::text,
-       verify_studio_code('claim@test.invalid', 'correct horse batteryy') = false;
-
--- The open state must not leak into the hardened one: once a code is set, the
--- empty string is a wrong code like any other.
-insert into results (test, expected, got, pass)
-select 'Nor an empty one, once a code has been set', 'false',
-       verify_studio_code('claim@test.invalid', '')::text,
-       verify_studio_code('claim@test.invalid', '') = false;
-
-insert into results (test, expected, got, pass)
-select 'And the page is told that this address needs a code', 'true',
-       studio_code_required('claim@test.invalid')::text,
-       studio_code_required('claim@test.invalid');
-
-insert into results (test, expected, got, pass)
-select 'An address that is not listed needs nothing, because it opens nothing',
-       'false', studio_code_required('stranger@test.invalid')::text,
-       studio_code_required('stranger@test.invalid') = false;
-
-insert into results (test, expected, got, pass)
-select 'An address that is not listed does not, whatever the code', 'false',
-       verify_studio_code('stranger@test.invalid', 'correct horse battery')::text,
-       verify_studio_code('stranger@test.invalid', 'correct horse battery') = false;
-
-insert into results (test, expected, got, pass)
-select 'An address that is not listed is refused with no code at all', 'false',
-       verify_studio_code('stranger@test.invalid', '')::text,
-       verify_studio_code('stranger@test.invalid', '') = false;
-
--- The hash is salted with the address, so a code lifted from one row cannot be
--- replayed against another.
-insert into admin_emails (email) values ('other@test.invalid') on conflict do nothing;
-do $$
-declare same boolean;
-begin
-  perform set_studio_code('other@test.invalid', 'correct horse battery');
-  select a.setup_code_hash = b.setup_code_hash into same
-    from admin_emails a, admin_emails b
-   where a.email = 'claim@test.invalid' and b.email = 'other@test.invalid';
-  insert into results (test, expected, got, pass)
-  values ('The same code on two addresses gives two different hashes', 'true',
-          (not same)::text, not same);
-end $$;
+select 'An address that is not listed may not', 'false',
+       studio_claim_allowed('stranger@test.invalid')::text,
+       studio_claim_allowed('stranger@test.invalid') = false;
 
 select mark_studio_claimed('claim@test.invalid');
 
 insert into results (test, expected, got, pass)
-select 'A claimed address cannot be claimed again', 'false',
-       verify_studio_code('claim@test.invalid', 'correct horse battery')::text,
-       verify_studio_code('claim@test.invalid', 'correct horse battery') = false;
+select 'A claimed address may not be claimed again', 'false',
+       studio_claim_allowed('claim@test.invalid')::text,
+       studio_claim_allowed('claim@test.invalid') = false;
 
--- Which is also how a lost password is recovered when there is no mail: set a
--- new code, and the row opens again.
-select set_studio_code('claim@test.invalid', 'a completely new code');
+-- Which is how a lost password is recovered when no mail arrives: clear the
+-- stamp and the row opens once more.
+update admin_emails set claimed_at = null where email = 'claim@test.invalid';
 
 insert into results (test, expected, got, pass)
-select 'Setting a new code re-opens a claimed address', 'true',
-       verify_studio_code('claim@test.invalid', 'a completely new code')::text,
-       verify_studio_code('claim@test.invalid', 'a completely new code');
+select 'Clearing claimed_at re-opens it', 'true',
+       studio_claim_allowed('claim@test.invalid')::text,
+       studio_claim_allowed('claim@test.invalid');
 
-do $$
-declare blocked boolean;
-begin
-  begin
-    perform set_studio_code('nobody@test.invalid', 'a long enough code');
-    blocked := false;
-  exception when others then blocked := true;
-  end;
-  insert into results (test, expected, got, pass)
-  values ('Setting a code refuses an address that is not listed', 'blocked',
-          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
-end $$;
+-- The code is gone, and so is every way to set one.
+insert into results (test, expected, got, pass)
+select 'Nothing is left of the setup code', '0', count(*)::text, count(*) = 0
+from pg_proc
+where proname in ('set_studio_code', 'verify_studio_code', 'studio_code_hash', 'studio_code_required');
 
--- A code that could be typed by hand in an afternoon is not a second factor.
-do $$
-declare blocked boolean;
-begin
-  begin
-    perform set_studio_code('claim@test.invalid', 'short');
-    blocked := false;
-  exception when others then blocked := true;
-  end;
-  insert into results (test, expected, got, pass)
-  values ('A setup code under ten characters is refused', 'blocked',
-          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
-end $$;
+insert into results (test, expected, got, pass)
+select 'And its column is gone from the allow-list', '0', count(*)::text, count(*) = 0
+from information_schema.columns
+where table_name = 'admin_emails' and column_name = 'setup_code_hash';
 
--- And none of it is reachable from a browser: the claim endpoint holds the
--- service key, so a client cannot sit and guess at the code.
+-- None of it is reachable from a browser: the claim endpoint holds the service
+-- key, and a signed-in client must not be able to open or close the door.
 set role authenticated;
 select as_user(:ANN);
 do $$
 declare blocked boolean;
 begin
   begin
-    perform verify_studio_code('claim@test.invalid', 'a completely new code');
+    perform studio_claim_allowed('claim@test.invalid');
     blocked := false;
   exception when others then blocked := true;
   end;
   insert into results (test, expected, got, pass)
-  values ('A signed-in client cannot ask whether a code is right', 'blocked',
-          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
-end $$;
-
-do $$
-declare blocked boolean;
-begin
-  begin
-    perform set_studio_code('claim@test.invalid', 'my own code thanks');
-    blocked := false;
-  exception when others then blocked := true;
-  end;
-  insert into results (test, expected, got, pass)
-  values ('A signed-in client cannot set a setup code', 'blocked',
-          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
-end $$;
-
-do $$
-declare blocked boolean;
-begin
-  begin
-    perform studio_code_required('claim@test.invalid');
-    blocked := false;
-  exception when others then blocked := true;
-  end;
-  insert into results (test, expected, got, pass)
-  values ('A signed-in client cannot ask whether an address needs a code',
+  values ('A signed-in client cannot ask whether an address may be claimed',
           'blocked', case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
+do $$
+declare blocked boolean;
+begin
+  begin
+    perform mark_studio_claimed('claim@test.invalid');
+    blocked := false;
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('A signed-in client cannot mark an address claimed', 'blocked',
+          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
+do $$
+declare blocked int;
+begin
+  -- The allow-list itself was never readable by anyone but the server, and
+  -- that is what stops a client adding their own address to it.
+  select count(*) into blocked from admin_emails;
+  insert into results (test, expected, got, pass)
+  values ('A signed-in client sees nothing in the allow-list', '0',
+          blocked::text, blocked = 0);
+exception when others then
+  insert into results (test, expected, got, pass)
+  values ('A signed-in client sees nothing in the allow-list', '0',
+          'refused outright', true);
 end $$;
 
 -- ------------------------------------------------------------------ photos

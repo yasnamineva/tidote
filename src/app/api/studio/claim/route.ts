@@ -9,15 +9,16 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
  * the owner of the atelier could not get into her own panel.
  *
  * This is the replacement, and it is the only door: the address has to be on
- * the allow-list, the row has to be unclaimed, and — if a one-time code has
- * been set on that row — the code has to match. With no code set, the
- * allow-list is the whole gate, which is the studio's own decision: there is no
- * traffic on the site yet and nobody is going to register her address before
- * she does. `set_studio_code()` tightens it again later, with no deploy.
+ * the allow-list and the row has to be unclaimed. That is the whole gate, by
+ * the studio's own decision — the site has no traffic, and a forgotten password
+ * is recoverable by mail, by a second listed address, or in Supabase directly.
  *
  * It creates the login with the password she typed, already confirmed, which is
  * the state `handle_new_user` reads as studio for a listed address — so the
  * role still comes from the database, not from here.
+ *
+ * Once she has claimed it, `claimed_at` shuts the door: the same address cannot
+ * be claimed a second time by anyone.
  *
  * The service key is required and never leaves the server: the allow-list is
  * not readable by anyone else, and the code is compared inside Postgres
@@ -54,11 +55,8 @@ function clientIp(request: Request): string {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const email = String(body?.email ?? "").trim().toLowerCase().slice(0, 160);
-  const code = String(body?.code ?? "").trim().slice(0, 200);
   const password = String(body?.password ?? "");
 
-  // No check for `code` here: whether one is needed depends on the row, and
-  // only the database knows. An address and a password is the minimum.
   if (!email || password.length < 8) {
     return Response.json({ code: "bad_input" }, { status: 400 });
   }
@@ -75,13 +73,13 @@ export async function POST(request: Request) {
     return Response.json({ code: "not_configured" }, { status: 503 });
   }
 
-  const { data: allowed, error: checkError } = await admin.rpc("verify_studio_code", {
+  const { data: allowed, error: checkError } = await admin.rpc("studio_claim_allowed", {
     p_email: email,
-    p_code: code,
   });
   if (checkError) {
     console.error("studio claim check failed:", checkError.message);
-    // The function is missing until 0009_studio_claim.sql has been applied.
+    // The function is missing until the studio-claim migrations have been
+    // applied.
     // That is a migration that has not been run, not a wrong code, and the
     // page says so — otherwise the first thing she would do is doubt the code.
     const missing =
@@ -92,9 +90,8 @@ export async function POST(request: Request) {
       { status: missing ? 503 : 500 }
     );
   }
-  // One answer for every kind of no: not listed, no code set, already claimed,
-  // wrong code. Otherwise this endpoint would tell a stranger which addresses
-  // are on the allow-list.
+  // One answer for either kind of no — not listed, or already claimed — so
+  // this endpoint cannot be used to find out which addresses are on the list.
   if (!allowed) {
     return Response.json({ code: "refused" }, { status: 403 });
   }
@@ -102,8 +99,8 @@ export async function POST(request: Request) {
   const { data: created, error } = await admin.auth.admin.createUser({
     email,
     password,
-    // No confirmation mail, and none needed: the code was the proof. This is
-    // also what makes the profile trigger file her as studio.
+    // No confirmation mail and none needed — the allow-list is the proof. It
+    // is also what makes the profile trigger file her as studio.
     email_confirm: true,
     user_metadata: { name: "Tidote Atelier" },
   });

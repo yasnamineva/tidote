@@ -6,7 +6,8 @@ import { PlaceholderImage } from "@/components/placeholder-image";
 import { Reveal } from "@/components/reveal";
 import { useLang } from "@/lib/i18n";
 
-const HERO_IMAGES = ["/photos/hero-1.jpg", "/photos/hero-2.jpg", "/photos/hero-3.jpg"];
+/** One photograph, full width: a rail of finished clothes, tags and all. */
+const HERO_IMAGE = "/photos/hero-rail.jpg";
 
 /**
  * The name arrives on the atelier's own swing tag, dropped in on its cord.
@@ -22,34 +23,35 @@ const HERO_IMAGES = ["/photos/hero-1.jpg", "/photos/hero-2.jpg", "/photos/hero-3
  * covering the photograph so much as hanging in front of it; and it is a real
  * object of the studio's, not a graphic device.
  *
- * The photographs stay behind it and are washed back only as much as the tag's
- * own shadow needs. The tag takes the left, the words take the right — on a
- * phone the tag comes first and the words follow underneath.
+ * Behind it, one photograph rather than three tiles, under one even fade. The
+ * words used to sit on a pool of cream of their own, which read as a white
+ * shape laid over the picture — the thing it was there to avoid. A single veil
+ * across the whole frame lifts the dark parts of the photograph far enough for
+ * ink to be read anywhere on it, and leaves the picture looking like a
+ * picture.
+ *
+ * The tag takes the left, the words the right; on a phone the tag comes first
+ * and the words follow underneath.
  */
 export function Hero() {
   const { t } = useLang();
   return (
     <section className="relative w-full overflow-hidden bg-cream">
-      <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-3">
-        {HERO_IMAGES.map((src, i) => (
-          <PlaceholderImage
-            key={src}
-            label="Tidote streetwear look"
-            src={src}
-            priority={i === 0}
-            index={i}
-            className={`h-full w-full ${i === 0 ? "" : "hidden md:block"} ${
-              i === 1 ? "" : "md:blur-[2px] md:scale-[1.04]"
-            }`}
-          />
-        ))}
+      <div className="absolute inset-0">
+        <PlaceholderImage
+          label="A rail of finished Tidote pieces"
+          src={HERO_IMAGE}
+          priority
+          sizes="100vw"
+          zoomOnHover={false}
+          className="h-full w-full"
+        />
       </div>
 
-      {/* The veil is only for the words on the right now. The tag is opaque, so
-          it needs no help being read — it needs a photograph to hang in front
-          of, which means letting more of it through than before. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-cream via-cream/70 to-cream/35" />
-      <div className="absolute inset-0 bg-gradient-to-r from-cream/55 via-cream/25 to-cream/55" />
+      {/* One fade over the whole photograph. Even enough that ink is readable
+          wherever it falls, light enough that the rail is still a rail. */}
+      <div className="absolute inset-0 bg-cream/62" />
+      <div className="absolute inset-0 bg-gradient-to-b from-cream/45 via-transparent to-cream/35" />
 
       {/* Two columns only once there is room for both; at 768 the tag and a
           paragraph side by side squeezed each other, and stacked reads better. */}
@@ -61,13 +63,6 @@ export function Hero() {
         </div>
 
         <div className="relative text-center lg:pt-[32vh] lg:text-left">
-          {/* A soft pool of cream under the words, so they sit on something
-              quiet without a plaque's edges — the photograph carries on around
-              the tag, which is the point of the whole composition. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -inset-x-8 -inset-y-10 -z-10 bg-[radial-gradient(115%_85%_at_50%_50%,rgba(247,244,239,0.92)_0%,rgba(247,244,239,0.7)_45%,rgba(247,244,239,0)_78%)] lg:bg-[radial-gradient(110%_80%_at_28%_52%,rgba(247,244,239,0.94)_0%,rgba(247,244,239,0.72)_48%,rgba(247,244,239,0)_80%)]"
-          />
           <Reveal>
             <h1 className="mx-auto max-w-md text-xl font-medium leading-snug text-ink md:max-w-xl md:text-3xl lg:mx-0 lg:text-4xl">
               {t("hero.prop")}
