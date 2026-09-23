@@ -59,11 +59,15 @@ async function rest(path, init = {}) {
 
 // ------------------------------------------------------------------ the setup
 //
-// The studio account is not created here. It is created the way the atelier
-// creates it — by claiming an allow-listed address on /studio-setup with the
-// one-time code set on its row — which is the flow this suite is now the only
-// test of. All this does is put the row and the code in place, at an
-// `.invalid` address that can receive no mail and is removed again below.
+// The studio account is made the way the atelier makes it: an allow-listed
+// address registers, and confirming the address is what promotes it. Both steps
+// are done here against the auth API rather than through a browser, because
+// clicking a link in an inbox is not something a test can do — but the promotion
+// is the database's, not the test's, and that it happens on confirmation and not
+// before is checked either side of the stamp.
+//
+// The address is `.invalid`, so no mail can leave for it, and both it and its
+// allow-list row are removed at the end.
 const studio = {
   email: `studio-probe-${Date.now()}@tidote.invalid`,
   password: `Probe-password-${Date.now()}`,
@@ -74,50 +78,52 @@ const listed = await rest("admin_emails", {
   body: JSON.stringify({ email: studio.email }),
 });
 check(listed.ok, "the address is on the studio allow-list");
-// The allow-list is the whole gate (0011), so all this needs is the row.
-const coded = await fetch(`${URL_}/rest/v1/rpc/studio_claim_allowed`, {
+
+// Registered, unconfirmed.
+const made = await fetch(`${URL_}/auth/v1/admin/users`, {
   method: "POST",
   headers: H,
-  body: JSON.stringify({ p_email: studio.email }),
+  body: JSON.stringify({
+    email: studio.email,
+    password: studio.password,
+    email_confirm: false,
+    user_metadata: { name: "Probe Studio" },
+  }),
 });
+const studioUser = await made.json();
+if (!made.ok || !studioUser.id) {
+  console.error("Could not register the probe account:", made.status, studioUser);
+  process.exit(1);
+}
+const before = await rest(`profiles?id=eq.${studioUser.id}&select=role`);
+check(
+  before.body?.[0]?.role === "client",
+  `an allow-listed address is only a client until it is confirmed (${before.body?.[0]?.role})`
+);
 
-/**
- * Whether this database knows about the claim flow yet.
- *
- * 0009 is applied by hand in the SQL editor, so a checkout can be ahead of the
- * project it is pointed at. Rather than fail nineteen studio checks because of
- * one unapplied migration, the suite says which mode it is in and makes the
- * account the old way — and the SQL itself is covered either way by
- * `npm run test:db`, which applies every migration to a local Postgres.
- */
-const CLAIMABLE = coded.ok;
-if (CLAIMABLE) {
-  check((await coded.json()) === true, "and the database says it may be claimed");
-} else {
+// Confirmed — the link being clicked.
+const confirmed = await fetch(`${URL_}/auth/v1/admin/users/${studioUser.id}`, {
+  method: "PUT",
+  headers: H,
+  body: JSON.stringify({ email_confirm: true }),
+});
+await new Promise((r) => setTimeout(r, 1200));
+const after = await rest(`profiles?id=eq.${studioUser.id}&select=role`);
+check(
+  confirmed.ok && after.body?.[0]?.role === "admin",
+  `and the studio from the moment it is (${after.body?.[0]?.role})`
+);
+const CLAIMABLE = after.body?.[0]?.role === "admin";
+if (!CLAIMABLE) {
   console.log(
-    `  ** the studio-claim migrations are not applied to this project (HTTP ${coded.status}) —\n` +
-      "     the claim page cannot be exercised here. Apply it and run this again."
+    "  ** the promotion did not happen — 0009_studio_by_confirmation.sql is\n" +
+      "     probably not applied to this project. Apply it and run this again."
   );
-  const made = await fetch(`${URL_}/auth/v1/admin/users`, {
-    method: "POST",
-    headers: H,
-    body: JSON.stringify({
-      email: studio.email,
-      password: studio.password,
-      email_confirm: true,
-      user_metadata: { name: "Probe Studio" },
-    }),
-  });
-  const user = await made.json();
-  if (!made.ok || !user.id) {
-    console.error("Could not create the probe account:", made.status, user);
-    process.exit(1);
-  }
-  const promoted = await rest(`profiles?id=eq.${user.id}`, {
+  const promoted = await rest(`profiles?id=eq.${studioUser.id}`, {
     method: "PATCH",
     body: JSON.stringify({ role: "admin" }),
   });
-  check(promoted.ok && promoted.body?.[0]?.role === "admin", "the probe account is the studio");
+  check(promoted.ok, "promoted by hand so the rest of the panel can be checked");
 }
 
 // A client with an order for the studio to price. The demo client's own
@@ -242,100 +248,14 @@ async function signIn(email, password, expect) {
 
 const text = (page) => page.evaluate(() => document.body.innerText);
 
-/** Fills /studio-setup and submits. Returns the page it ended up on. */
-async function claim({ email, password, confirm = password }) {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  await ctx.addInitScript(() => {
-    try {
-      localStorage.setItem("tidote_lang", "bg");
-    } catch {}
-  });
-  const page = await ctx.newPage();
-  const errors = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(`${BASE}/studio-setup`, { waitUntil: "domcontentloaded" });
-  await page.waitForSelector("#studio-password", { timeout: 30000 });
-  await page.fill("#studio-email", email);
-  await page.fill("#studio-password", password);
-  await page.fill("#studio-confirm", confirm);
-  await page.locator('button[type="submit"]').first().click();
-  await page.waitForURL(/\/admin/, { timeout: 30000 }).catch(() => {});
-  await page.waitForTimeout(4000);
-  return { ctx, page, errors };
-}
-
 try {
-  // ------------------------------------------- claiming the studio account
-  // The real way in, and the only one once 0009 is applied: an allow-listed
-  // address, the code set on its row, and a password she picks here. No mail
-  // anywhere in it — which is the point, because Supabase will not send it.
-  console.log(
-    CLAIMABLE
-      ? "\nthe studio account is claimed at /studio-setup"
-      : "\nsigning in (the claim page needs 0009 applied)"
+  // ------------------------------------------------------------- signing in
+  console.log("\nthe studio signs in");
+  const session = await signIn(studio.email, studio.password, "/admin");
+  check(
+    session.page.url().includes("/admin"),
+    `a studio login lands on the panel (${session.page.url().replace(BASE, "")})`
   );
-
-  let session;
-  if (CLAIMABLE) {
-    // An address nobody listed, first — so a pass below means the allow-list
-    // was actually consulted and is not just letting everyone through.
-    const stranger = await claim({
-      email: `stranger-${Date.now()}@tidote.invalid`,
-      password: "a-password-long-enough",
-    });
-    check(
-      !stranger.page.url().includes("/admin"),
-      "an address that is not on the list gets nowhere"
-    );
-    const strangerMsg =
-      (await stranger.page.locator('[role="alert"]').first().textContent()) || "";
-    check(
-      /не отвори нищо/i.test(strangerMsg),
-      `and is told so in her own language: "${strangerMsg.trim().slice(0, 40)}"`
-    );
-    await stranger.ctx.close();
-
-    // Two passwords that disagree are caught in the page, before the request.
-    const mismatched = await claim({ ...studio, confirm: `${studio.password}x` });
-    const mismatchMsg =
-      (await mismatched.page.locator('[role="alert"]').first().textContent()) || "";
-    check(/не съвпадат/i.test(mismatchMsg), "two different passwords are refused");
-    await mismatched.ctx.close();
-
-    // The real one: the listed address and a password, nothing else.
-    session = await claim(studio);
-    check(
-      session.page.url().includes("/admin"),
-      `a listed address and a password land in the panel (${session.page.url().replace(BASE, "")})`
-    );
-
-    const role = await rest(
-      `profiles?email=eq.${encodeURIComponent(studio.email)}&select=role`
-    );
-    check(
-      role.body?.[0]?.role === "admin",
-      `the profile it made is the studio (${role.body?.[0]?.role})`
-    );
-    const row = await rest(
-      `admin_emails?email=eq.${encodeURIComponent(studio.email)}&select=claimed_at`
-    );
-    check(Boolean(row.body?.[0]?.claimed_at), "the allow-list row is marked claimed");
-
-    // And a claimed row is closed: the second person to try that address, or
-    // the same person twice, gets nothing.
-    const again = await claim(studio);
-    check(
-      !again.page.url().includes("/admin"),
-      "a claimed address cannot be claimed again"
-    );
-    await again.ctx.close();
-  } else {
-    session = await signIn(studio.email, studio.password, "/admin");
-    check(
-      session.page.url().includes("/admin"),
-      `a studio login lands on the panel (${session.page.url().replace(BASE, "")})`
-    );
-  }
 
   const { ctx, page, errors } = session;
   if (!page.url().includes("/admin")) throw new Error("no studio session");
@@ -438,13 +358,15 @@ try {
   await page.waitForTimeout(6000);
   body = await text(page);
   check(body.includes(demoProfile.body[0].name), "the conversations are listed");
-  check(
-    /Запитванията не се заредиха/.test(body),
-    "the missing enquiries table is reported on its own"
+  // Enquiries load separately from the conversations, so either state is
+  // right — what must never happen is one taking the other down with it.
+  const enquiriesFailed = /Запитванията не се заредиха/.test(body);
+  console.log(
+    `    enquiries: ${enquiriesFailed ? "not loaded (0008 not applied?)" : "loaded"}`
   );
   check(
     body.includes(demoProfile.body[0].name),
-    "and does not take the client conversations down with it"
+    "the conversations are there whether or not the enquiries loaded"
   );
   await page.locator(`button:has-text("${demoProfile.body[0].name}")`).first().click();
   await page.waitForTimeout(4000);

@@ -290,24 +290,6 @@ const en: Dict = {
 
   // Setting up the studio account. The code is set once in the database with
   // set_studio_code(); see supabase/migrations/0009_studio_claim.sql.
-  "studio.eyebrow": "Studio",
-  "studio.title": "SET UP THE STUDIO ACCOUNT",
-  "studio.blurb":
-    "For the atelier's own account. The address has to be on the studio list in the database — then the password below is yours to choose, and nothing is emailed.",
-  "studio.newPassword": "Your password",
-  "studio.submit": "Create the studio account",
-  "studio.refused":
-    "That address does not open anything. It has to be on the studio list in the database, and it must not already have an account.",
-  "studio.exists":
-    "There is already an account for that address. Sign in with it, or clear claimed_at on its row in the database and come back.",
-  "studio.tooMany":
-    "Too many attempts from here. Wait an hour and try again.",
-  "studio.badInput": "An address and a password of at least 8 characters.",
-  "studio.notReady":
-    "The database is not ready for this yet — the studio-claim migrations have not been applied, or the server has no service key. Nothing you typed is wrong.",
-  "studio.failed": "The account was not created. Nothing has been half-made — try again.",
-  "studio.madeButNoSignIn":
-    "The account was created, but signing in straight away did not work. Go to the login page and sign in with the password you just chose.",
   "signup.checkEmail": "Check {email} for a link to confirm your address.",
   "signup.checkEmailSub":
     "You can sign in as soon as you have clicked it. If nothing arrives, look in your spam folder.",
@@ -1233,23 +1215,6 @@ const bg: Dict = {
   "signup.rateLimited":
     "Твърде много опити за регистрация от тук през последния час, затова имейлът за потвърждение не можа да се изпрати. Опитайте по-късно или ни пишете на support@tidoteatelier.com и ще създадем профила вместо вас.",
 
-  "studio.eyebrow": "Ателие",
-  "studio.title": "СЪЗДАЙ ПРОФИЛА НА АТЕЛИЕТО",
-  "studio.blurb":
-    "За профила на самото ателие. Адресът трябва да е в списъка на ателието в базата — паролата отдолу си я избираш ти и нищо не се изпраща по имейл.",
-  "studio.newPassword": "Твоята парола",
-  "studio.submit": "Създай профила на ателието",
-  "studio.refused":
-    "Този адрес не отваря нищо. Трябва да е в списъка на ателието в базата и да няма вече профил.",
-  "studio.exists":
-    "Вече има профил с този адрес. Влез с него или изчисти claimed_at на реда му в базата и опитай пак.",
-  "studio.tooMany": "Твърде много опити от тук. Изчакай един час и опитай отново.",
-  "studio.badInput": "Адрес и парола от поне 8 знака.",
-  "studio.notReady":
-    "Базата още не е готова за това — миграциите за профила на ателието не са приложени или сървърът няма service key. Нищо от въведеното не е грешно.",
-  "studio.failed": "Профилът не беше създаден. Няма нищо недовършено — опитай отново.",
-  "studio.madeButNoSignIn":
-    "Профилът е създаден, но автоматичното влизане не сработи. Отиди на страницата за вход и влез с паролата, която току-що избра.",
   "signup.checkEmail": "Проверете {email} за връзка, с която да потвърдите адреса си.",
   "signup.checkEmailSub":
     "Ще може да влезете веднага щом я отворите. Ако не пристигне нищо, проверете в спам.",

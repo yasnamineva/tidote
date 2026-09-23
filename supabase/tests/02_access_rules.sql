@@ -177,100 +177,118 @@ begin
           case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
 end $$;
 
--- ------------------------------------------------ becoming the studio (0011)
--- The allow-list is the gate, on its own: an unclaimed listed address may
--- claim the studio account, a claimed one may not, and nothing else opens it.
--- The one-time code 0009 introduced is gone — see 0011 for why — but the
--- one-shot part is the whole protection now, so it is the part to hold down.
+-- --------------------------------------------- becoming the studio (0009)
+-- The whole rule: an allow-listed address is a client until its owner confirms
+-- it, and the studio from the moment they do. Nothing else promotes anyone, so
+-- registering someone else's listed address gets you an account you cannot
+-- sign into and a promotion that goes to their mailbox.
 reset role;
+-- No user claim, which is what production looks like here: the confirmation is
+-- written by GoTrue's own unauthenticated endpoint, and that is exactly why
+-- 0006's column guard lets the promotion through.
+select set_config('request.jwt.claim.sub', '', false);
 
 insert into admin_emails (email) values ('claim@test.invalid') on conflict do nothing;
 
-insert into results (test, expected, got, pass)
-select 'A listed, unclaimed address may claim the studio account', 'true',
-       studio_claim_allowed('claim@test.invalid')::text,
-       studio_claim_allowed('claim@test.invalid');
+-- Registering it, unconfirmed.
+insert into auth.users (id, email, raw_user_meta_data)
+values ('77777777-7777-7777-7777-777777777777', 'claim@test.invalid', '{"name":"Hopeful"}');
 
 insert into results (test, expected, got, pass)
-select 'The address is matched without regard to case', 'true',
-       studio_claim_allowed('CLAIM@TEST.INVALID')::text,
-       studio_claim_allowed('CLAIM@TEST.INVALID');
+select 'Registering a listed address is only a client until it is confirmed',
+       'client', role::text, role = 'client'
+from profiles where id = '77777777-7777-7777-7777-777777777777';
+
+-- Clicking the link.
+update auth.users set email_confirmed_at = now()
+where id = '77777777-7777-7777-7777-777777777777';
 
 insert into results (test, expected, got, pass)
-select 'An address that is not listed may not', 'false',
-       studio_claim_allowed('stranger@test.invalid')::text,
-       studio_claim_allowed('stranger@test.invalid') = false;
+select 'Confirming it is what makes them the studio', 'admin', role::text, role = 'admin'
+from profiles where id = '77777777-7777-7777-7777-777777777777';
 
-select mark_studio_claimed('claim@test.invalid');
-
-insert into results (test, expected, got, pass)
-select 'A claimed address may not be claimed again', 'false',
-       studio_claim_allowed('claim@test.invalid')::text,
-       studio_claim_allowed('claim@test.invalid') = false;
-
--- Which is how a lost password is recovered when no mail arrives: clear the
--- stamp and the row opens once more.
-update admin_emails set claimed_at = null where email = 'claim@test.invalid';
+-- And the same stamp on an address nobody listed changes nothing.
+insert into auth.users (id, email, raw_user_meta_data)
+values ('88888888-8888-8888-8888-888888888888', 'nobody@test.invalid', '{"name":"Someone"}');
+update auth.users set email_confirmed_at = now()
+where id = '88888888-8888-8888-8888-888888888888';
 
 insert into results (test, expected, got, pass)
-select 'Clearing claimed_at re-opens it', 'true',
-       studio_claim_allowed('claim@test.invalid')::text,
-       studio_claim_allowed('claim@test.invalid');
+select 'Confirming an address that is not listed changes nothing', 'client',
+       role::text, role = 'client'
+from profiles where id = '88888888-8888-8888-8888-888888888888';
 
--- The code is gone, and so is every way to set one.
+-- Allow-listing an address that is already confirmed promotes it too, so the
+-- list decides whichever order things happened in.
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data)
+values ('99999999-9999-9999-9999-999999999999', 'later@test.invalid', now(),
+        '{"name":"Confirmed First"}');
+
 insert into results (test, expected, got, pass)
-select 'Nothing is left of the setup code', '0', count(*)::text, count(*) = 0
+select 'Confirming an address before it is listed leaves a client', 'client',
+       role::text, role = 'client'
+from profiles where id = '99999999-9999-9999-9999-999999999999';
+
+insert into admin_emails (email) values ('later@test.invalid');
+
+insert into results (test, expected, got, pass)
+select 'Listing it afterwards promotes them', 'admin', role::text, role = 'admin'
+from profiles where id = '99999999-9999-9999-9999-999999999999';
+
+-- But only if they confirmed it. An unconfirmed holder of a listed address is
+-- still just someone who typed it into a form.
+insert into auth.users (id, email, raw_user_meta_data)
+values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'squatter@test.invalid',
+        '{"name":"Squatter"}');
+insert into admin_emails (email) values ('squatter@test.invalid');
+
+insert into results (test, expected, got, pass)
+select 'Listing an unconfirmed address promotes nobody', 'client', role::text,
+       role = 'client'
+from profiles where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+-- Nothing is left of the claim page.
+insert into results (test, expected, got, pass)
+select 'Nothing is left of the claim endpoint', '0', count(*)::text, count(*) = 0
 from pg_proc
-where proname in ('set_studio_code', 'verify_studio_code', 'studio_code_hash', 'studio_code_required');
+where proname in ('studio_claim_allowed', 'mark_studio_claimed',
+                  'set_studio_code', 'verify_studio_code',
+                  'studio_code_hash', 'studio_code_required');
 
 insert into results (test, expected, got, pass)
 select 'And its column is gone from the allow-list', '0', count(*)::text, count(*) = 0
 from information_schema.columns
-where table_name = 'admin_emails' and column_name = 'setup_code_hash';
+where table_name = 'admin_emails'
+  and column_name in ('setup_code_hash', 'claimed_at');
 
--- None of it is reachable from a browser: the claim endpoint holds the service
--- key, and a signed-in client must not be able to open or close the door.
+-- The allow-list was never readable by anyone but the server, which is what
+-- stops a client adding their own address to it.
 set role authenticated;
 select as_user(:ANN);
 do $$
-declare blocked boolean;
+declare seen int;
 begin
-  begin
-    perform studio_claim_allowed('claim@test.invalid');
-    blocked := false;
-  exception when others then blocked := true;
-  end;
-  insert into results (test, expected, got, pass)
-  values ('A signed-in client cannot ask whether an address may be claimed',
-          'blocked', case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
-end $$;
-
-do $$
-declare blocked boolean;
-begin
-  begin
-    perform mark_studio_claimed('claim@test.invalid');
-    blocked := false;
-  exception when others then blocked := true;
-  end;
-  insert into results (test, expected, got, pass)
-  values ('A signed-in client cannot mark an address claimed', 'blocked',
-          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
-end $$;
-
-do $$
-declare blocked int;
-begin
-  -- The allow-list itself was never readable by anyone but the server, and
-  -- that is what stops a client adding their own address to it.
-  select count(*) into blocked from admin_emails;
+  select count(*) into seen from admin_emails;
   insert into results (test, expected, got, pass)
   values ('A signed-in client sees nothing in the allow-list', '0',
-          blocked::text, blocked = 0);
+          seen::text, seen = 0);
 exception when others then
   insert into results (test, expected, got, pass)
   values ('A signed-in client sees nothing in the allow-list', '0',
           'refused outright', true);
+end $$;
+
+do $$
+declare blocked boolean;
+begin
+  begin
+    insert into admin_emails (email) values ('me@test.invalid');
+    blocked := false;
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('A signed-in client cannot add themselves to the allow-list',
+          'blocked', case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
 end $$;
 
 -- ------------------------------------------------------------------ photos

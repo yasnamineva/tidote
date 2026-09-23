@@ -278,8 +278,8 @@ console.log("\nfiles that cannot be used");
   await ctx.close();
 }
 
-// ------------------------------------------ the studio door, from outside
-console.log("\nthe studio setup page, to someone who should not get in");
+// ---------------------------------------------- the way into the studio
+console.log("\nthe studio's own way in");
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
   await ctx.addInitScript(() => {
@@ -289,46 +289,35 @@ console.log("\nthe studio setup page, to someone who should not get in");
   });
   const page = await ctx.newPage();
 
-  const res = await page.request.post(`${BASE}/api/studio/claim`, {
-    data: {
-      email: `nobody-${Date.now()}@tidote.invalid`,
-      password: "long-enough-password",
-    },
+  // There was a /studio-setup page and a /api/studio/claim endpoint for this,
+  // built on the belief that the confirmation mail could not be delivered. It
+  // can. The studio registers like any other client and the allow-list plus the
+  // confirmation link do the rest, so neither of those should answer any more.
+  const gone = await page.request.get(`${BASE}/studio-setup`);
+  check(gone.status() === 404, `/studio-setup is gone (HTTP ${gone.status()})`);
+  const endpoint = await page.request.post(`${BASE}/api/studio/claim`, {
+    data: { email: "nobody@tidote.invalid", password: "long-enough-password" },
   });
-  const body = await res.json().catch(() => ({}));
-  console.log(`    route answered ${res.status()} ${JSON.stringify(body)}`);
-  // `refused` once 0009 is applied, `not_configured` before that. Either is a
-  // code this page can put into her language; neither is Postgres's own words,
-  // and neither says whether the address is on the allow-list.
   check(
-    ["refused", "not_configured"].includes(body.code),
-    "an address nobody listed is refused by code, not by database error"
-  );
-  check(res.status() !== 201, "and no account is created");
-  check(
-    !JSON.stringify(body).includes("admin_emails"),
-    "without naming the allow-list"
+    endpoint.status() === 404 || endpoint.status() === 405,
+    `and so is the endpoint (HTTP ${endpoint.status()})`
   );
 
-  const short = await page.request.post(`${BASE}/api/studio/claim`, {
-    data: { email: "someone@tidote.invalid", password: "short" },
-  });
-  check((await short.json()).code === "bad_input", "a short password is refused before anything else");
-
-  // And the page itself renders, in both languages, with its three fields.
-  await page.goto(`${BASE}/studio-setup`, { waitUntil: "domcontentloaded" });
+  // What replaces them is the ordinary form, which asks for the password twice.
+  await page.goto(`${BASE}/signup`, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(2500);
   check(
-    (await page.locator("#studio-email").count()) === 1 &&
-      (await page.locator("#studio-password").count()) === 1 &&
-      (await page.locator("#studio-code").count()) === 0,
-    "the setup page asks for an address and a password, and nothing else"
+    (await page.locator('input[type="password"]').count()) === 2,
+    "and registering asks for the password twice"
   );
-  const seen = await page.evaluate(() => document.body.innerText);
-  check(
-    !/admin_emails|studio_claim_allowed|sb_secret/i.test(seen),
-    "and gives nothing away about how the door works"
-  );
+  await page.fill("#name", "State Test");
+  await page.fill("#email", `probe-${Date.now()}@tidote.invalid`);
+  await page.fill("#password", "long-enough-1");
+  await page.fill("#confirm", "long-enough-2");
+  await page.locator('button[type="submit"]').first().click();
+  await page.waitForTimeout(1500);
+  const mismatch = (await page.locator('[role="alert"]').first().textContent()) || "";
+  check(/не съвпадат/i.test(mismatch), "two that disagree are refused before anything is sent");
   await ctx.close();
 }
 

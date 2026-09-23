@@ -96,31 +96,28 @@ check(!/Зареждане…\s*$/.test(rail.trim()), "/in-stock is not stuck on
 check(/модел|закачалката/i.test(rail), "and shows the rail");
 
 // -------------------------------------------------------- the studio door
-const claim = await page.request.post(`${BASE}/api/studio/claim`, {
-  data: {
-    email: `nobody-${Date.now()}@tidote.invalid`,
-    password: "long-enough-password",
-  },
+// The studio registers like any client; the allow-list and the confirmation
+// link do the rest. The page and endpoint that used to do it are gone.
+const gone = await page.request.get(`${BASE}/studio-setup`);
+check(gone.status() === 404, `/studio-setup is gone (HTTP ${gone.status()})`);
+const endpoint = await page.request.post(`${BASE}/api/studio/claim`, {
+  data: { email: "nobody@tidote.invalid", password: "long-enough-password" },
 });
-const body = await claim.json().catch(() => ({}));
-console.log(`    /api/studio/claim answered ${claim.status()} ${JSON.stringify(body)}`);
-// `refused` once the migrations are applied, `not_configured` before that.
-check(["refused", "not_configured"].includes(body.code), "the studio door answers with a code");
-check(claim.status() !== 201, "and lets nobody in");
-check(!JSON.stringify(body).includes("admin_emails"), "without naming the allow-list");
-
-await page.goto(`${BASE}/studio-setup`, { waitUntil: "domcontentloaded" });
-await page.waitForTimeout(3500);
 check(
-  (await page.locator("#studio-email").count()) === 1 &&
-    (await page.locator("#studio-password").count()) === 1 &&
-    (await page.locator("#studio-code").count()) === 0,
-  "/studio-setup asks for an address and a password, and nothing else"
+  endpoint.status() === 404 || endpoint.status() === 405,
+  `and so is /api/studio/claim (HTTP ${endpoint.status()})`
+);
+
+await page.goto(`${BASE}/signup`, { waitUntil: "domcontentloaded" });
+await page.waitForTimeout(3000);
+check(
+  (await page.locator('input[type="password"]').count()) === 2,
+  "registering asks for the password twice"
 );
 
 // ------------------------------------------------------ robots and sitemap
 const robots = await (await fetch(`${BASE}/robots.txt`)).text();
-check(/Disallow: \/studio-setup/.test(robots), "robots.txt keeps the setup page out of search");
+check(/Disallow: \/admin/.test(robots), "robots.txt keeps the portal out of search");
 const sitemap = await (await fetch(`${BASE}/sitemap.xml`)).text();
 check(!/worn-by/.test(sitemap), "and the sitemap does not offer the empty wall");
 
