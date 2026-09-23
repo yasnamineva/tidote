@@ -27,6 +27,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -41,6 +42,14 @@ export default function SignupPage() {
     e.preventDefault();
     if (password.length < 8) {
       setError(t("signup.shortPassword"));
+      return;
+    }
+    // Asked twice and checked here: the field hides what was typed, so a typo
+    // in it is otherwise discovered at the next sign-in, by which time there is
+    // an account nobody can get into and a confirmation mail that will not
+    // arrive twice.
+    if (password !== confirm) {
+      setError(t("auth.passwordMismatch"));
       return;
     }
     setBusy(true);
@@ -119,6 +128,23 @@ export default function SignupPage() {
               placeholder="••••••••"
             />
             <p className="text-xs text-ink-soft">{t("signup.passwordHint")}</p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="confirm" className={labelCls}>
+              {t("signup.repeatPassword")}
+            </label>
+            <input
+              id="confirm"
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              className={fieldCls}
+              placeholder="••••••••"
+            />
           </div>
 
           {error && <FormError>{error}</FormError>}

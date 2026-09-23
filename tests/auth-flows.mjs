@@ -78,6 +78,9 @@ for (const lang of ["en","bg"]) {
   await page.fill("#name","Test Person");
   await page.fill("#email", CONFIGURED ? DEMO_EMAIL : "x@example.com");
   await page.fill("#password","longenough1");
+  // Both of them, or the browser refuses to submit at all and this check waits
+  // for a message the form never got as far as producing.
+  await page.fill("#confirm","longenough1");
   await page.click('button[type="submit"]'); await page.waitForTimeout(3500);
   const sErr = (await page.locator('[role="alert"]').first().textContent() || "").trim();
   const shown = await page.evaluate(() => document.body.innerText);
@@ -103,6 +106,17 @@ for (const lang of ["en","bg"]) {
   } else {
     check(/SETUP\.md|база данни/.test(sErr), `signup names the real cause: "${sErr.slice(0,60)}"`);
   }
+
+  console.log(`[${lang}] the password is asked for twice`);
+  await page.goto(B + "/signup", { waitUntil:"networkidle" });
+  check(await page.locator('input[type="password"]').count() === 2, "signup has two password fields");
+  await page.fill("#name","Test Person");
+  await page.fill("#email", CONFIGURED ? DEMO_EMAIL : "x@example.com");
+  await page.fill("#password","longenough1");
+  await page.fill("#confirm","longenough2");
+  await page.click('button[type="submit"]'); await page.waitForTimeout(1200);
+  const mErr = (await page.locator('[role="alert"]').first().textContent() || "").trim();
+  check(/не съвпадат|not the same/i.test(mErr), `two different passwords are refused: "${mErr.slice(0,40)}"`);
 
   // minLength stops the browser submitting at all, which is better than our own
   // message — so what to assert is that it never got sent, not that we complained.

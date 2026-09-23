@@ -48,7 +48,7 @@ export default function StudioSetupPage() {
       return;
     }
     if (password !== confirm) {
-      setError(t("studio.mismatch"));
+      setError(t("auth.passwordMismatch"));
       return;
     }
     setBusy(true);
@@ -135,7 +135,7 @@ export default function StudioSetupPage() {
 
         <div className="flex flex-col gap-2">
           <label htmlFor="studio-confirm" className={labelCls}>
-            {t("studio.repeatPassword")}
+            {t("signup.repeatPassword")}
           </label>
           <input
             id="studio-confirm"

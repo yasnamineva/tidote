@@ -278,6 +278,11 @@ const en: Dict = {
   "signup.submitting": "Creating…",
   "signup.passwordHint": "At least 8 characters.",
   "signup.shortPassword": "Use at least 8 characters.",
+  "signup.repeatPassword": "Type your password again",
+  // Shared by the client's registration form and the studio's setup page:
+  // both ask twice, because neither shows what was typed and a typo in a
+  // password you cannot see is only discovered at the next sign-in.
+  "auth.passwordMismatch": "The two passwords are not the same.",
   "signup.taken": "That email already has an account. Try signing in instead.",
   "signup.failed": "Could not create the account. Please try again.",
   "signup.rateLimited":
@@ -290,9 +295,7 @@ const en: Dict = {
   "studio.blurb":
     "For the atelier's own account. The address has to be on the studio list in the database — then the password below is yours to choose, and nothing is emailed.",
   "studio.newPassword": "Your password",
-  "studio.repeatPassword": "Your password again",
   "studio.submit": "Create the studio account",
-  "studio.mismatch": "The two passwords are not the same.",
   "studio.refused":
     "That address does not open anything. It has to be on the studio list in the database, and it must not already have an account.",
   "studio.exists":
@@ -1223,6 +1226,8 @@ const bg: Dict = {
   "signup.submitting": "Създаване…",
   "signup.passwordHint": "Поне 8 символа.",
   "signup.shortPassword": "Използвайте поне 8 символа.",
+  "signup.repeatPassword": "Въведете паролата отново",
+  "auth.passwordMismatch": "Двете пароли не съвпадат.",
   "signup.taken": "Вече има профил с този имейл. Опитайте да влезете.",
   "signup.failed": "Профилът не можа да бъде създаден. Опитайте отново.",
   "signup.rateLimited":
@@ -1233,9 +1238,7 @@ const bg: Dict = {
   "studio.blurb":
     "За профила на самото ателие. Адресът трябва да е в списъка на ателието в базата — паролата отдолу си я избираш ти и нищо не се изпраща по имейл.",
   "studio.newPassword": "Твоята парола",
-  "studio.repeatPassword": "Повтори паролата",
   "studio.submit": "Създай профила на ателието",
-  "studio.mismatch": "Двете пароли не съвпадат.",
   "studio.refused":
     "Този адрес не отваря нищо. Трябва да е в списъка на ателието в базата и да няма вече профил.",
   "studio.exists":
