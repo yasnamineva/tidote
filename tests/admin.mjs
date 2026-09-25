@@ -16,6 +16,7 @@
  *   npm run test:admin
  */
 import { chromium } from "playwright";
+import { findCollisions, findSmallTargets } from "./dom-checks.mjs";
 import { readFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 
@@ -345,12 +346,21 @@ try {
     "the client has been notified of the price"
   );
 
-  // Move it along the stages the studio uses.
-  const nextStage = page.locator('button:has-text("В изработка"), select').first();
-  if ((await nextStage.count()) > 0) {
-    await nextStage.click().catch(() => {});
-    await page.waitForTimeout(3000);
+  // Move it along to ready, which is the stage that lets the client book a
+  // fitting — checked from her side at the end of this suite.
+  const readyButton = page
+    .locator("button")
+    .filter({ hasText: /Готова за проба|Ready for Fitting/i })
+    .first();
+  if ((await readyButton.count()) > 0) {
+    await readyButton.click();
+    await page.waitForTimeout(4000);
   }
+  const stage = await rest(`orders?id=eq.${orderId}&select=status`);
+  check(
+    stage.body?.[0]?.status === "ready",
+    `the studio can move it to ready (${stage.body?.[0]?.status})`
+  );
 
   // ------------------------------------------------------------- the inbox
   console.log("\nthe inbox");
@@ -431,23 +441,102 @@ try {
   await page.unroute("**/rest/v1/profiles**");
 
   // ------------------------------------------------ the panel on a phone
-  console.log("\nthe panel on a phone");
-  for (const path of ["/admin", "/admin/inbox", "/admin/analytics"]) {
-    await page.goto(BASE + path, { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(4500);
-    const over = {};
-    for (const w of [320, 390]) {
-      await page.setViewportSize({ width: w, height: 780 });
-      await page.waitForTimeout(600);
-      const px = await page.evaluate(
-        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
-      );
-      if (px > 2) over[w] = px;
+  //
+  // Until now this was a sideways-scroll check on three pages. The panel is
+  // where the studio spends her working day, most of it on a phone in a fitting
+  // room, and the overlap detector the public pages have had for weeks had
+  // never once been pointed at it.
+  console.log("\nthe panel at every width");
+  const PANEL_PAGES = [
+    "/admin",
+    "/admin/inbox",
+    "/admin/analytics",
+    "/admin/ready",
+    "/admin/calendar",
+    "/admin/orders/category/all",
+    `/admin/clients/${clientId}`,
+    `/admin/orders/${clientId}/${orderId}`,
+  ];
+  const PANEL_WIDTHS = [320, 390, 768, 1280];
+
+  for (const path of PANEL_PAGES) {
+    const broken = [];
+    // Loaded once, then resized — which is what a phone being turned over
+    // actually does, and a quarter of the navigations. Reloading for each
+    // width made this the slowest part of the suite and eventually timed a
+    // navigation out under its own load.
+    await page.setViewportSize({ width: PANEL_WIDTHS.at(-1), height: 860 });
+    await page.goto(BASE + path, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForTimeout(3500);
+
+    for (const w of PANEL_WIDTHS) {
+      await page.setViewportSize({ width: w, height: 860 });
+      await page.waitForTimeout(900);
+
+      const r = await page.evaluate(findCollisions);
+      const small = await page.evaluate(findSmallTargets);
+      const notes = [];
+      if (r.scrollX > 2) notes.push(`scrolls ${r.scrollX}px sideways`);
+      if (r.hits.length) notes.push(`overlap: ${r.hits[0]}`);
+      if (r.outside.length) notes.push(`outside: ${r.outside[0]}`);
+      if (small.length) notes.push(`small target: ${small[0]}`);
+      if (notes.length) broken.push(`${w}px — ${notes.join("; ")}`);
     }
-    await page.setViewportSize({ width: 1440, height: 1000 });
-    const desc = Object.entries(over).map(([w, px]) => `${w}:+${px}px`).join(" ");
-    check(Object.keys(over).length === 0, `${path} does not scroll sideways${desc ? ` (${desc})` : ""}`);
+    check(broken.length === 0, `${path} holds together at every width`);
+    broken.forEach((b) => console.log(`      ${b}`));
   }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
+  // The panel's own way around, on a phone: the sidebar becomes something you
+  // open, and it has to close behind you or the page you asked for is under it.
+  console.log("\nthe panel's navigation on a phone");
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(3500);
+  const opener = page
+    .locator("button")
+    .filter({ hasText: /Меню|МЕНЮ|Menu/i })
+    .first();
+  const hasOpener =
+    (await opener.count()) > 0 ||
+    (await page.locator('button[aria-label*="меню" i], button[aria-label*="menu" i]').count()) > 0;
+  check(hasOpener, "there is a way to open the panel's menu");
+  if (hasOpener) {
+    await (
+      (await opener.count()) > 0
+        ? opener
+        : page.locator('button[aria-label*="меню" i], button[aria-label*="menu" i]').first()
+    ).click();
+    await page.waitForTimeout(900);
+    // The panel renders one nav and places it twice — the sidebar and the
+    // drawer — so the first copy in the document is the hidden one at this
+    // width. Ask for the visible one, not the first one.
+    const link = page.locator('a[href="/admin/inbox"]:visible').first();
+    const reachable = await link
+      .waitFor({ state: "visible", timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+    check(reachable, "and the pages are reachable from it");
+    if (reachable) {
+      await link.click();
+      await page.waitForTimeout(3500);
+      check(page.url().includes("/admin/inbox"), "following one navigates");
+      const covered = await page.evaluate(() => {
+        // Anything full-screen and fixed still sitting over the page.
+        for (const el of document.querySelectorAll("div")) {
+          const cs = getComputedStyle(el);
+          if (cs.position !== "fixed") continue;
+          const b = el.getBoundingClientRect();
+          if (b.width > window.innerWidth * 0.9 && b.height > window.innerHeight * 0.9) {
+            return true;
+          }
+        }
+        return false;
+      });
+      check(!covered, "and the menu closes behind you");
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
 
   // ----------------------------------------- and what the client now sees
   console.log("\nthe client's side of the same order");
@@ -459,6 +548,32 @@ try {
     document.body.innerText.includes("275")
   );
   check(bell, "and she has been told about it");
+
+  // The fitting section, with something in it. Every other run sees its empty
+  // state, and a calendar at 320px is the sort of thing that only fails at
+  // 320px.
+  for (const w of [320, 390, 1280]) {
+    await client.page.setViewportSize({ width: w, height: 860 });
+    await client.page.goto(`${BASE}/dashboard`, { waitUntil: "domcontentloaded" });
+    await client.page.waitForTimeout(4500);
+    const r = await client.page.evaluate(() => {
+      const el = document.getElementById("fitting");
+      if (!el) return { missing: true };
+      const de = document.documentElement;
+      return {
+        empty: /Още няма какво/.test(el.innerText),
+        controls: el.querySelectorAll("button").length,
+        scrollX: de.scrollWidth - de.clientWidth,
+      };
+    });
+    check(!r.missing, `${w}px: the client's fitting section is there`);
+    if (r.missing) continue;
+    check(
+      !r.empty && r.controls > 0,
+      `${w}px: it offers times rather than the empty state (${r.controls} controls)`
+    );
+    check(r.scrollX <= 2, `${w}px: and does not push the page sideways`);
+  }
   await client.ctx.close();
 
   await ctx.close();

@@ -377,6 +377,88 @@ check(
 
 await page.setViewportSize({ width: 1280, height: 1000 });
 
+// ------------------------------- the account's menu, on the phone's drawer
+// The desktop column was measured exactly; the drawer never was. It is the
+// same handler, but it also has to close behind itself, and what it scrolls to
+// has to end up under the header rather than behind it.
+console.log("\nthe account menu on a phone");
+{
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto(`${BASE}/dashboard`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(4000);
+
+  const rows = [
+    ["measurements", /Мерки/i],
+    ["orders", /Поръчки/i],
+    ["fitting", /Проба/i],
+    ["delivery", /Доставка/i],
+    ["wardrobe", /гардероб/i],
+  ];
+  for (const [id, label] of rows) {
+    const opener = page.locator("button").filter({ hasText: /Меню|МЕНЮ/i }).first();
+    if ((await opener.count()) === 0) {
+      check(false, "the account menu has an opener on a phone");
+      break;
+    }
+    await opener.click();
+    await page.waitForTimeout(800);
+    // The drawer's own row, not the stepper's button of the same name.
+    const row = page
+      .locator(".fixed button, .fixed a")
+      .filter({ hasText: label })
+      .first();
+    if ((await row.count()) === 0) {
+      check(false, `${id}: a row for it in the drawer`);
+      continue;
+    }
+    await row.click();
+    await page.waitForTimeout(2000);
+
+    const r = await page.evaluate((id) => {
+      const el = document.getElementById(id);
+      if (!el) return { missing: true };
+      const header = document.querySelector("header");
+      const headerH = header ? header.getBoundingClientRect().height : 0;
+      let barBottom = headerH;
+      for (const nd of document.querySelectorAll("div")) {
+        const cs = getComputedStyle(nd);
+        if (cs.position !== "sticky" && cs.position !== "fixed") continue;
+        const b = nd.getBoundingClientRect();
+        if (b.width > window.innerWidth * 0.5 && b.top < headerH + 8 && b.height > 20) {
+          barBottom = Math.max(barBottom, b.bottom);
+        }
+      }
+      let drawerOpen = false;
+      for (const nd of document.querySelectorAll("div")) {
+        const cs = getComputedStyle(nd);
+        if (cs.position !== "fixed") continue;
+        const b = nd.getBoundingClientRect();
+        if (b.width > window.innerWidth * 0.9 && b.height > window.innerHeight * 0.9) {
+          drawerOpen = true;
+        }
+      }
+      const box = el.getBoundingClientRect();
+      return {
+        top: Math.round(box.top),
+        barBottom: Math.round(barBottom),
+        behind: box.top < barBottom - 2,
+        drawerOpen,
+      };
+    }, id);
+
+    if (r.missing) {
+      check(false, `${id}: the section it points at exists`);
+      continue;
+    }
+    check(!r.drawerOpen, `${id}: the drawer closes behind you`);
+    check(
+      !r.behind,
+      `${id}: lands below the header, not under it (top ${r.top}, header ends ${r.barBottom})`
+    );
+  }
+  await page.setViewportSize({ width: 1280, height: 1000 });
+}
+
 // ------------------------------------------------------------------ logout
 console.log("\nsigning out");
 await page.goto(`${BASE}/dashboard`, { waitUntil: "domcontentloaded" });

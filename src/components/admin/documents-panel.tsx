@@ -116,7 +116,7 @@ function DocRow({
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
-              className="text-[10px] uppercase tracking-[0.1em] py-2 -my-1 text-ink-soft hover:text-ink transition-colors"
+              className="text-[10px] uppercase tracking-[0.1em] py-2.5 text-ink-soft hover:text-ink transition-colors"
             >
               {open ? "− " : "+ "}
               {t("doc.details")}

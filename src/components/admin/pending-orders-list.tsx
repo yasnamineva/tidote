@@ -48,7 +48,12 @@ function OrderReviewRow({
   const header = (
     <Link
       href={detailHref}
-      className="flex items-center gap-4 group flex-1 min-w-0"
+      /* `basis-56` so the row can wrap. With `flex-1` alone the base size is
+         zero, so the status pills always "fit" beside this and the thumbnail
+         inside it — which cannot shrink — pushed out of its own box and printed
+         across them at 320px. A real base width means the pills drop to the
+         next line instead. */
+      className="group flex flex-1 basis-56 items-center gap-4 min-w-0"
     >
       <OrderPhotoThumb photos={order.photos} label={piece} />
       <div className="min-w-0">
@@ -78,7 +83,10 @@ function OrderReviewRow({
   if (order.reviewStatus === "pending") {
     return (
       <div className="border border-accent/40 bg-accent/5 px-5 py-4 flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-4">
+        {/* Wraps rather than fighting: at 320px the status and category pills
+            are wider than what is left beside a thumbnail and a piece name, and
+            the two columns were printing across each other. */}
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           {header}
           {meta(
             <span className="text-xs uppercase tracking-[0.15em] px-3 py-1 rounded-full bg-accent-soft/40 text-accent whitespace-nowrap">
@@ -141,7 +149,7 @@ function OrderReviewRow({
 
   if (order.reviewStatus === "denied") {
     return (
-      <div className="border border-line bg-paper px-5 py-4 flex items-start justify-between gap-4 opacity-70">
+      <div className="border border-line bg-paper px-5 py-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2 opacity-70">
         {header}
         {meta(
           <span className="text-xs uppercase tracking-[0.15em] px-3 py-1 rounded-full bg-line/50 text-ink-soft whitespace-nowrap">
@@ -155,7 +163,7 @@ function OrderReviewRow({
   // Advancing production happens on the order page, where the full stage
   // picker and the client's notes are in view — not from a list row.
   return (
-    <div className="border border-line bg-paper px-5 py-4 flex items-start justify-between gap-4 transition-colors hover:border-line-strong">
+    <div className="border border-line bg-paper px-5 py-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2 transition-colors hover:border-line-strong">
       {header}
       {meta(
         <span

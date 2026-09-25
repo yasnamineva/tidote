@@ -34,7 +34,7 @@ export default function AdminOrderPage() {
     <div className="max-w-6xl">
       <Link
         href={client ? `/admin/clients/${client.id}` : "/admin"}
-        className="link-underline text-sm text-ink-soft hover:text-ink"
+        className="link-underline inline-block py-2 text-sm text-ink-soft hover:text-ink"
       >
         {t("od.backToClient")}
       </Link>

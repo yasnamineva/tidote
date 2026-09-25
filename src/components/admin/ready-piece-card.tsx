@@ -138,18 +138,22 @@ export function ReadyPieceCard({
             </span>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+          /* No negative margins. `-my-1.5` pulled the row's height back to
+             the ink, so once these two wrapped onto separate lines their
+             padded boxes overlapped — 57px of Edit sitting on Delete, which is
+             a mis-tap waiting to happen on a phone. */
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
             <button
               type="button"
               onClick={onEdit}
-              className="uppercase tracking-[0.1em] py-1.5 -my-1.5 text-ink-soft hover:text-ink transition-colors"
+              className="uppercase tracking-[0.1em] py-2 text-ink-soft hover:text-ink transition-colors"
             >
               {t("ready.edit")}
             </button>
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="uppercase tracking-[0.1em] py-1.5 -my-1.5 text-ink-soft hover:text-accent transition-colors"
+              className="uppercase tracking-[0.1em] py-2 text-ink-soft hover:text-accent transition-colors"
             >
               {t("ready.delete")}
             </button>

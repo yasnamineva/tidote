@@ -253,14 +253,14 @@ export function ExpensesPanel({ clients }: { clients: Client[] }) {
                             <button
                               type="button"
                               onClick={() => setEditing(e)}
-                              className="py-1.5 -my-1.5 text-ink-soft hover:text-ink"
+                              className="py-2 text-ink-soft hover:text-ink"
                             >
                               {t("ready.edit")}
                             </button>
                             <button
                               type="button"
                               onClick={() => setConfirming(e.id)}
-                              className="py-1.5 -my-1.5 text-ink-soft hover:text-accent"
+                              className="py-2 text-ink-soft hover:text-accent"
                             >
                               {t("ready.delete")}
                             </button>

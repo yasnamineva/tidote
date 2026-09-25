@@ -123,12 +123,18 @@ export default function AdminInboxPage() {
               <p className="mt-3 whitespace-pre-wrap text-sm">{e.message}</p>
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
                 {e.email && (
-                  <a href={`mailto:${e.email}`} className="link-underline text-ink-soft hover:text-moss-deep">
+                  <a
+                    href={`mailto:${e.email}`}
+                    className="link-underline py-1.5 text-ink-soft hover:text-moss-deep"
+                  >
                     {e.email}
                   </a>
                 )}
                 {e.phone && (
-                  <a href={`tel:${e.phone.replace(/\s+/g, "")}`} className="link-underline text-ink-soft hover:text-moss-deep">
+                  <a
+                    href={`tel:${e.phone.replace(/\s+/g, "")}`}
+                    className="link-underline py-1.5 text-ink-soft hover:text-moss-deep"
+                  >
                     {e.phone}
                   </a>
                 )}

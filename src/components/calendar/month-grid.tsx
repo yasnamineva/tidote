@@ -52,7 +52,7 @@ export function MonthGrid({
         <button
           type="button"
           onClick={() => setCursor(new Date(year, month - 1, 1))}
-          className="text-sm text-ink-soft hover:text-ink transition-colors px-2 py-1"
+          className="text-sm text-ink-soft hover:text-ink transition-colors px-3 py-2"
           aria-label="Previous month"
         >
           &larr;
@@ -61,7 +61,7 @@ export function MonthGrid({
         <button
           type="button"
           onClick={() => setCursor(new Date(year, month + 1, 1))}
-          className="text-sm text-ink-soft hover:text-ink transition-colors px-2 py-1"
+          className="text-sm text-ink-soft hover:text-ink transition-colors px-3 py-2"
           aria-label="Next month"
         >
           &rarr;
