@@ -33,6 +33,8 @@ type Session = {
   role: Role;
   /** The profile id. Named clientId because that is what every caller calls it. */
   clientId?: string;
+  /** Whether they want the atelier's occasional email. */
+  marketing: boolean;
 };
 
 type NewOrderInput = {
@@ -77,7 +79,9 @@ type AuthContextValue = {
   signUp: (
     name: string,
     email: string,
-    password: string
+    password: string,
+    /** Whether they want the atelier's occasional email. Off unless asked for. */
+    marketing?: boolean
   ) => Promise<{ ok: boolean; error?: string; needsConfirmation?: boolean }>;
   requestPasswordReset: (email: string) => Promise<{ ok: boolean; error?: string }>;
   updatePassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
@@ -85,6 +89,8 @@ type AuthContextValue = {
   refresh: () => Promise<void>;
   updateMeasurements: (next: Measurements) => Promise<void>;
   updateDeliveryInfo: (next: DeliveryInfo) => Promise<void>;
+  /** Join or leave the atelier's mailing list. Nothing to do with order mail. */
+  setMarketing: (wanted: boolean) => Promise<void>;
   addOrder: (input: NewOrderInput) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   addOrderNote: (orderId: string, text: string, photos: string[]) => Promise<void>;
@@ -162,11 +168,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setReady(true);
         return;
       }
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id,name,email,role")
-        .eq("id", userId)
-        .maybeSingle();
+      // Two goes, because the checkout can be ahead of the database it is
+      // pointed at. `marketing_opt_in` arrives with 0010, and asking for a
+      // column that is not there yet fails the whole read — which lands
+      // everyone on the login page being told their account cannot be read.
+      // A feature that is not migrated yet must not take sign-in with it.
+      //
+      // Wrapped, because `ready` staying false is the one outcome with no way
+      // back: every gated page renders "Loading account…" until it flips, so
+      // anything thrown in here is a spinner that never stops. It has happened
+      // twice now — once from the records load, once from this second read —
+      // so the guarantee lives here rather than at each call.
+      let profile: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        marketing_opt_in?: boolean;
+      } | null = null;
+      let profileError: unknown = null;
+      try {
+        const first = await supabase
+          .from("profiles")
+          .select("id,name,email,role,marketing_opt_in")
+          .eq("id", userId)
+          .maybeSingle();
+        profile = first.data;
+        profileError = first.error;
+        // Only for a column that is not there yet — never for a connection
+        // that is not there. Retrying everything doubled the requests in
+        // exactly the failure where the network is already struggling, and
+        // turned a clean "we could not read your account" into a storm.
+        const missingColumn =
+          first.error?.code === "42703" ||
+          /column .* does not exist|marketing_opt_in/i.test(first.error?.message ?? "");
+        if (missingColumn) {
+          const second = await supabase
+            .from("profiles")
+            .select("id,name,email,role")
+            .eq("id", userId)
+            .maybeSingle();
+          profile = second.data;
+          profileError = second.error;
+        }
+      } catch (e) {
+        profileError = e;
+      }
       if (cancelled) return;
       // "We could not read who you are" is not "you are not signed in". Both
       // used to end with session null, which sends a signed-in person to the
@@ -190,6 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: profile.email,
         role: profile.role as Role,
         clientId: profile.id,
+        marketing: Boolean(profile.marketing_opt_in),
       });
       // A failure to read the orders/measurements must not leave `ready` false
       // for the life of the tab: every gated page renders "Loading…" until it
@@ -279,7 +327,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (name: string, email: string, password: string) => {
+    async (name: string, email: string, password: string, marketing = false) => {
       const lang = getStoredLang();
       if (!isSupabaseConfigured()) {
         return { ok: false, error: translate(lang, "auth.noBackend") };
@@ -289,7 +337,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: email.trim().toLowerCase(),
           password,
           options: {
-            data: { name: name.trim() },
+            // Carried in the metadata because there is no session yet to write
+            // a profile row with: the signup trigger reads it from here.
+            data: { name: name.trim(), marketing_opt_in: marketing },
             emailRedirectTo: `${window.location.origin}/login`,
           },
         });
@@ -384,6 +434,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .upsert(fromDelivery(next, session.clientId));
       if (error) throw error;
       setDelivery({ ...next, updatedAt: new Date().toISOString().slice(0, 10) });
+    },
+    [session]
+  );
+
+  const setMarketing = useCallback(
+    async (wanted: boolean) => {
+      if (!session?.clientId) return;
+      const { error } = await getSupabase()
+        .from("profiles")
+        .update({ marketing_opt_in: wanted })
+        .eq("id", session.clientId);
+      // Before 0010 there is nowhere to record this. Saying so beats a silent
+      // toggle that forgets.
+      if (error) throw error;
+      setSession((current) => (current ? { ...current, marketing: wanted } : current));
     },
     [session]
   );
@@ -562,6 +627,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refresh,
         updateMeasurements,
         updateDeliveryInfo,
+        setMarketing,
         addOrder,
         sendMessage,
         addOrderNote,

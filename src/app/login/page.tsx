@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { PasswordField } from "@/components/password-field";
 import { useAuth } from "@/lib/auth";
+import { getRememberMe, setRememberMe } from "@/lib/supabase/client";
 import { useLang } from "@/lib/i18n";
 
 /**
@@ -32,6 +34,7 @@ function LoginForm() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [stayIn, setStayIn] = useState(getRememberMe());
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [resetSent, setResetSent] = useState(false);
@@ -122,10 +125,15 @@ function LoginForm() {
               <label htmlFor="email" className="text-xs uppercase tracking-[0.15em]">
                 {t("login.email")}
               </label>
+              {/* `autoComplete` is what tells a browser this pair is worth
+                  offering to save. This page had none at all, which is why it
+                  never asked. */}
               <input
                 id="email"
+                name="email"
                 type="email"
                 required
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="border border-line-strong bg-cream px-4 py-3 text-sm transition-colors focus:outline-none focus:border-moss-deep"
@@ -133,20 +141,34 @@ function LoginForm() {
               />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label htmlFor="password" className="text-xs uppercase tracking-[0.15em]">
-                {t("login.password")}
-              </label>
+            <PasswordField
+              id="password"
+              label={t("login.password")}
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
+            />
+
+            {/* Off means a session cookie: it lives as long as the browser is
+                open and no longer, which is the honest reading of "do not keep
+                me signed in" on a machine that is not yours. */}
+            <label className="flex items-start gap-3 text-sm text-ink-soft">
               <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="border border-line-strong bg-cream px-4 py-3 text-sm transition-colors focus:outline-none focus:border-moss-deep"
-                placeholder="••••••••"
+                type="checkbox"
+                checked={stayIn}
+                onChange={(e) => {
+                  setStayIn(e.target.checked);
+                  setRememberMe(e.target.checked);
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-moss-deep"
               />
-            </div>
+              <span>
+                {t("login.stay")}
+                <span className="mt-0.5 block text-xs text-ink-soft/80">
+                  {t("login.stayHint")}
+                </span>
+              </span>
+            </label>
 
             {error && (
               <p

@@ -12,8 +12,10 @@ import {
   labelCls,
   submitCls,
 } from "@/components/auth-shell";
+import { PasswordField } from "@/components/password-field";
 import { useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
+import { passwordAcceptable } from "@/lib/password";
 
 /**
  * Registering yourself. The other way in is the studio adding you from the
@@ -30,6 +32,8 @@ export default function SignupPage() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [taken, setTaken] = useState(false);
+  const [marketing, setMarketing] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -40,8 +44,10 @@ export default function SignupPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 8) {
-      setError(t("signup.shortPassword"));
+    if (!passwordAcceptable(password)) {
+      // The list under the field has been saying which one all along; this is
+      // the backstop for someone who submitted anyway.
+      setError(t("pw.notYet"));
       return;
     }
     // Asked twice and checked here: the field hides what was typed, so a typo
@@ -54,7 +60,30 @@ export default function SignupPage() {
     }
     setBusy(true);
     setError(null);
-    const result = await signUp(name, email, password);
+
+    // Asked before registering, because Supabase will not say. It answers a
+    // signup for an existing address exactly as it answers a new one and sends
+    // no mail, which leaves the person who owns that address watching an inbox
+    // for nothing. The studio would rather be told.
+    try {
+      const probe = await fetch("/api/auth/email-taken", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const seen = await probe.json().catch(() => ({}));
+      if (seen.taken) {
+        setBusy(false);
+        setTaken(true);
+        setError(null);
+        return;
+      }
+    } catch {
+      // Unreachable, or the server has no key to ask with. Carry on: a
+      // registration that might work beats a warning that might be wrong.
+    }
+
+    const result = await signUp(name, email, password, marketing);
     setBusy(false);
     if (!result.ok) {
       setError(result.error ?? t("signup.failed"));
@@ -129,40 +158,65 @@ export default function SignupPage() {
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="password" className={labelCls}>
-              {t("login.password")}
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={fieldCls}
-              placeholder="••••••••"
-            />
-            <p className="text-xs text-ink-soft">{t("signup.passwordHint")}</p>
-          </div>
+          <PasswordField
+            id="password"
+            label={t("login.password")}
+            value={password}
+            onChange={setPassword}
+            autoComplete="new-password"
+            minLength={8}
+            showRules
+          />
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="confirm" className={labelCls}>
-              {t("signup.repeatPassword")}
-            </label>
+          <PasswordField
+            id="confirm"
+            label={t("signup.repeatPassword")}
+            value={confirm}
+            onChange={setConfirm}
+            autoComplete="new-password"
+            minLength={8}
+          />
+
+          {/* Asked once, here, and changeable afterwards from the account. Off
+              by default: nobody is subscribed to anything by not noticing a
+              ticked box. */}
+          <label className="flex items-start gap-3 text-sm text-ink-soft">
             <input
-              id="confirm"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className={fieldCls}
-              placeholder="••••••••"
+              type="checkbox"
+              checked={marketing}
+              onChange={(e) => setMarketing(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-moss-deep"
             />
-          </div>
+            <span>
+              {t("signup.marketing")}
+              <span className="mt-0.5 block text-xs text-ink-soft/80">
+                {t("signup.marketingHint")}
+              </span>
+            </span>
+          </label>
+
+          {taken && (
+            <div
+              role="alert"
+              className="flex flex-col gap-2 border border-accent/40 bg-accent/5 px-3 py-3 text-sm animate-[fade-up_0.3s_ease-out_both]"
+            >
+              <p className="text-accent">{t("signup.taken")}</p>
+              <div className="flex flex-wrap items-center gap-x-5">
+                <Link
+                  href="/login"
+                  className="link-underline inline-block py-1 text-ink-soft hover:text-ink"
+                >
+                  {t("signup.toLogin")}
+                </Link>
+                <Link
+                  href="/reset-password"
+                  className="link-underline inline-block py-1 text-ink-soft hover:text-ink"
+                >
+                  {t("signup.forgotInstead")}
+                </Link>
+              </div>
+            </div>
+          )}
 
           {error && <FormError>{error}</FormError>}
 

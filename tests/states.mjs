@@ -278,6 +278,37 @@ console.log("\nfiles that cannot be used");
   await ctx.close();
 }
 
+// ------------------------------------------------ the taken-address check
+console.log("\nthe check that says an address is taken");
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+  const page = await ctx.newPage();
+
+  const known = await page.request.post(`${BASE}/api/auth/email-taken`, {
+    data: { email: E.NEXT_PUBLIC_DEMO_EMAIL },
+  });
+  const knownBody = await known.json().catch(() => ({}));
+  check(knownBody.taken === true, "an address that has an account comes back taken");
+
+  const stranger = await page.request.post(`${BASE}/api/auth/email-taken`, {
+    data: { email: `nobody-${Date.now()}@tidote.invalid` },
+  });
+  check((await stranger.json()).taken === false, "and one that does not, free");
+
+  // One bit and nothing else. The whole reason this endpoint is acceptable is
+  // that it answers the question the form needs and no other.
+  check(
+    Object.keys(knownBody).every((k) => k === "taken" || k === "checked"),
+    `it answers with nothing but that (${Object.keys(knownBody).join(", ")})`
+  );
+
+  const rubbish = await page.request.post(`${BASE}/api/auth/email-taken`, {
+    data: { email: "not-an-address" },
+  });
+  check((await rubbish.json()).code === "bad_input", "rubbish is refused");
+  await ctx.close();
+}
+
 // ---------------------------------------------- the way into the studio
 console.log("\nthe studio's own way in");
 {
@@ -312,8 +343,8 @@ console.log("\nthe studio's own way in");
   );
   await page.fill("#name", "State Test");
   await page.fill("#email", `probe-${Date.now()}@tidote.invalid`);
-  await page.fill("#password", "long-enough-1");
-  await page.fill("#confirm", "long-enough-2");
+  await page.fill("#password", "long-enough-1!");
+  await page.fill("#confirm", "long-enough-2!");
   await page.locator('button[type="submit"]').first().click();
   await page.waitForTimeout(1500);
   const mismatch = (await page.locator('[role="alert"]').first().textContent()) || "";

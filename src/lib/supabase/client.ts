@@ -41,6 +41,37 @@ export function isSupabaseConfigured(): boolean {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && publishableKey());
 }
 
+/**
+ * Whether the session should outlive the browser window.
+ *
+ * On means a cookie with a lifetime, which is what every site's "keep me
+ * signed in" does and what lets someone close the laptop and come back. Off
+ * means a session cookie: it is gone when the browser is, which is the honest
+ * reading of the box being unticked on a machine that is not yours.
+ *
+ * The preference is remembered per device — not the session, the preference —
+ * so the box comes back the way it was left.
+ */
+const REMEMBER_KEY = "tidote_stay_signed_in";
+const YEAR = 60 * 60 * 24 * 365;
+
+export function getRememberMe(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.localStorage.getItem(REMEMBER_KEY) !== "no";
+  } catch {
+    return true;
+  }
+}
+
+export function setRememberMe(stay: boolean): void {
+  try {
+    window.localStorage.setItem(REMEMBER_KEY, stay ? "yes" : "no");
+  } catch {
+    // Private windows refuse storage. The default below is the safer one.
+  }
+}
+
 export function getSupabase(): SupabaseClient {
   if (!browserClient) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -49,7 +80,15 @@ export function getSupabase(): SupabaseClient {
     // first query, long after the cause. Fail where the cause is.
     if (!url) throw new Error(missing("NEXT_PUBLIC_SUPABASE_URL"));
     if (!key) throw new Error(missing("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"));
-    browserClient = createBrowserClient(url, key);
+    browserClient = createBrowserClient(url, key, {
+      // Read at write time rather than at construction, because the client is
+      // a singleton made before anyone has touched the checkbox.
+      cookieOptions: {
+        get maxAge() {
+          return getRememberMe() ? YEAR : undefined;
+        },
+      },
+    });
   }
   return browserClient;
 }

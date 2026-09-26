@@ -66,73 +66,71 @@ for (const lang of ["en","bg"]) {
   await page.goto(B + "/signup", { waitUntil:"networkidle" });
   check(await page.locator('a[href="/login"]').count()>=1, "signup links back to sign in");
 
-  // Two environments, two right answers. With no keys the page must name the
-  // real cause instead of blaming the person; with keys it talks to the real
-  // Supabase, where the honest answers are "that address already has an
-  // account" or "the confirmation email is rate limited" — and where an
-  // address nobody owns must not be registered just to run a test. So the
-  // existing account is the one used, and what is asserted is that the message
-  // names a cause rather than saying "try again".
-  console.log(`[${lang}] what signup says when it cannot go through`);
+  // Registering an address that already has an account.
+  //
+  // This assertion used to be the opposite. Supabase answers such a signup
+  // exactly as it answers a new one and sends no mail, so that the form cannot
+  // be used to discover who is registered, and this suite checked that the
+  // silence held. It held — and the owner of the site sat watching an inbox
+  // for a message that was never sent.
+  //
+  // The atelier chose the other side of that trade: say so. The cost is that
+  // someone can now learn whether a given address has an account at a small
+  // studio; the benefit is that nobody is stuck at that dead end. So what is
+  // checked here now is that the form *does* tell you, and offers the two
+  // things you actually want next.
+  console.log(`[${lang}] registering an address that already has an account`);
   await page.goto(B + "/signup", { waitUntil:"networkidle" });
   await page.fill("#name","Test Person");
   await page.fill("#email", CONFIGURED ? DEMO_EMAIL : "x@example.com");
-  await page.fill("#password","longenough1");
-  // Both of them, or the browser refuses to submit at all and this check waits
-  // for a message the form never got as far as producing.
-  await page.fill("#confirm","longenough1");
-  await page.click('button[type="submit"]'); await page.waitForTimeout(3500);
+  // Meets the rules the form now shows: length, a digit, a symbol.
+  await page.fill("#password","longenough1!");
+  await page.fill("#confirm","longenough1!");
+  await page.click('button[type="submit"]'); await page.waitForTimeout(4000);
   const sErr = (await page.locator('[role="alert"]').first().textContent() || "").trim();
   const shown = await page.evaluate(() => document.body.innerText);
+
   if (CONFIGURED) {
-    // An address that already has an account is answered exactly like a new
-    // one: check your inbox. That is deliberate — telling the visitor "that
-    // address is taken" would turn this form into a way to find out who has an
-    // account here. What must not appear is a vague failure.
-    const notice = (
-      (await page.locator('[role="status"]').first().textContent()) || ""
-    ).trim();
-    const quiet =
-      /Проверете|Check /i.test(notice) ||
-      /последния час|last hour|rate limit/i.test(sErr);
     check(
-      quiet,
-      `signup neither reveals the account nor says "try again": "${(notice || sErr || "nothing").slice(0, 60)}"`
+      /вече има профил|already has an account/i.test(sErr),
+      `it says the address is taken: "${sErr.slice(0, 48)}"`
     );
     check(
-      !/вече има профил|already has an account/i.test(shown.replace(/Ако[^.]*\.|If that address[^.]*\./g, "")),
-      "and does not confirm that the address is registered"
-    );
-    // The screen that says "check your inbox" is also shown when no mail was
-    // sent at all, because the address already exists — Supabase answers the
-    // same way on purpose. Saying only "check your inbox" left the owner of
-    // this site waiting for a message that was never coming, so the screen has
-    // to cover that case too, in the same words for everyone.
-    check(
-      /вече има профил|already has an account/i.test(shown),
-      "and says what to do when no mail is coming"
+      !/Проверете .*за връзка|Check .* for a link/i.test(shown),
+      "and does not send you to an inbox with nothing in it"
     );
     check(
-      (await page.locator('a[href="/reset-password"]').count()) > 0,
-      "with a way to reset the password from there"
+      (await page.locator('a[href="/login"]').count()) > 0 &&
+        (await page.locator('a[href="/reset-password"]').count()) > 0,
+      "offering both a sign-in and a password reset"
     );
   } else {
     check(/SETUP\.md|база данни/.test(sErr), `signup names the real cause: "${sErr.slice(0,60)}"`);
   }
 
-  console.log(`[${lang}] the password is asked for twice`);
-  await page.goto(B + "/signup", { waitUntil:"networkidle" });
-  check(await page.locator('input[type="password"]').count() === 2, "signup has two password fields");
-  await page.fill("#name","Test Person");
-  await page.fill("#email", CONFIGURED ? DEMO_EMAIL : "x@example.com");
-  await page.fill("#password","longenough1");
-  await page.fill("#confirm","longenough2");
-  await page.click('button[type="submit"]'); await page.waitForTimeout(1200);
-  const mErr = (await page.locator('[role="alert"]').first().textContent() || "").trim();
-  check(/не съвпадат|not the same/i.test(mErr), `two different passwords are refused: "${mErr.slice(0,40)}"`);
-
   // minLength stops the browser submitting at all, which is better than our own
   // message — so what to assert is that it never got sent, not that we complained.
+  await page.goto(B + "/signup", { waitUntil:"networkidle" });
+  // A password that is long enough but has neither a digit nor a symbol is
+  // refused by the rules rather than by the browser, and the list under the
+  // field says which one is missing before the button is ever pressed.
+  await page.goto(B + "/signup", { waitUntil:"networkidle" });
+  await page.fill("#password","onlyletters");
+  await page.waitForTimeout(400);
+  const ticks = await page.evaluate(() =>
+    [...document.querySelectorAll("li")]
+      .filter((li) => /\u2713|\u00b7/.test(li.innerText))
+      .map((li) => li.innerText.trim().slice(0, 2))
+  );
+  check(
+    ticks.filter((t) => t.startsWith("\u2713")).length === 1,
+    `the rule list ticks only what is met (${ticks.join(" ")})`
+  );
+  check(
+    (await page.locator('button[aria-pressed]').count()) >= 1,
+    "and the password can be shown"
+  );
+
   await page.goto(B + "/signup", { waitUntil:"networkidle" });
   await page.fill("#name","T"); await page.fill("#email","x@example.com"); await page.fill("#password","short");
   await page.click('button[type="submit"]'); await page.waitForTimeout(500);

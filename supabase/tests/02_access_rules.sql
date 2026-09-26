@@ -291,6 +291,46 @@ begin
           'blocked', case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
 end $$;
 
+-- ------------------------------------------------- the atelier's mailing list
+-- A client may put themselves on it and take themselves off, and the stamp
+-- records when they said yes — but none of that reaches the columns 0006
+-- protects.
+set role authenticated;
+select as_user(:ANN);
+
+update profiles set marketing_opt_in = true where id = auth.uid();
+
+insert into results (test, expected, got, pass)
+select 'A client can put themselves on the mailing list', 'true',
+       marketing_opt_in::text, marketing_opt_in
+from profiles where id = auth.uid();
+
+insert into results (test, expected, got, pass)
+select 'And when they said so is recorded', 'true',
+       (marketing_opt_in_at is not null)::text, marketing_opt_in_at is not null
+from profiles where id = auth.uid();
+
+update profiles set marketing_opt_in = false where id = auth.uid();
+
+insert into results (test, expected, got, pass)
+select 'Taking themselves off clears the stamp', 'true',
+       (marketing_opt_in = false and marketing_opt_in_at is null)::text,
+       marketing_opt_in = false and marketing_opt_in_at is null
+from profiles where id = auth.uid();
+
+do $$
+declare blocked boolean;
+begin
+  begin
+    update profiles set marketing_opt_in = true where id <> auth.uid();
+    blocked := (select count(*) = 0 from profiles where id <> auth.uid() and marketing_opt_in);
+  exception when others then blocked := true;
+  end;
+  insert into results (test, expected, got, pass)
+  values ('But not onto someone else''s behalf', 'blocked',
+          case when blocked then 'blocked' else 'GOT THROUGH' end, blocked);
+end $$;
+
 -- ------------------------------------------------------------------ photos
 -- Uploads are the one private thing that does not live in a table. The folder
 -- name is the permission: client-photos/<uuid>/… . So the test is whether Ann

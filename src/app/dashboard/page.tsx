@@ -133,6 +133,7 @@ export default function DashboardPage() {
     messages,
     items,
     updateMeasurements,
+    setMarketing,
     sendMessage,
     addItem,
     removeItem,
@@ -146,6 +147,7 @@ export default function DashboardPage() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [marketingBusy, setMarketingBusy] = useState(false);
   const [headerH, setHeaderH] = useState(0);
   const [barH, setBarH] = useState(0);
   const barRef = useRef<HTMLDivElement | null>(null);
@@ -655,6 +657,39 @@ export default function DashboardPage() {
                 {t("dash.delivery.use")}
               </p>
               <DeliveryForm />
+
+              {/* Where they change their mind about the atelier's email. On
+                  the same screen as the address, because both are "what the
+                  studio may do with how to reach me". */}
+              <div className="mt-6 border border-line bg-paper px-6 py-5">
+                <h3 className="font-display text-lg">{t("account.emails")}</h3>
+                <p className="mt-1 text-sm text-ink-soft">
+                  {session.marketing
+                    ? t("account.marketingOn")
+                    : t("account.marketingOff")}
+                </p>
+                <button
+                  type="button"
+                  disabled={marketingBusy}
+                  onClick={async () => {
+                    setMarketingBusy(true);
+                    try {
+                      await setMarketing(!session.marketing);
+                    } catch {
+                      // Nothing was changed; the line above still reads true.
+                    } finally {
+                      setMarketingBusy(false);
+                    }
+                  }}
+                  className="btn-sweep mt-4 inline-block border border-ink px-5 py-2.5 text-xs uppercase tracking-[0.15em] transition-colors duration-300 hover:text-cream disabled:opacity-60"
+                >
+                  {marketingBusy
+                    ? t("common.saving")
+                    : session.marketing
+                      ? t("account.marketingLeave")
+                      : t("account.marketingJoin")}
+                </button>
+              </div>
             </Reveal>
           </div>
 
