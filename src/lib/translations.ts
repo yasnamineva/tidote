@@ -291,6 +291,9 @@ const en: Dict = {
   // Setting up the studio account. The code is set once in the database with
   // set_studio_code(); see supabase/migrations/0009_studio_claim.sql.
   "signup.checkEmail": "Check {email} for a link to confirm your address.",
+  "signup.alreadyHave":
+    "If that address already has an account, no mail is sent and none is needed — sign in with it instead.",
+  "signup.forgotInstead": "Forgotten your password?",
   "signup.checkEmailSub":
     "You can sign in as soon as you have clicked it. If nothing arrives, look in your spam folder.",
   "signup.toLogin": "← Back to sign in",
@@ -1216,6 +1219,9 @@ const bg: Dict = {
     "Твърде много опити за регистрация от тук през последния час, затова имейлът за потвърждение не можа да се изпрати. Опитайте по-късно или ни пишете на support@tidoteatelier.com и ще създадем профила вместо вас.",
 
   "signup.checkEmail": "Проверете {email} за връзка, с която да потвърдите адреса си.",
+  "signup.alreadyHave":
+    "Ако на този адрес вече има профил, имейл не се изпраща и не е нужен — просто влезте с него.",
+  "signup.forgotInstead": "Забравена парола?",
   "signup.checkEmailSub":
     "Ще може да влезете веднага щом я отворите. Ако не пристигне нищо, проверете в спам.",
   "signup.toLogin": "← Обратно към входа",

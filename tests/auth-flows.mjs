@@ -100,8 +100,21 @@ for (const lang of ["en","bg"]) {
       `signup neither reveals the account nor says "try again": "${(notice || sErr || "nothing").slice(0, 60)}"`
     );
     check(
-      !/вече има профил|already has an account/i.test(shown),
+      !/вече има профил|already has an account/i.test(shown.replace(/Ако[^.]*\.|If that address[^.]*\./g, "")),
       "and does not confirm that the address is registered"
+    );
+    // The screen that says "check your inbox" is also shown when no mail was
+    // sent at all, because the address already exists — Supabase answers the
+    // same way on purpose. Saying only "check your inbox" left the owner of
+    // this site waiting for a message that was never coming, so the screen has
+    // to cover that case too, in the same words for everyone.
+    check(
+      /вече има профил|already has an account/i.test(shown),
+      "and says what to do when no mail is coming"
+    );
+    check(
+      (await page.locator('a[href="/reset-password"]').count()) > 0,
+      "with a way to reset the password from there"
     );
   } else {
     check(/SETUP\.md|база данни/.test(sErr), `signup names the real cause: "${sErr.slice(0,60)}"`);

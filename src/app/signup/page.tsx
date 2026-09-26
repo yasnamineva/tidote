@@ -71,12 +71,29 @@ export default function SignupPage() {
         <div className={formCls}>
           <FormNotice>{t("signup.checkEmail", { email })}</FormNotice>
           <p className="text-sm text-ink-soft">{t("signup.checkEmailSub")}</p>
-          <Link
-            href="/login"
-            className="link-underline inline-block py-2 text-sm text-ink-soft hover:text-ink"
-          >
-            {t("signup.toLogin")}
-          </Link>
+          {/* Said to everyone, in the same words, whether or not the address
+              already has an account — so it still reveals nothing about who is
+              registered here. Without it, the one case where no mail is sent
+              (an address that already exists) looks exactly like the case where
+              one is, and the person waits for something that is never coming.
+              It happened to the owner of this site. */}
+          <p className="border-t border-line pt-4 text-sm text-ink-soft">
+            {t("signup.alreadyHave")}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-5">
+            <Link
+              href="/login"
+              className="link-underline inline-block py-2 text-sm text-ink-soft hover:text-ink"
+            >
+              {t("signup.toLogin")}
+            </Link>
+            <Link
+              href="/reset-password"
+              className="link-underline inline-block py-2 text-sm text-ink-soft hover:text-ink"
+            >
+              {t("signup.forgotInstead")}
+            </Link>
+          </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className={formCls}>
