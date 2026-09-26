@@ -37,6 +37,11 @@ export function findCollisions() {
     const b = el.getBoundingClientRect();
     if (b.width <= 0 || b.height <= 0) return false;
     if (el.closest("[aria-hidden='true']")) return false;
+    // Not the inside of a chart. An SVG `<g>` of tick labels reports one box
+    // spanning the whole axis, so two axes read as one printing across the
+    // other while the chart itself is perfectly legible. A chart lays itself
+    // out; this is an instrument for HTML text that does not.
+    if (el.closest("svg")) return false;
     const text = el.textContent.trim();
     if (!text) return false;
     // Keep the innermost element holding a given string, not its wrappers.

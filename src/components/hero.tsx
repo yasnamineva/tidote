@@ -48,21 +48,38 @@ export function Hero() {
         />
       </div>
 
-      {/* One fade over the whole photograph. Even enough that ink is readable
-          wherever it falls, light enough that the rail is still a rail. */}
-      <div className="absolute inset-0 bg-cream/62" />
-      <div className="absolute inset-0 bg-gradient-to-b from-cream/45 via-transparent to-cream/35" />
+      {/* A blur that fades out downward, so the top of the frame goes soft and
+          light and the rail comes into focus as it falls. `backdrop-blur` with
+          a mask rather than a second copy of the photograph: one element, one
+          download, and the mask is what makes it a gradient rather than a
+          line. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 backdrop-blur-[14px]"
+        style={{
+          maskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.92) 22%, rgba(0,0,0,0.45) 48%, rgba(0,0,0,0) 72%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.92) 22%, rgba(0,0,0,0.45) 48%, rgba(0,0,0,0) 72%)",
+        }}
+      />
+
+      {/* Cream over the whole frame, heaviest at the top where the blur is —
+          the two together are one effect, the picture arriving rather than
+          starting. */}
+      <div className="absolute inset-0 bg-cream/50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-cream/72 via-cream/26 to-cream/22" />
 
       {/* Two columns only once there is room for both; at 768 the tag and a
           paragraph side by side squeezed each other, and stacked reads better. */}
-      <div className="relative z-10 mx-auto grid min-h-[88vh] max-w-7xl grid-cols-1 items-center gap-8 px-6 pb-14 md:min-h-[92vh] lg:grid-cols-[auto_1fr] lg:items-start lg:gap-20">
+      <div className="relative z-10 mx-auto grid min-h-[88vh] max-w-7xl grid-cols-1 items-center gap-6 px-6 pb-14 md:min-h-[92vh] lg:grid-cols-[auto_1fr] lg:items-start lg:gap-20">
         {/* The cord starts at the top edge of the section — it comes from above
             the fold, the way a tag hangs from something out of frame. */}
         <div className="flex justify-center lg:justify-start">
           <HangTag />
         </div>
 
-        <div className="relative text-center lg:pt-[32vh] lg:text-left">
+        <div className="relative text-center lg:pt-[24vh] lg:text-left">
           <Reveal>
             <h1 className="mx-auto max-w-md text-xl font-medium leading-snug text-ink md:max-w-xl md:text-3xl lg:mx-0 lg:text-4xl">
               {t("hero.prop")}
