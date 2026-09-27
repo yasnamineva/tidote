@@ -338,13 +338,41 @@ try {
   const after = await rest(`orders?id=eq.${orderId}&select=total,eta,review_status`);
   check(after.body?.[0]?.total === "€275", `the row carries the price (${after.body?.[0]?.total})`);
   check(after.body?.[0]?.review_status === "accepted", "and is marked accepted");
+  // `select=*` rather than naming `data`: that column arrives with 0010, and
+  // asking for it before then fails the whole query — which is how this test
+  // learned the same lesson the portal did.
   const alerts = await rest(
-    `notifications?audience=eq.client&profile_id=eq.${clientId}&order=created_at.desc&limit=3&select=kind,text`
+    `notifications?audience=eq.client&profile_id=eq.${clientId}&order=created_at.desc&limit=3&select=*`
   );
   check(
     (alerts.body ?? []).some((n) => /275/.test(n.text || "")),
     "the client has been notified of the price"
   );
+
+  // And the email behind it. Nothing is sent from here — no transport is
+  // configured in a checkout — but the route must get far enough to have one
+  // to send: the right kind, the right person, a rendered subject. "skipped"
+  // for want of a transport is the pass; "no mail for this kind" is not.
+  const priced = (alerts.body ?? []).find((n) => n.kind === "order_reviewed");
+  check(Boolean(priced), "the price change raised an order_reviewed alert");
+  if (priced) {
+    if (priced.data === undefined) {
+      console.log("    (0010 not applied here, so the alert carries no detail)");
+    } else {
+      check(
+        priced.data?.status === "accepted" && Boolean(priced.data?.total),
+        `carrying what the email needs (${JSON.stringify(priced.data ?? {})})`
+      );
+    }
+    const mailed = await page.request.post(`${BASE}/api/notify`, {
+      data: { id: priced.id },
+    });
+    const outcome = await mailed.json().catch(() => ({}));
+    check(
+      outcome.sent === true || /transport|SMTP|RESEND/i.test(outcome.skipped ?? ""),
+      `it has an email to send (${outcome.sent ? "sent" : outcome.skipped ?? outcome.error})`
+    );
+  }
 
   // Move it along to ready, which is the stage that lets the client book a
   // fitting — checked from her side at the end of this suite.

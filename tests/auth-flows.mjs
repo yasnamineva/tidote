@@ -29,6 +29,20 @@ const { DEMO_EMAIL, CONFIGURED } = (() => {
     return { DEMO_EMAIL: "x@example.com", CONFIGURED: false };
   }
 })();
+/**
+ * Go somewhere and let it settle.
+ *
+ * These checks used to navigate with `networkidle`, which waits for a quiet
+ * network — something a page that polls for notifications never provides. It
+ * passed by luck until it timed out. `domcontentloaded` returns too early for
+ * links and animations, so the settle is explicit now rather than a side
+ * effect of waiting for the wrong thing.
+ */
+async function go(page, path) {
+  await page.goto(B + path, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(1800);
+}
+
 const browser = await chromium.launch();
 const bad = [];
 const check = (ok, m) => { console.log(`  ${ok ? "PASS" : "** FAIL **"}  ${m}`); if (!ok) bad.push(m); };
@@ -43,7 +57,8 @@ for (const lang of ["en","bg"]) {
 
   console.log(`\n[${lang}] the three account pages`);
   for (const [path, marker] of [["/login","#password"],["/signup","#name"],["/reset-password",null]]) {
-    const res = await page.goto(B + path, { waitUntil:"networkidle" });
+    const res = await page.goto(B + path, { waitUntil:"domcontentloaded" });
+    await page.waitForTimeout(1200);
     await page.waitForTimeout(700);
     check(res.status()===200, `${path} serves 200`);
     const chars = await page.evaluate(() => document.body.innerText.trim().length);
@@ -60,10 +75,10 @@ for (const lang of ["en","bg"]) {
   }
 
   console.log(`[${lang}] cross-links`);
-  await page.goto(B + "/login", { waitUntil:"networkidle" });
+  await go(page, "/login");
   check(await page.locator('a[href="/signup"]').count()>=1, "login offers Create an account");
   check(await page.locator('button:has-text("' + (lang==="bg"?"Забравена":"Forgot") + '")').count()>=1, "login offers a password reset");
-  await page.goto(B + "/signup", { waitUntil:"networkidle" });
+  await go(page, "/signup");
   check(await page.locator('a[href="/login"]').count()>=1, "signup links back to sign in");
 
   // Registering an address that already has an account.
@@ -80,7 +95,7 @@ for (const lang of ["en","bg"]) {
   // checked here now is that the form *does* tell you, and offers the two
   // things you actually want next.
   console.log(`[${lang}] registering an address that already has an account`);
-  await page.goto(B + "/signup", { waitUntil:"networkidle" });
+  await go(page, "/signup");
   await page.fill("#name","Test Person");
   await page.fill("#email", CONFIGURED ? DEMO_EMAIL : "x@example.com");
   // Meets the rules the form now shows: length, a digit, a symbol.
@@ -110,11 +125,11 @@ for (const lang of ["en","bg"]) {
 
   // minLength stops the browser submitting at all, which is better than our own
   // message — so what to assert is that it never got sent, not that we complained.
-  await page.goto(B + "/signup", { waitUntil:"networkidle" });
+  await go(page, "/signup");
   // A password that is long enough but has neither a digit nor a symbol is
   // refused by the rules rather than by the browser, and the list under the
   // field says which one is missing before the button is ever pressed.
-  await page.goto(B + "/signup", { waitUntil:"networkidle" });
+  await go(page, "/signup");
   await page.fill("#password","onlyletters");
   await page.waitForTimeout(400);
   const ticks = await page.evaluate(() =>
@@ -131,7 +146,7 @@ for (const lang of ["en","bg"]) {
     "and the password can be shown"
   );
 
-  await page.goto(B + "/signup", { waitUntil:"networkidle" });
+  await go(page, "/signup");
   await page.fill("#name","T"); await page.fill("#email","x@example.com"); await page.fill("#password","short");
   await page.click('button[type="submit"]'); await page.waitForTimeout(500);
   const blocked = await page.evaluate(() => {
@@ -140,7 +155,7 @@ for (const lang of ["en","bg"]) {
   });
   check(blocked.invalid, `short password blocked by the browser: "${blocked.msg.slice(0,45)}"`);
 
-  await page.goto(B + "/login", { waitUntil:"networkidle" });
+  await go(page, "/login");
   await page.click(`button:has-text("${lang==="bg"?"Забравена":"Forgot"}")`);
   await page.waitForTimeout(700);
   const fErr = (await page.locator('[role="alert"]').first().textContent() || "").trim();
@@ -164,8 +179,11 @@ console.log("\nguards unchanged");
 {
   const page = await (await browser.newContext()).newPage();
   for (const [p, expect] of [["/signup","/signup"],["/reset-password","/reset-password"],["/dashboard","/login"],["/admin","/login"]]) {
-    await page.goto(B + p, { waitUntil:"networkidle" });
-    await page.waitForTimeout(1000);
+    // `domcontentloaded` and then a beat, rather than `networkidle`: a page
+    // that polls for notifications never goes idle, so waiting for that was
+    // waiting for something that does not happen.
+    await go(page, p);
+    await page.waitForTimeout(2500);
     const landed = page.url().replace(B,"").split("?")[0];
     check(landed===expect, `${p} -> ${landed}`);
   }

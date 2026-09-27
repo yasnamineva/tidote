@@ -12,7 +12,17 @@
 
 alter table profiles
   add column if not exists marketing_opt_in boolean not null default false,
-  add column if not exists marketing_opt_in_at timestamptz;
+  add column if not exists marketing_opt_in_at timestamptz,
+  -- Which language to write to them in. The notification's own sentence is
+  -- composed in whatever language the person who caused it was using, which is
+  -- the studio's more often than not — so an email built from that would reach
+  -- an English client in Bulgarian.
+  add column if not exists lang text not null default 'bg';
+
+-- What an alert is about, so an email can be written from it rather than from
+-- its sentence: the piece, the stage it moved to, the price, who it concerns.
+alter table notifications
+  add column if not exists data jsonb not null default '{}'::jsonb;
 
 -- The stamp is the record of when they said yes, which is the part that
 -- matters if anyone is ever asked to show it.
@@ -37,7 +47,7 @@ create trigger profiles_stamp_marketing
 create or replace function handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into profiles (id, role, name, email, marketing_opt_in, marketing_opt_in_at)
+  insert into profiles (id, role, name, email, marketing_opt_in, marketing_opt_in_at, lang)
   values (
     new.id,
     case
@@ -52,7 +62,8 @@ begin
     case
       when coalesce((new.raw_user_meta_data ->> 'marketing_opt_in')::boolean, false)
       then now()
-    end
+    end,
+    case when new.raw_user_meta_data ->> 'lang' = 'en' then 'en' else 'bg' end
   );
 
   insert into measurements (profile_id) values (new.id);

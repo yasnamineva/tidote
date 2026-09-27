@@ -484,6 +484,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           piece: pieceLabel(lang, input.piece),
         }),
         href: `/admin/orders/${clientId}/${data.id}`,
+        data: { client: session.name, piece: pieceLabel(lang, input.piece) },
       });
       // The order is in. Failing to read the account back is a display
       // problem, not a failed order, and the form must not tell her to place
@@ -507,6 +508,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: session.name,
         }),
         href: "/admin/inbox",
+        data: { client: session.name },
       });
     },
     [session]

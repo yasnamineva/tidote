@@ -76,6 +76,9 @@ export async function updateOrderStatus(
       status: statusLabel(lang, status),
     }),
     href: `/dashboard/orders/${orderId}`,
+    // Raw, so the email can name the stage in the reader's language rather
+    // than in whichever one the studio happens to have the site set to.
+    data: { piece: pieceLabel(lang, context.piece), status },
   });
   return getClientWithLiveData(clientId);
 }
@@ -133,6 +136,7 @@ export async function acceptOrder(
     kind: "order_reviewed",
     text: translate(lang, "gen.notif.acceptedClient", { piece, total }),
     href: `/dashboard/orders/${orderId}`,
+    data: { piece, total, status: "accepted" },
   });
   return getClientWithLiveData(clientId);
 }
@@ -165,6 +169,7 @@ export async function denyOrder(
     kind: "order_reviewed",
     text: translate(lang, "gen.notif.deniedClient", { piece }),
     href: `/dashboard/orders/${orderId}`,
+    data: { piece, status: "declined" },
   });
   return getClientWithLiveData(clientId);
 }
@@ -265,6 +270,7 @@ export async function returnOrder(
       piece: pieceLabel(lang, context.piece),
     }),
     href: `/dashboard/orders/${orderId}`,
+    data: { piece: pieceLabel(lang, context.piece) },
   });
   return getClientWithLiveData(clientId);
 }

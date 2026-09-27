@@ -309,6 +309,41 @@ console.log("\nthe check that says an address is taken");
   await ctx.close();
 }
 
+// ------------------------------------------- the mail behind the bell
+console.log("\nthe email that goes with an alert");
+{
+  const { ctx, page } = await signedIn();
+
+  // The route composes nothing from what it is sent: an id, and it reads the
+  // rest back itself. So the only thing a signed-in person can cause is a mail
+  // the database already says belongs to someone.
+  const madeUp = await page.request.post(`${BASE}/api/notify`, {
+    data: { id: "00000000-0000-0000-0000-000000000000" },
+  });
+  const madeUpBody = await madeUp.json().catch(() => ({}));
+  check(
+    madeUpBody.skipped === "no such notification",
+    "an alert that does not exist sends nothing"
+  );
+  check(
+    !JSON.stringify(madeUpBody).includes("@"),
+    "and no address comes back either way"
+  );
+
+  const noId = await page.request.post(`${BASE}/api/notify`, { data: {} });
+  check((await noId.json()).code === "bad_input", "and an empty request is refused");
+  await ctx.close();
+
+  // Signed out, it refuses outright.
+  const anon = await browser.newContext();
+  const anonPage = await anon.newPage();
+  const out = await anonPage.request.post(`${BASE}/api/notify`, {
+    data: { id: "00000000-0000-0000-0000-000000000000" },
+  });
+  check(out.status() === 401, `a stranger is refused outright (HTTP ${out.status()})`);
+  await anon.close();
+}
+
 // ---------------------------------------------- the way into the studio
 console.log("\nthe studio's own way in");
 {
